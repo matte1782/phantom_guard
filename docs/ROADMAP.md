@@ -333,8 +333,8 @@ Public release on PyPI and GitHub.
 
 | Phase | Status | Progress | Blockers |
 |-------|--------|----------|----------|
-| P0: Setup | IN_PROGRESS | 80% | CI/CD needed |
-| P1: Core | NOT_STARTED | 0% | - |
+| P0: Setup | COMPLETE | 100% | - |
+| P1: Core | IN_PROGRESS | 60% | Tests needed |
 | P2: CLI | NOT_STARTED | 0% | - |
 | P3: Cache | NOT_STARTED | 0% | - |
 | P4: Action | NOT_STARTED | 0% | - |
@@ -346,8 +346,8 @@ Public release on PyPI and GitHub.
 
 | Milestone | Target Date | Actual Date | Notes |
 |-----------|-------------|-------------|-------|
-| P0 Complete | Day 3 | - | - |
-| P1 Complete | Day 21 | - | - |
+| P0 Complete | Day 3 | Day 1 | Git, pre-commit, initial scaffold |
+| P1 Complete | Day 21 | - | Core engine 60% done |
 | P2 Complete | Day 35 | - | - |
 | P3 Complete | Day 49 | - | - |
 | P4 Complete | Day 63 | - | - |
