@@ -1,5 +1,5 @@
 # SPEC: S020-S026 - PyPI Registry Client
-# Gate 3: Test Design - Stubs
+# Gate 3: Test Design - Implementation
 """
 Unit tests for the PyPI registry client.
 
@@ -12,6 +12,16 @@ EDGE_CASES: EC020-EC034
 from __future__ import annotations
 
 import pytest
+import respx
+import httpx
+
+from phantom_guard.registry.pypi import PyPIClient
+from phantom_guard.registry.exceptions import (
+    RegistryTimeoutError,
+    RegistryRateLimitError,
+    RegistryUnavailableError,
+    RegistryParseError,
+)
 
 
 class TestPyPIClient:
@@ -25,9 +35,9 @@ class TestPyPIClient:
     # SUCCESSFUL RESPONSE TESTS
     # =========================================================================
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_package_exists_returns_metadata(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_package_exists_returns_metadata(self):
         """
         TEST_ID: T020.01
         SPEC: S020
@@ -38,11 +48,30 @@ class TestPyPIClient:
         When: get_package is called
         Then: Returns PackageMetadata with exists=True
         """
-        pass
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {
+                        "name": "flask",
+                        "version": "3.0.0",
+                        "summary": "A micro web framework",
+                        "author": "Armin Ronacher",
+                    },
+                    "releases": {"3.0.0": [], "2.0.0": []},
+                },
+            )
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_package_not_found_returns_not_exists(self):
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("flask")
+
+        assert metadata.exists is True
+        assert metadata.name == "flask"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_package_not_found_returns_not_exists(self):
         """
         TEST_ID: T020.02
         SPEC: S020
@@ -53,11 +82,19 @@ class TestPyPIClient:
         When: get_package is called
         Then: Returns PackageMetadata with exists=False
         """
-        pass
+        respx.get("https://pypi.org/pypi/nonexistent-phantom-package/json").mock(
+            return_value=httpx.Response(404)
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_package_metadata_fields(self):
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("nonexistent-phantom-package")
+
+        assert metadata.exists is False
+        assert metadata.name == "nonexistent-phantom-package"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_package_metadata_fields(self):
         """
         TEST_ID: T020.03
         SPEC: S020
@@ -66,15 +103,46 @@ class TestPyPIClient:
         When: get_package is called
         Then: Metadata contains name, version, author, repo, etc.
         """
-        pass
+        respx.get("https://pypi.org/pypi/requests/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {
+                        "name": "requests",
+                        "version": "2.31.0",
+                        "summary": "Python HTTP for Humans",
+                        "author": "Kenneth Reitz",
+                        "project_urls": {
+                            "Source": "https://github.com/psf/requests",
+                        },
+                    },
+                    "releases": {
+                        "2.31.0": [{"upload_time": "2023-05-22T10:00:00"}],
+                        "2.30.0": [{"upload_time": "2023-05-01T10:00:00"}],
+                        "2.29.0": [{"upload_time": "2023-04-01T10:00:00"}],
+                    },
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("requests")
+
+        assert metadata.exists is True
+        assert metadata.name == "requests"
+        assert metadata.latest_version == "2.31.0"
+        assert metadata.description == "Python HTTP for Humans"
+        assert metadata.repository_url == "https://github.com/psf/requests"
+        assert metadata.release_count == 3
+        assert metadata.maintainer_count == 1
 
     # =========================================================================
     # ERROR HANDLING TESTS
     # =========================================================================
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_timeout_raises_error(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_timeout_raises_error(self):
         """
         TEST_ID: T020.04
         SPEC: S020
@@ -85,11 +153,20 @@ class TestPyPIClient:
         When: get_package is called
         Then: Raises RegistryTimeoutError
         """
-        pass
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            side_effect=httpx.TimeoutException("timeout")
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_server_error_raises_unavailable(self):
+        async with PyPIClient(timeout=1.0) as client:
+            with pytest.raises(RegistryTimeoutError) as exc_info:
+                await client.get_package_metadata("flask")
+
+            assert exc_info.value.registry == "pypi"
+            assert exc_info.value.timeout == 1.0
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_server_error_raises_unavailable(self):
         """
         TEST_ID: T020.05
         SPEC: S020
@@ -99,11 +176,20 @@ class TestPyPIClient:
         When: get_package is called
         Then: Raises RegistryUnavailableError
         """
-        pass
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(500)
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_gateway_error_raises_unavailable(self):
+        async with PyPIClient() as client:
+            with pytest.raises(RegistryUnavailableError) as exc_info:
+                await client.get_package_metadata("flask")
+
+            assert exc_info.value.registry == "pypi"
+            assert exc_info.value.status_code == 500
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_gateway_error_raises_unavailable(self):
         """
         TEST_ID: T020.06
         SPEC: S020
@@ -113,11 +199,22 @@ class TestPyPIClient:
         When: get_package is called
         Then: Raises RegistryUnavailableError
         """
-        pass
+        for status_code in [502, 503, 504]:
+            respx.get("https://pypi.org/pypi/flask/json").mock(
+                return_value=httpx.Response(status_code)
+            )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_rate_limit_raises_error(self):
+            async with PyPIClient() as client:
+                with pytest.raises(RegistryUnavailableError) as exc_info:
+                    await client.get_package_metadata("flask")
+
+                assert exc_info.value.status_code == status_code
+
+            respx.clear()
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_raises_error(self):
         """
         TEST_ID: T020.07
         SPEC: S020
@@ -127,11 +224,20 @@ class TestPyPIClient:
         When: get_package is called
         Then: Raises RegistryRateLimitError with retry_after
         """
-        pass
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(429, headers={"Retry-After": "60"})
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_invalid_json_raises_parse_error(self):
+        async with PyPIClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("flask")
+
+            assert exc_info.value.registry == "pypi"
+            assert exc_info.value.retry_after == 60
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_invalid_json_raises_parse_error(self):
         """
         TEST_ID: T020.08
         SPEC: S020
@@ -141,11 +247,19 @@ class TestPyPIClient:
         When: get_package is called
         Then: Raises RegistryParseError
         """
-        pass
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(200, content=b"not valid json{{{")
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_missing_fields_graceful_default(self):
+        async with PyPIClient() as client:
+            with pytest.raises(RegistryParseError) as exc_info:
+                await client.get_package_metadata("flask")
+
+            assert exc_info.value.registry == "pypi"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_missing_fields_graceful_default(self):
         """
         TEST_ID: T020.09
         SPEC: S020
@@ -155,11 +269,29 @@ class TestPyPIClient:
         When: get_package is called
         Then: Uses graceful defaults for missing fields
         """
-        pass
+        respx.get("https://pypi.org/pypi/minimal-package/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "minimal-package"},
+                    "releases": {},
+                },
+            )
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_empty_response_handled(self):
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("minimal-package")
+
+        assert metadata.exists is True
+        assert metadata.name == "minimal-package"
+        assert metadata.latest_version is None
+        assert metadata.description is None
+        assert metadata.repository_url is None
+        assert metadata.release_count == 0
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_empty_response_handled(self):
         """
         TEST_ID: T020.10
         SPEC: S020
@@ -169,15 +301,23 @@ class TestPyPIClient:
         When: get_package is called
         Then: Handles gracefully
         """
-        pass
+        respx.get("https://pypi.org/pypi/empty-package/json").mock(
+            return_value=httpx.Response(200, json={})
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("empty-package")
+
+        assert metadata.exists is True
+        assert metadata.name == "empty-package"
 
     # =========================================================================
     # PYPISTATS TESTS (P1-PERF-001)
     # =========================================================================
 
-    @pytest.mark.skip(reason="Stub - implement with S023")
-    @pytest.mark.unit
-    def test_pypistats_success_returns_downloads(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_pypistats_success_returns_downloads(self):
         """
         TEST_ID: T020.11
         SPEC: S023
@@ -187,11 +327,21 @@ class TestPyPIClient:
         When: get_downloads is called
         Then: Returns download count
         """
-        pass
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": {"last_month": 15000000}},
+            )
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S023")
-    @pytest.mark.unit
-    def test_pypistats_unavailable_returns_none(self):
+        async with PyPIClient() as client:
+            downloads = await client.get_downloads("flask")
+
+        assert downloads == 15000000
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_pypistats_unavailable_returns_none(self):
         """
         TEST_ID: T020.12
         SPEC: S023
@@ -201,11 +351,18 @@ class TestPyPIClient:
         When: get_downloads is called
         Then: Returns None (graceful degradation)
         """
-        pass
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            return_value=httpx.Response(500)
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S023")
-    @pytest.mark.unit
-    def test_pypistats_timeout_returns_none(self):
+        async with PyPIClient() as client:
+            downloads = await client.get_downloads("flask")
+
+        assert downloads is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_pypistats_timeout_returns_none(self):
         """
         TEST_ID: T020.13
         SPEC: S023
@@ -215,15 +372,21 @@ class TestPyPIClient:
         When: get_downloads is called
         Then: Returns None (graceful degradation)
         """
-        pass
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            side_effect=httpx.TimeoutException("timeout")
+        )
+
+        async with PyPIClient() as client:
+            downloads = await client.get_downloads("flask")
+
+        assert downloads is None
 
 
 class TestPyPIURL:
     """Tests for PyPI URL construction."""
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_api_url_format(self):
+    @pytest.mark.asyncio
+    async def test_api_url_format(self):
         """
         TEST_ID: T020.14
         SPEC: S020
@@ -232,11 +395,13 @@ class TestPyPIURL:
         When: Constructing API URL
         Then: Returns "https://pypi.org/pypi/flask/json"
         """
-        pass
+        async with PyPIClient() as client:
+            url = client._get_api_url("flask")
 
-    @pytest.mark.skip(reason="Stub - implement with S020")
-    @pytest.mark.unit
-    def test_api_url_normalized(self):
+        assert url == "https://pypi.org/pypi/flask/json"
+
+    @pytest.mark.asyncio
+    async def test_api_url_normalized(self):
         """
         TEST_ID: T020.15
         SPEC: S020
@@ -245,4 +410,8 @@ class TestPyPIURL:
         When: Constructing API URL
         Then: Returns normalized URL
         """
-        pass
+        async with PyPIClient() as client:
+            url = client._get_api_url("Flask_Redis")
+
+        # PEP 503: lowercase, _ -> -
+        assert url == "https://pypi.org/pypi/flask-redis/json"
