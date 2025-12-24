@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 # PYTEST CONFIGURATION
 # =============================================================================
 
+
 def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers."""
     config.addinivalue_line("markers", "unit: Unit tests (fast, no I/O)")
@@ -45,6 +46,7 @@ def pytest_configure(config: pytest.Config) -> None:
 # =============================================================================
 # SAMPLE PACKAGE DATA FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def valid_package_names() -> list[str]:
@@ -154,6 +156,7 @@ def typosquat_pairs() -> list[tuple[str, str]]:
 # MOCK REGISTRY RESPONSE FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def pypi_success_response() -> dict:
     """Mock successful PyPI API response.
@@ -236,6 +239,7 @@ def crates_success_response() -> dict:
 # MOCK SIGNAL FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def all_risk_signals() -> list[str]:
     """All possible risk signals for maximum risk score.
@@ -269,6 +273,7 @@ def no_risk_signals() -> list[str]:
 # ASYNC FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 async def async_client():
     """Async HTTP client for integration tests.
@@ -283,6 +288,7 @@ async def async_client():
 # =============================================================================
 # CACHE FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def temp_cache_dir(tmp_path):
@@ -299,6 +305,7 @@ def temp_cache_dir(tmp_path):
 # =============================================================================
 # BENCHMARK FIXTURES
 # =============================================================================
+
 
 @pytest.fixture
 def benchmark_packages() -> list[str]:

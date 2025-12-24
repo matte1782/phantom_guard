@@ -29,7 +29,6 @@ from phantom_guard.core.patterns import (
 )
 from phantom_guard.core.types import SignalType
 
-
 # =============================================================================
 # PURITY TESTS (INV008)
 # =============================================================================
@@ -94,9 +93,7 @@ class TestAISuffixPatterns:
         signals = match_patterns("package-gpt-helper")
         assert len(signals) > 0
         # Should match AI_GPT_INFIX pattern
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "AI_GPT_INFIX" in pattern_ids
 
 
@@ -123,9 +120,7 @@ class TestHelperSuffixPatterns:
         """Helper suffixes should be detected."""
         signals = match_patterns(name)
         assert len(signals) > 0
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "HELPER_SUFFIX" in pattern_ids
 
 
@@ -171,9 +166,7 @@ class TestCombinationPatterns:
     def test_popular_ai_direct_detected(self, name: str) -> None:
         """Popular package + AI provider should be detected."""
         signals = match_patterns(name)
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "POPULAR_AI_DIRECT" in pattern_ids
 
 
@@ -221,9 +214,7 @@ class TestGenericPrefixPatterns:
     def test_easy_prefix_detected(self, name: str) -> None:
         """'easy-' prefix with popular package should be detected."""
         signals = match_patterns(name)
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "EASY_PREFIX" in pattern_ids
 
     @pytest.mark.parametrize(
@@ -239,9 +230,7 @@ class TestGenericPrefixPatterns:
     def test_simple_prefix_detected(self, name: str) -> None:
         """'simple-' prefix with popular package should be detected."""
         signals = match_patterns(name)
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "SIMPLE_PREFIX" in pattern_ids
 
     @pytest.mark.parametrize(
@@ -257,9 +246,7 @@ class TestGenericPrefixPatterns:
     def test_auto_prefix_detected(self, name: str) -> None:
         """'auto-' prefix should be detected."""
         signals = match_patterns(name)
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "AUTO_PREFIX" in pattern_ids
 
 
@@ -284,9 +271,7 @@ class TestPythonPrefixPatterns:
     def test_py_prefix_ai_detected(self, name: str) -> None:
         """'py' prefix with AI provider should be detected."""
         signals = match_patterns(name)
-        pattern_ids = [
-            s.metadata.get("pattern_id") for s in signals if s.metadata
-        ]
+        pattern_ids = [s.metadata.get("pattern_id") for s in signals if s.metadata]
         assert "PY_PREFIX_AI" in pattern_ids
 
 

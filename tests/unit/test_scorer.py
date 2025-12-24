@@ -16,7 +16,6 @@ import pytest
 from phantom_guard.core.scorer import (
     THRESHOLD_SAFE,
     THRESHOLD_SUSPICIOUS,
-    AggregateResult,
     ThresholdConfig,
     aggregate_results,
     build_package_risk,
@@ -95,10 +94,7 @@ class TestRiskCalculation:
         Then: Returns score = 0.0 (clamped)
         """
         # Create signals that would push raw score below -100
-        signals = tuple(
-            Signal(SignalType.POPULAR_PACKAGE, -1.0, f"Popular {i}")
-            for i in range(3)
-        )
+        signals = tuple(Signal(SignalType.POPULAR_PACKAGE, -1.0, f"Popular {i}") for i in range(3))
         score = calculate_risk_score(signals)
         assert score == 0.0
 
@@ -114,10 +110,7 @@ class TestRiskCalculation:
         When: calculate_risk_score is called
         Then: Returns score = 1.0 (clamped)
         """
-        signals = tuple(
-            Signal(SignalType.TYPOSQUAT, 1.0, f"Risk {i}")
-            for i in range(5)
-        )
+        signals = tuple(Signal(SignalType.TYPOSQUAT, 1.0, f"Risk {i}") for i in range(5))
         score = calculate_risk_score(signals)
         assert score == 1.0
 
@@ -468,7 +461,8 @@ class TestResultAggregation:
         assert agg.overall_risk == Recommendation.SUSPICIOUS
 
         # With HIGH_RISK
-        results_high = results_sus + [
+        results_high = [
+            *results_sus,
             PackageRisk("pkg3", "pypi", True, 0.9, (), Recommendation.HIGH_RISK),
         ]
         agg = aggregate_results(results_high)
@@ -513,7 +507,7 @@ class TestMonotonicity:
         Then: score(S2) >= score(S1)
         """
         base = (Signal(SignalType.LOW_DOWNLOADS, 0.3, "Low"),)
-        extended = base + (Signal(SignalType.RECENTLY_CREATED, 0.4, "New"),)
+        extended = (*base, Signal(SignalType.RECENTLY_CREATED, 0.4, "New"))
 
         base_score = calculate_risk_score(base)
         extended_score = calculate_risk_score(extended)
@@ -532,7 +526,7 @@ class TestMonotonicity:
         Then: score(S2) <= score(S1)
         """
         base = (Signal(SignalType.LOW_DOWNLOADS, 0.3, "Low"),)
-        extended = base + (Signal(SignalType.POPULAR_PACKAGE, -0.5, "Popular"),)
+        extended = (*base, Signal(SignalType.POPULAR_PACKAGE, -0.5, "Popular"))
 
         base_score = calculate_risk_score(base)
         extended_score = calculate_risk_score(extended)

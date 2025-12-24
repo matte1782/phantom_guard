@@ -6,6 +6,14 @@ IMPLEMENTS: S001-S009
 
 from __future__ import annotations
 
+from phantom_guard.core.detector import (
+    RegistryClient,
+    normalize_package_name,
+    validate_batch,
+    validate_batch_sync,
+    validate_package,
+    validate_package_sync,
+)
 from phantom_guard.core.patterns import (
     HALLUCINATION_PATTERNS,
     HallucinationPattern,
@@ -99,6 +107,7 @@ __all__ = [
     "PhantomGuardError",
     "Recommendation",
     "Registry",
+    "RegistryClient",
     "Signal",
     "SignalType",
     "ThresholdConfig",
@@ -126,8 +135,13 @@ __all__ = [
     "list_patterns",
     "match_patterns",
     "merge_signals",
+    "normalize_package_name",
     "normalized_distance",
     "similarity",
+    "validate_batch",
+    "validate_batch_sync",
+    "validate_package",
     "validate_package_name",
+    "validate_package_sync",
     "validate_registry",
 ]

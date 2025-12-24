@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import pytest
 
+from phantom_guard.core.types import SignalType
 from phantom_guard.core.typosquat import (
     DEFAULT_SIMILARITY_THRESHOLD,
     MAX_EDIT_DISTANCE,
@@ -29,7 +30,6 @@ from phantom_guard.core.typosquat import (
     normalized_distance,
     similarity,
 )
-from phantom_guard.core.types import SignalType
 
 
 class TestTyposquatDetection:
@@ -475,7 +475,7 @@ class TestPopularPackages:
     @pytest.mark.unit
     def test_packages_are_frozenset(self) -> None:
         """Package sets are immutable frozensets."""
-        for registry, packages in POPULAR_PACKAGES.items():
+        for _registry, packages in POPULAR_PACKAGES.items():
             assert isinstance(packages, frozenset)
 
 

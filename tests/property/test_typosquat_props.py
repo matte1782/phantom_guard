@@ -10,7 +10,7 @@ Uses Hypothesis for property-based testing.
 from __future__ import annotations
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from phantom_guard.core.typosquat import (
@@ -201,10 +201,13 @@ class TestTyposquatFuzz:
     """Fuzz tests for typosquat detection."""
 
     @pytest.mark.fuzz
-    @given(st.text(min_size=0, max_size=50, alphabet=st.characters(
-        whitelist_categories=('L', 'N'),
-        whitelist_characters='-_'
-    )))
+    @given(
+        st.text(
+            min_size=0,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_"),
+        )
+    )
     @settings(max_examples=100)
     def test_fuzz_typosquat_never_crashes(self, name: str) -> None:
         """
@@ -219,10 +222,13 @@ class TestTyposquatFuzz:
         assert result is None or hasattr(result, "target")
 
     @pytest.mark.fuzz
-    @given(st.text(min_size=0, max_size=50, alphabet=st.characters(
-        whitelist_categories=('L', 'N'),
-        whitelist_characters='-_'
-    )))
+    @given(
+        st.text(
+            min_size=0,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("L", "N"), whitelist_characters="-_"),
+        )
+    )
     @settings(max_examples=100)
     def test_fuzz_detect_typosquat_returns_tuple(self, name: str) -> None:
         """
@@ -297,11 +303,23 @@ class TestPopularPackageProperties:
     """Property tests for popular package matching."""
 
     @pytest.mark.property
-    @given(st.sampled_from([
-        "requests", "flask", "django", "numpy", "pandas",
-        "react", "lodash", "express",
-        "serde", "tokio", "reqwest",
-    ]))
+    @given(
+        st.sampled_from(
+            [
+                "requests",
+                "flask",
+                "django",
+                "numpy",
+                "pandas",
+                "react",
+                "lodash",
+                "express",
+                "serde",
+                "tokio",
+                "reqwest",
+            ]
+        )
+    )
     @settings(max_examples=20)
     def test_popular_packages_not_typosquats(self, name: str) -> None:
         """

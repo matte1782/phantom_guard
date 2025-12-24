@@ -17,7 +17,6 @@ import pytest
 
 from phantom_guard.core import (
     AGE_THRESHOLD_NEW_DAYS,
-    DESCRIPTION_THRESHOLD_SHORT,
     DOWNLOAD_THRESHOLD_LOW,
     DOWNLOAD_THRESHOLD_POPULAR,
     RELEASE_THRESHOLD_FEW,
@@ -30,7 +29,6 @@ from phantom_guard.core import (
     has_signal_type,
     merge_signals,
 )
-
 
 # =============================================================================
 # TEST FIXTURES
@@ -568,18 +566,14 @@ class TestHelperFunctions:
     @pytest.mark.unit
     def test_has_signal_type_true(self) -> None:
         """has_signal_type returns True when signal present."""
-        signals = (
-            Signal(type=SignalType.LOW_DOWNLOADS, weight=0.3, message="Test"),
-        )
+        signals = (Signal(type=SignalType.LOW_DOWNLOADS, weight=0.3, message="Test"),)
 
         assert has_signal_type(signals, SignalType.LOW_DOWNLOADS) is True
 
     @pytest.mark.unit
     def test_has_signal_type_false(self) -> None:
         """has_signal_type returns False when signal absent."""
-        signals = (
-            Signal(type=SignalType.LOW_DOWNLOADS, weight=0.3, message="Test"),
-        )
+        signals = (Signal(type=SignalType.LOW_DOWNLOADS, weight=0.3, message="Test"),)
 
         assert has_signal_type(signals, SignalType.NO_REPOSITORY) is False
 
@@ -596,9 +590,7 @@ class TestHelperFunctions:
     @pytest.mark.unit
     def test_get_signal_by_type_not_found(self) -> None:
         """get_signal_by_type returns None when absent."""
-        signals = (
-            Signal(type=SignalType.LOW_DOWNLOADS, weight=0.3, message="Test"),
-        )
+        signals = (Signal(type=SignalType.LOW_DOWNLOADS, weight=0.3, message="Test"),)
 
         result = get_signal_by_type(signals, SignalType.NO_REPOSITORY)
 
