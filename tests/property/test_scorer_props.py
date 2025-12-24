@@ -46,8 +46,8 @@ class TestScorerProperties:
         SPEC: S007
         INV: INV010
 
-        Property: For ANY signal set S1, adding any signal S2 ∉ S1:
-                  score(S1 ∪ {S2}) >= score(S1)
+        Property: For ANY signal set S1, adding any signal S2 not in S1:
+                  score(S1 U {S2}) >= score(S1)
         """
         pass
 

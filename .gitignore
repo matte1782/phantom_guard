@@ -99,3 +99,8 @@ cache.db
 
 # Research artifacts (already in repo, don't duplicate)
 # research-output/
+
+# Internal development files (FORTRESS framework, Claude usage)
+.claude/
+.fortress/
+CLAUDE.md
