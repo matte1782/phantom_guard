@@ -540,6 +540,16 @@ class TestFindTyposquatTargets:
         matches = find_typosquat_targets("flask", "pypi")
         assert all(m.target != "flask" for m in matches)
 
+    @pytest.mark.unit
+    def test_custom_max_distance(self) -> None:
+        """Custom max_distance creates new detector."""
+        # Default max_distance is 2, using 3 should find more matches
+        matches_default = find_typosquat_targets("flak", "pypi")
+        matches_custom = find_typosquat_targets("flak", "pypi", max_distance=3)
+        # Both should find flask (distance 1)
+        assert len(matches_default) > 0
+        assert len(matches_custom) >= len(matches_default)
+
 
 class TestTyposquatDetectorClass:
     """Tests for TyposquatDetector class."""

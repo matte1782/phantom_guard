@@ -43,71 +43,229 @@ DEFAULT_SIMILARITY_THRESHOLD: float = 0.65
 # Top 100 most popular packages per registry
 # These are the most likely typosquat targets
 POPULAR_PACKAGES: dict[str, frozenset[str]] = {
-    "pypi": frozenset({
-        # Core/Essential
-        "requests", "numpy", "pandas", "flask", "django",
-        "scipy", "matplotlib", "pillow", "sqlalchemy", "pytest",
-        "boto3", "pyyaml", "cryptography", "urllib3", "certifi",
-        "setuptools", "wheel", "pip", "packaging", "six",
-        # Web frameworks
-        "jinja2", "markupsafe", "click", "werkzeug", "itsdangerous",
-        "fastapi", "uvicorn", "starlette", "pydantic", "httpx",
-        "aiohttp", "tornado", "gunicorn", "gevent", "eventlet",
-        # Data processing
-        "attrs", "decorator", "wrapt", "typing-extensions", "dataclasses",
-        "idna", "chardet", "charset-normalizer", "beautifulsoup4", "lxml",
-        # Database
-        "redis", "celery", "kombu", "billiard", "amqp",
-        "psycopg2", "pymysql", "pymongo", "elasticsearch", "alembic",
-        # ML/AI
-        "tensorflow", "keras", "torch", "transformers", "scikit-learn",
-        "xgboost", "lightgbm", "catboost", "nltk", "spacy",
-        # AWS
-        "botocore", "s3transfer", "awscli", "boto", "moto",
-        # Utilities
-        "tqdm", "colorama", "rich", "python-dateutil", "pytz",
-        "pathlib2", "filelock", "watchdog", "schedule", "apscheduler",
-        # CLI
-        "argparse", "docopt", "fire", "typer", "prompt-toolkit",
-        # Testing
-        "mock", "nose", "coverage", "tox", "hypothesis",
-        # Linting/Formatting
-        "black", "ruff", "mypy", "flake8", "pylint",
-        "isort", "autopep8", "yapf", "bandit", "safety",
-        # Other popular
-        "openai", "anthropic", "langchain", "chromadb", "pinecone",
-    }),
-    "npm": frozenset({
-        # Core
-        "react", "lodash", "axios", "express", "moment",
-        "typescript", "webpack", "babel-core", "eslint", "prettier",
-        # Frameworks
-        "next", "vue", "angular", "jquery", "underscore",
-        "svelte", "nuxt", "gatsby", "remix", "astro",
-        # Utilities
-        "uuid", "chalk", "debug", "dotenv", "commander",
-        "yargs", "inquirer", "ora", "cross-env", "rimraf",
-        # React ecosystem
-        "react-dom", "react-router", "redux", "mobx", "zustand",
-        "react-query", "swr", "formik", "react-hook-form", "styled-components",
-        # Node.js
-        "fs-extra", "glob", "chokidar", "nodemon", "pm2",
-        "cors", "helmet", "morgan", "body-parser", "cookie-parser",
-    }),
-    "crates": frozenset({
-        # Core
-        "serde", "tokio", "reqwest", "clap", "rand",
-        "log", "regex", "chrono", "anyhow", "thiserror",
-        # Async
-        "async-trait", "futures", "async-std", "smol", "actix",
-        # Web
-        "hyper", "axum", "warp", "rocket", "actix-web",
-        # Serialization
-        "serde-json", "toml", "yaml-rust", "csv", "bincode",
-        # Utilities
-        "lazy-static", "once-cell", "parking-lot", "crossbeam", "rayon",
-        "itertools", "num", "uuid", "base64", "sha2",
-    }),
+    "pypi": frozenset(
+        {
+            # Core/Essential
+            "requests",
+            "numpy",
+            "pandas",
+            "flask",
+            "django",
+            "scipy",
+            "matplotlib",
+            "pillow",
+            "sqlalchemy",
+            "pytest",
+            "boto3",
+            "pyyaml",
+            "cryptography",
+            "urllib3",
+            "certifi",
+            "setuptools",
+            "wheel",
+            "pip",
+            "packaging",
+            "six",
+            # Web frameworks
+            "jinja2",
+            "markupsafe",
+            "click",
+            "werkzeug",
+            "itsdangerous",
+            "fastapi",
+            "uvicorn",
+            "starlette",
+            "pydantic",
+            "httpx",
+            "aiohttp",
+            "tornado",
+            "gunicorn",
+            "gevent",
+            "eventlet",
+            # Data processing
+            "attrs",
+            "decorator",
+            "wrapt",
+            "typing-extensions",
+            "dataclasses",
+            "idna",
+            "chardet",
+            "charset-normalizer",
+            "beautifulsoup4",
+            "lxml",
+            # Database
+            "redis",
+            "celery",
+            "kombu",
+            "billiard",
+            "amqp",
+            "psycopg2",
+            "pymysql",
+            "pymongo",
+            "elasticsearch",
+            "alembic",
+            # ML/AI
+            "tensorflow",
+            "keras",
+            "torch",
+            "transformers",
+            "scikit-learn",
+            "xgboost",
+            "lightgbm",
+            "catboost",
+            "nltk",
+            "spacy",
+            # AWS
+            "botocore",
+            "s3transfer",
+            "awscli",
+            "boto",
+            "moto",
+            # Utilities
+            "tqdm",
+            "colorama",
+            "rich",
+            "python-dateutil",
+            "pytz",
+            "pathlib2",
+            "filelock",
+            "watchdog",
+            "schedule",
+            "apscheduler",
+            # CLI
+            "argparse",
+            "docopt",
+            "fire",
+            "typer",
+            "prompt-toolkit",
+            # Testing
+            "mock",
+            "nose",
+            "coverage",
+            "tox",
+            "hypothesis",
+            # Linting/Formatting
+            "black",
+            "ruff",
+            "mypy",
+            "flake8",
+            "pylint",
+            "isort",
+            "autopep8",
+            "yapf",
+            "bandit",
+            "safety",
+            # Other popular
+            "openai",
+            "anthropic",
+            "langchain",
+            "chromadb",
+            "pinecone",
+        }
+    ),
+    "npm": frozenset(
+        {
+            # Core
+            "react",
+            "lodash",
+            "axios",
+            "express",
+            "moment",
+            "typescript",
+            "webpack",
+            "babel-core",
+            "eslint",
+            "prettier",
+            # Frameworks
+            "next",
+            "vue",
+            "angular",
+            "jquery",
+            "underscore",
+            "svelte",
+            "nuxt",
+            "gatsby",
+            "remix",
+            "astro",
+            # Utilities
+            "uuid",
+            "chalk",
+            "debug",
+            "dotenv",
+            "commander",
+            "yargs",
+            "inquirer",
+            "ora",
+            "cross-env",
+            "rimraf",
+            # React ecosystem
+            "react-dom",
+            "react-router",
+            "redux",
+            "mobx",
+            "zustand",
+            "react-query",
+            "swr",
+            "formik",
+            "react-hook-form",
+            "styled-components",
+            # Node.js
+            "fs-extra",
+            "glob",
+            "chokidar",
+            "nodemon",
+            "pm2",
+            "cors",
+            "helmet",
+            "morgan",
+            "body-parser",
+            "cookie-parser",
+        }
+    ),
+    "crates": frozenset(
+        {
+            # Core
+            "serde",
+            "tokio",
+            "reqwest",
+            "clap",
+            "rand",
+            "log",
+            "regex",
+            "chrono",
+            "anyhow",
+            "thiserror",
+            # Async
+            "async-trait",
+            "futures",
+            "async-std",
+            "smol",
+            "actix",
+            # Web
+            "hyper",
+            "axum",
+            "warp",
+            "rocket",
+            "actix-web",
+            # Serialization
+            "serde-json",
+            "toml",
+            "yaml-rust",
+            "csv",
+            "bincode",
+            # Utilities
+            "lazy-static",
+            "once-cell",
+            "parking-lot",
+            "crossbeam",
+            "rayon",
+            "itertools",
+            "num",
+            "uuid",
+            "base64",
+            "sha2",
+        }
+    ),
 }
 
 
@@ -263,9 +421,7 @@ class TyposquatDetector:
         """
         # INV009: Validate threshold bounds
         if threshold <= 0.0 or threshold >= 1.0:
-            raise ValueError(
-                f"Threshold must be in (0.0, 1.0) exclusive, got {threshold}"
-            )
+            raise ValueError(f"Threshold must be in (0.0, 1.0) exclusive, got {threshold}")
         self._threshold = threshold
         self._max_distance = max_distance
 
@@ -313,11 +469,13 @@ class TyposquatDetector:
             if distance <= self._max_distance and distance > 0:
                 sim = similarity(name_lower, target)
                 if sim >= self._threshold:
-                    matches.append(TyposquatMatch(
-                        target=target,
-                        distance=distance,
-                        similarity=sim,
-                    ))
+                    matches.append(
+                        TyposquatMatch(
+                            target=target,
+                            distance=distance,
+                            similarity=sim,
+                        )
+                    )
 
         return sorted(matches, key=lambda m: m.similarity, reverse=True)
 
@@ -380,7 +538,6 @@ def detect_typosquat(
 ) -> tuple[Signal, ...]:
     """
     IMPLEMENTS: S006
-    INVARIANT: INV009 - Uses validated edit distance
 
     Check if package name is a potential typosquat and return signals.
 
@@ -405,16 +562,17 @@ def detect_typosquat(
         # similarity of 0.85+ gets weight 0.7-0.9
         weight = 0.5 + (match.similarity * 0.4)
 
-        signals.append(Signal(
-            type=SignalType.TYPOSQUAT,
-            weight=min(0.95, max(0.3, weight)),  # Clamp to [0.3, 0.95]
-            message=f"Possible typosquat of '{match.target}' "
-                    f"(distance: {match.distance})",
-            metadata={
-                "target": match.target,
-                "distance": match.distance,
-                "similarity": round(match.similarity, 3),
-            },
-        ))
+        signals.append(
+            Signal(
+                type=SignalType.TYPOSQUAT,
+                weight=min(0.95, max(0.3, weight)),  # Clamp to [0.3, 0.95]
+                message=f"Possible typosquat of '{match.target}' (distance: {match.distance})",
+                metadata={
+                    "target": match.target,
+                    "distance": match.distance,
+                    "similarity": round(match.similarity, 3),
+                },
+            )
+        )
 
     return tuple(signals)
