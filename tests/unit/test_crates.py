@@ -1,5 +1,5 @@
 # SPEC: S033-S039 - crates.io Registry Client
-# Gate 3: Test Design - Stubs
+# Gate 3: Test Design - Implementation
 """
 Unit tests for the crates.io registry client.
 
@@ -11,7 +11,17 @@ EDGE_CASES: EC020-EC034
 
 from __future__ import annotations
 
+import httpx
 import pytest
+import respx
+
+from phantom_guard.registry.crates import CratesClient, USER_AGENT
+from phantom_guard.registry.exceptions import (
+    RegistryParseError,
+    RegistryRateLimitError,
+    RegistryTimeoutError,
+    RegistryUnavailableError,
+)
 
 
 class TestCratesClient:
@@ -25,9 +35,9 @@ class TestCratesClient:
     # SUCCESSFUL RESPONSE TESTS
     # =========================================================================
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_package_exists_returns_metadata(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_package_exists_returns_metadata(self) -> None:
         """
         TEST_ID: T033.01
         SPEC: S033
@@ -38,11 +48,31 @@ class TestCratesClient:
         When: get_package is called
         Then: Returns PackageMetadata with exists=True
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {
+                        "name": "serde",
+                        "newest_version": "1.0.193",
+                        "created_at": "2015-03-05T00:00:00Z",
+                        "recent_downloads": 50000000,
+                        "description": "A serialization framework",
+                    },
+                    "versions": [{"num": "1.0.193"}],
+                },
+            )
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_package_not_found_returns_not_exists(self):
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("serde")
+
+        assert metadata.exists is True
+        assert metadata.name == "serde"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_package_not_found_returns_not_exists(self) -> None:
         """
         TEST_ID: T033.02
         SPEC: S033
@@ -53,11 +83,19 @@ class TestCratesClient:
         When: get_package is called
         Then: Returns PackageMetadata with exists=False
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/nonexistent-crate-xyz123").mock(
+            return_value=httpx.Response(404)
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_package_metadata_fields(self):
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("nonexistent-crate-xyz123")
+
+        assert metadata.exists is False
+        assert metadata.name == "nonexistent-crate-xyz123"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_package_metadata_fields(self) -> None:
         """
         TEST_ID: T033.03
         SPEC: S033
@@ -66,15 +104,46 @@ class TestCratesClient:
         When: get_package is called
         Then: Metadata contains name, version, repository, downloads
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/tokio").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {
+                        "name": "tokio",
+                        "newest_version": "1.35.0",
+                        "created_at": "2016-08-14T12:00:00Z",
+                        "recent_downloads": 30000000,
+                        "repository": "https://github.com/tokio-rs/tokio",
+                        "description": "Async runtime for Rust",
+                    },
+                    "versions": [
+                        {"num": "1.35.0"},
+                        {"num": "1.34.0"},
+                        {"num": "1.33.0"},
+                    ],
+                },
+            )
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("tokio")
+
+        assert metadata.name == "tokio"
+        assert metadata.exists is True
+        assert metadata.latest_version == "1.35.0"
+        assert metadata.release_count == 3
+        assert metadata.downloads_last_month == 30000000
+        assert metadata.repository_url == "https://github.com/tokio-rs/tokio"
+        assert metadata.description == "Async runtime for Rust"
+        assert metadata.created_at is not None
 
     # =========================================================================
     # USER-AGENT HEADER TESTS (INV015)
     # =========================================================================
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_user_agent_header_included(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_user_agent_header_included(self) -> None:
         """
         TEST_ID: T033.04
         SPEC: S033
@@ -84,11 +153,22 @@ class TestCratesClient:
         When: Request is made
         Then: User-Agent header is present
         """
-        pass
+        route = respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200, json={"crate": {"name": "serde"}, "versions": []}
+            )
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_user_agent_format(self):
+        async with CratesClient() as client:
+            await client.get_package_metadata("serde")
+
+        # Verify User-Agent was sent
+        assert route.called
+        request = route.calls[0].request
+        assert "User-Agent" in request.headers
+        assert "PhantomGuard" in request.headers["User-Agent"]
+
+    def test_user_agent_format(self) -> None:
         """
         TEST_ID: T033.05
         SPEC: S033
@@ -98,15 +178,17 @@ class TestCratesClient:
         When: Inspecting format
         Then: Contains project name and contact info
         """
-        pass
+        assert "PhantomGuard" in USER_AGENT
+        assert "/" in USER_AGENT  # Has version
+        assert "github" in USER_AGENT.lower()  # Has contact URL
 
     # =========================================================================
     # ERROR HANDLING TESTS
     # =========================================================================
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_timeout_raises_error(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_timeout_raises_error(self) -> None:
         """
         TEST_ID: T033.06
         SPEC: S033
@@ -117,11 +199,19 @@ class TestCratesClient:
         When: get_package is called
         Then: Raises RegistryTimeoutError
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            side_effect=httpx.TimeoutException("Connection timed out")
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_server_error_raises_unavailable(self):
+        async with CratesClient() as client:
+            with pytest.raises(RegistryTimeoutError) as exc_info:
+                await client.get_package_metadata("serde")
+
+        assert exc_info.value.registry == "crates.io"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_server_error_raises_unavailable(self) -> None:
         """
         TEST_ID: T033.07
         SPEC: S033
@@ -131,11 +221,20 @@ class TestCratesClient:
         When: get_package is called
         Then: Raises RegistryUnavailableError
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(500)
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_rate_limit_raises_error(self):
+        async with CratesClient() as client:
+            with pytest.raises(RegistryUnavailableError) as exc_info:
+                await client.get_package_metadata("serde")
+
+        assert exc_info.value.registry == "crates.io"
+        assert exc_info.value.status_code == 500
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_raises_error(self) -> None:
         """
         TEST_ID: T033.08
         SPEC: S033
@@ -145,11 +244,20 @@ class TestCratesClient:
         When: get_package is called
         Then: Raises RegistryRateLimitError
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(429, headers={"Retry-After": "120"})
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_invalid_json_raises_parse_error(self):
+        async with CratesClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("serde")
+
+        assert exc_info.value.registry == "crates.io"
+        assert exc_info.value.retry_after == 120
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_invalid_json_raises_parse_error(self) -> None:
         """
         TEST_ID: T033.09
         SPEC: S033
@@ -159,15 +267,21 @@ class TestCratesClient:
         When: get_package is called
         Then: Raises RegistryParseError
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(200, content=b"not valid json")
+        )
+
+        async with CratesClient() as client:
+            with pytest.raises(RegistryParseError) as exc_info:
+                await client.get_package_metadata("serde")
+
+        assert exc_info.value.registry == "crates.io"
 
 
 class TestCratesURL:
     """Tests for crates.io URL construction."""
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_api_url_format(self):
+    def test_api_url_format(self) -> None:
         """
         TEST_ID: T033.10
         SPEC: S033
@@ -176,11 +290,11 @@ class TestCratesURL:
         When: Constructing API URL
         Then: Returns "https://crates.io/api/v1/crates/serde"
         """
-        pass
+        client = CratesClient()
+        url = client._get_api_url("serde")
+        assert url == "https://crates.io/api/v1/crates/serde"
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_crate_name_normalization(self):
+    def test_crate_name_normalization(self) -> None:
         """
         TEST_ID: T033.11
         SPEC: S033
@@ -189,15 +303,17 @@ class TestCratesURL:
         When: Constructing API URL
         Then: URL is lowercase normalized
         """
-        pass
+        client = CratesClient()
+        url = client._get_api_url("Serde")
+        assert url == "https://crates.io/api/v1/crates/serde"
 
 
 class TestCratesDownloads:
     """Tests for crates.io download count parsing."""
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_downloads_from_response(self):
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_downloads_from_response(self) -> None:
         """
         TEST_ID: T033.12
         SPEC: S033
@@ -206,11 +322,27 @@ class TestCratesDownloads:
         When: Parsing metadata
         Then: Downloads count is extracted
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {
+                        "name": "serde",
+                        "recent_downloads": 50000000,
+                    },
+                    "versions": [],
+                },
+            )
+        )
 
-    @pytest.mark.skip(reason="Stub - implement with S033")
-    @pytest.mark.unit
-    def test_missing_downloads_field(self):
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("serde")
+
+        assert metadata.downloads_last_month == 50000000
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_missing_downloads_field(self) -> None:
         """
         TEST_ID: T033.13
         SPEC: S033
@@ -219,4 +351,287 @@ class TestCratesDownloads:
         When: Parsing metadata
         Then: Returns None for downloads
         """
-        pass
+        respx.get("https://crates.io/api/v1/crates/obscure-crate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {
+                        "name": "obscure-crate",
+                    },
+                    "versions": [],
+                },
+            )
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("obscure-crate")
+
+        assert metadata.downloads_last_month is None
+
+
+class TestCratesClientErrors:
+    """Tests for crates.io client error handling edge cases."""
+
+    @pytest.mark.asyncio
+    async def test_client_not_initialized_raises_runtime_error(self) -> None:
+        """
+        TEST_ID: T033.14
+        SPEC: S033
+
+        Given: CratesClient not used as context manager
+        When: get_package_metadata is called
+        Then: Raises RuntimeError
+        """
+        client = CratesClient()
+        with pytest.raises(RuntimeError) as exc_info:
+            await client.get_package_metadata("serde")
+        assert "context" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_network_error_raises_unavailable(self) -> None:
+        """
+        TEST_ID: T033.15
+        SPEC: S033
+
+        Given: Network connection error
+        When: get_package_metadata is called
+        Then: Raises RegistryUnavailableError
+        """
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            side_effect=httpx.ConnectError("Connection refused")
+        )
+
+        async with CratesClient() as client:
+            with pytest.raises(RegistryUnavailableError):
+                await client.get_package_metadata("serde")
+
+    @pytest.mark.asyncio
+    async def test_get_owners_without_context_returns_none(self) -> None:
+        """
+        TEST_ID: T033.16
+        SPEC: S035
+
+        Given: CratesClient not used as context manager
+        When: get_owners is called
+        Then: Returns None (graceful degradation)
+        """
+        client = CratesClient()
+        result = await client.get_owners("serde")
+        assert result is None
+
+
+class TestCratesOwners:
+    """Tests for crates.io owners API."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_get_owners_success(self) -> None:
+        """
+        TEST_ID: T033.17
+        SPEC: S035
+
+        Given: Crate with owners endpoint
+        When: get_owners is called
+        Then: Returns owner count
+        """
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "users": [
+                        {"id": 1, "login": "dtolnay"},
+                        {"id": 2, "login": "erickt"},
+                    ]
+                },
+            )
+        )
+
+        async with CratesClient() as client:
+            owner_count = await client.get_owners("serde")
+
+        assert owner_count == 2
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_get_owners_unavailable_returns_none(self) -> None:
+        """
+        TEST_ID: T033.18
+        SPEC: S035
+
+        Given: Owners endpoint returns error
+        When: get_owners is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            return_value=httpx.Response(500)
+        )
+
+        async with CratesClient() as client:
+            owner_count = await client.get_owners("serde")
+
+        assert owner_count is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_get_owners_timeout_returns_none(self) -> None:
+        """
+        TEST_ID: T033.19
+        SPEC: S035
+
+        Given: Owners endpoint times out
+        When: get_owners is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            side_effect=httpx.TimeoutException("Timeout")
+        )
+
+        async with CratesClient() as client:
+            owner_count = await client.get_owners("serde")
+
+        assert owner_count is None
+
+
+class TestCratesMetadataWithOwners:
+    """Tests for combined metadata + owners."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_metadata_with_owners_success(self) -> None:
+        """
+        TEST_ID: T033.20
+        SPEC: S033, S035
+
+        Given: Crate exists with owners available
+        When: get_package_metadata_with_owners is called
+        Then: Returns metadata with maintainer_count included
+        """
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {
+                        "name": "serde",
+                        "newest_version": "1.0.193",
+                        "recent_downloads": 50000000,
+                    },
+                    "versions": [{"num": "1.0.193"}],
+                },
+            )
+        )
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "users": [
+                        {"id": 1, "login": "dtolnay"},
+                        {"id": 2, "login": "erickt"},
+                    ]
+                },
+            )
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata_with_owners("serde")
+
+        assert metadata.exists is True
+        assert metadata.name == "serde"
+        assert metadata.maintainer_count == 2
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_metadata_with_owners_not_found(self) -> None:
+        """
+        TEST_ID: T033.21
+        SPEC: S033, S035
+
+        Given: Crate does not exist
+        When: get_package_metadata_with_owners is called
+        Then: Returns metadata with exists=False
+        """
+        respx.get("https://crates.io/api/v1/crates/nonexistent-xyz").mock(
+            return_value=httpx.Response(404)
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata_with_owners("nonexistent-xyz")
+
+        assert metadata.exists is False
+        assert metadata.maintainer_count is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_metadata_with_owners_unavailable(self) -> None:
+        """
+        TEST_ID: T033.22
+        SPEC: S033, S035
+
+        Given: Crate exists but owners API unavailable
+        When: get_package_metadata_with_owners is called
+        Then: Returns metadata with maintainer_count=None
+        """
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {"name": "serde"},
+                    "versions": [],
+                },
+            )
+        )
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            return_value=httpx.Response(503)
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata_with_owners("serde")
+
+        assert metadata.exists is True
+        assert metadata.maintainer_count is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_empty_response_handled(self) -> None:
+        """
+        TEST_ID: T033.23
+        SPEC: S034
+
+        Given: crates.io returns empty JSON object
+        When: get_package_metadata is called
+        Then: Returns metadata with exists=True and default values
+        """
+        respx.get("https://crates.io/api/v1/crates/empty-crate").mock(
+            return_value=httpx.Response(200, json={})
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("empty-crate")
+
+        assert metadata.exists is True
+        assert metadata.name == "empty-crate"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_custom_user_agent(self) -> None:
+        """
+        TEST_ID: T033.24
+        SPEC: S033
+        INV: INV015
+
+        Given: CratesClient with custom user agent
+        When: Request is made
+        Then: Custom User-Agent header is used
+        """
+        custom_ua = "CustomApp/1.0.0"
+        route = respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200, json={"crate": {"name": "serde"}, "versions": []}
+            )
+        )
+
+        async with CratesClient(user_agent=custom_ua) as client:
+            await client.get_package_metadata("serde")
+
+        request = route.calls[0].request
+        assert request.headers["User-Agent"] == custom_ua
