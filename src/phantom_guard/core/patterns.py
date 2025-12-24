@@ -36,7 +36,7 @@ class PatternCategory(Enum):
 # =============================================================================
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class HallucinationPattern:
     """
     IMPLEMENTS: S050

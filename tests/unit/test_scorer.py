@@ -600,10 +600,16 @@ class TestThresholdConfig:
             ThresholdConfig(safe=1.5, suspicious=0.8)
 
     @pytest.mark.unit
-    def test_suspicious_out_of_range(self) -> None:
-        """Suspicious threshold out of range is rejected."""
-        with pytest.raises(ValueError):
+    def test_suspicious_out_of_range_high(self) -> None:
+        """Suspicious threshold > 1.0 is rejected."""
+        with pytest.raises(ValueError, match="Suspicious threshold must be"):
             ThresholdConfig(safe=0.2, suspicious=1.5)
+
+    @pytest.mark.unit
+    def test_suspicious_out_of_range_low(self) -> None:
+        """Suspicious threshold < 0.0 is rejected (caught by ordering)."""
+        with pytest.raises(ValueError):
+            ThresholdConfig(safe=0.2, suspicious=-0.1)
 
     @pytest.mark.unit
     def test_frozen(self) -> None:
