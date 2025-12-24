@@ -415,3 +415,197 @@ class TestPyPIURL:
 
         # PEP 503: lowercase, _ -> -
         assert url == "https://pypi.org/pypi/flask-redis/json"
+
+
+class TestPyPIClientErrors:
+    """Additional error handling tests for full coverage."""
+
+    @pytest.mark.asyncio
+    async def test_client_not_initialized_raises_runtime_error(self):
+        """
+        TEST_ID: T020.16
+        SPEC: S020
+
+        Given: PyPIClient created but not entered via context manager
+        When: get_package_metadata is called
+        Then: Raises RuntimeError with helpful message
+        """
+        client = PyPIClient()
+        # Don't use context manager
+
+        with pytest.raises(RuntimeError) as exc_info:
+            await client.get_package_metadata("flask")
+
+        assert "context" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_network_error_raises_unavailable(self):
+        """
+        TEST_ID: T020.17
+        SPEC: S020
+        EC: EC023
+
+        Given: Network connection fails (not timeout)
+        When: get_package_metadata is called
+        Then: Raises RegistryUnavailableError
+        """
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            side_effect=httpx.ConnectError("Connection refused")
+        )
+
+        async with PyPIClient() as client:
+            with pytest.raises(RegistryUnavailableError) as exc_info:
+                await client.get_package_metadata("flask")
+
+            assert exc_info.value.registry == "pypi"
+            assert exc_info.value.status_code is None
+
+    @pytest.mark.asyncio
+    async def test_get_downloads_without_context_returns_none(self):
+        """
+        TEST_ID: T020.18
+        SPEC: S023
+
+        Given: PyPIClient not initialized
+        When: get_downloads is called
+        Then: Returns None (graceful degradation)
+        """
+        client = PyPIClient()
+        # Don't use context manager
+
+        result = await client.get_downloads("flask")
+        assert result is None
+
+
+class TestPyPIMetadataWithDownloads:
+    """Tests for combined metadata + downloads method."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_metadata_with_downloads_success(self):
+        """
+        TEST_ID: T020.19
+        SPEC: S020, S023
+
+        Given: Package exists and pypistats available
+        When: get_package_metadata_with_downloads is called
+        Then: Returns metadata with download count
+        """
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "flask", "version": "3.0.0"},
+                    "releases": {"3.0.0": []},
+                },
+            )
+        )
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": {"last_month": 5000000}},
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata_with_downloads("flask")
+
+        assert metadata.exists is True
+        assert metadata.name == "flask"
+        assert metadata.downloads_last_month == 5000000
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_metadata_with_downloads_not_found(self):
+        """
+        TEST_ID: T020.20
+        SPEC: S020, S023
+
+        Given: Package does not exist
+        When: get_package_metadata_with_downloads is called
+        Then: Returns metadata with exists=False, no downloads fetch
+        """
+        respx.get("https://pypi.org/pypi/nonexistent/json").mock(
+            return_value=httpx.Response(404)
+        )
+        # pypistats should NOT be called
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata_with_downloads("nonexistent")
+
+        assert metadata.exists is False
+        assert metadata.downloads_last_month is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_metadata_with_downloads_stats_unavailable(self):
+        """
+        TEST_ID: T020.21
+        SPEC: S020, S023
+
+        Given: Package exists but pypistats unavailable
+        When: get_package_metadata_with_downloads is called
+        Then: Returns metadata with downloads=None
+        """
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "flask", "version": "3.0.0"},
+                    "releases": {"3.0.0": []},
+                },
+            )
+        )
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            return_value=httpx.Response(500)
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata_with_downloads("flask")
+
+        assert metadata.exists is True
+        assert metadata.downloads_last_month is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_get_downloads_invalid_json(self):
+        """
+        TEST_ID: T020.22
+        SPEC: S023
+
+        Given: pypistats returns invalid JSON
+        When: get_downloads is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            return_value=httpx.Response(200, content=b"not json{{{")
+        )
+
+        async with PyPIClient() as client:
+            downloads = await client.get_downloads("flask")
+
+        assert downloads is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_get_downloads_non_integer_value(self):
+        """
+        TEST_ID: T020.23
+        SPEC: S023
+
+        Given: pypistats returns non-integer download count
+        When: get_downloads is called
+        Then: Returns None
+        """
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            return_value=httpx.Response(
+                200,
+                json={"data": {"last_month": "not a number"}},
+            )
+        )
+
+        async with PyPIClient() as client:
+            downloads = await client.get_downloads("flask")
+
+        assert downloads is None

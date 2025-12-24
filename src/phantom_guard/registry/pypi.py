@@ -7,7 +7,7 @@ PyPI registry client.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Any
 
 import httpx
 
@@ -18,9 +18,6 @@ from phantom_guard.registry.exceptions import (
     RegistryTimeoutError,
     RegistryUnavailableError,
 )
-
-if TYPE_CHECKING:
-    pass
 
 # Constants
 PYPI_API_BASE = "https://pypi.org/pypi"
@@ -85,6 +82,35 @@ class PyPIClient:
         normalized = name.lower().replace("_", "-")
         return f"{PYPISTATS_API_BASE}/{normalized}/recent"
 
+    def _find_earliest_upload(
+        self, releases: dict[str, list[dict[str, Any]]]
+    ) -> datetime | None:
+        """
+        Find earliest upload timestamp from releases.
+
+        Optimized: Uses generator expression with min() instead of
+        nested loops, efficient for packages with many releases.
+        """
+
+        def parse_upload_times() -> list[datetime]:
+            """Generate valid datetime objects from upload_time fields."""
+            timestamps: list[datetime] = []
+            for release_files in releases.values():
+                for file_info in release_files:
+                    upload_time = file_info.get("upload_time")
+                    if upload_time:
+                        try:
+                            parsed = datetime.fromisoformat(
+                                upload_time.replace("Z", "+00:00")
+                            )
+                            timestamps.append(parsed)
+                        except ValueError:
+                            pass
+            return timestamps
+
+        timestamps = parse_upload_times()
+        return min(timestamps) if timestamps else None
+
     async def get_package_metadata(self, name: str) -> PackageMetadata:
         """
         IMPLEMENTS: S020, S022
@@ -128,7 +154,7 @@ class PyPIClient:
 
         return self._parse_metadata(name, data)
 
-    def _parse_metadata(self, name: str, data: dict) -> PackageMetadata:  # type: ignore[type-arg]
+    def _parse_metadata(self, name: str, data: dict[str, Any]) -> PackageMetadata:
         """
         IMPLEMENTS: S022
 
@@ -137,22 +163,11 @@ class PyPIClient:
         if not data:
             return PackageMetadata(name=name, exists=True)
 
-        info = data.get("info", {})
-        releases = data.get("releases", {})
+        info: dict[str, Any] = data.get("info", {})
+        releases: dict[str, list[dict[str, Any]]] = data.get("releases", {})
 
-        # Parse created_at from earliest release
-        created_at = None
-        for release_files in releases.values():
-            for file_info in release_files:
-                if upload_time := file_info.get("upload_time"):
-                    try:
-                        parsed = datetime.fromisoformat(
-                            upload_time.replace("Z", "+00:00")
-                        )
-                        if created_at is None or parsed < created_at:
-                            created_at = parsed
-                    except ValueError:
-                        pass
+        # Parse created_at from earliest release (optimized with generator)
+        created_at = self._find_earliest_upload(releases)
 
         # Get repository URL
         repository_url = info.get("project_url") or info.get("home_page")
