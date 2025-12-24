@@ -1,5 +1,5 @@
 """
-IMPLEMENTS: S001
+IMPLEMENTS: S001, S004
 INVARIANTS: INV001, INV002, INV006, INV007, INV019, INV020
 Core data structures for Phantom Guard.
 """
@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Literal
 
@@ -129,6 +130,45 @@ class Signal:
         # INV007: Validate weight bounds
         if not -1.0 <= self.weight <= 1.0:
             raise ValueError(f"Signal weight must be in [-1.0, 1.0], got {self.weight}")
+
+
+@dataclass(frozen=True, slots=True)
+class PackageMetadata:
+    """
+    IMPLEMENTS: S004
+    Package metadata fetched from registry APIs.
+
+    All fields except name and exists are optional since registries
+    may not provide all data, or requests may partially fail.
+    """
+
+    name: str
+    exists: bool
+    registry: Literal["pypi", "npm", "crates"] = "pypi"
+    created_at: datetime | None = None
+    downloads_last_month: int | None = None
+    repository_url: str | None = None
+    maintainer_count: int | None = None
+    release_count: int | None = None
+    latest_version: str | None = None
+    description: str | None = None
+
+    @property
+    def age_days(self) -> int | None:
+        """
+        Calculate days since package creation.
+
+        Returns:
+            Number of days since created_at, or None if created_at is not set.
+        """
+        if self.created_at is None:
+            return None
+        now = datetime.now(tz=UTC)
+        # Ensure created_at is timezone-aware for comparison
+        created = self.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+        return (now - created).days
 
 
 @dataclass(frozen=True, slots=True)
