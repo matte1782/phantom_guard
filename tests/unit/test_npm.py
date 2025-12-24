@@ -586,3 +586,49 @@ class TestNpmMetadataWithDownloads:
 
         assert metadata.exists is True
         assert metadata.name == "empty-pkg"
+
+
+class TestNpmRegistryField:
+    """Tests to verify registry field is correctly set."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_registry_field_set_on_exists(self) -> None:
+        """
+        TEST_ID: T027.24
+        SPEC: S027
+
+        Given: Package exists on npm
+        When: get_package_metadata is called
+        Then: Returns metadata with registry="npm"
+        """
+        respx.get("https://registry.npmjs.org/express").mock(
+            return_value=httpx.Response(
+                200, json={"name": "express", "versions": {}}
+            )
+        )
+
+        async with NpmClient() as client:
+            metadata = await client.get_package_metadata("express")
+
+        assert metadata.registry == "npm"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_registry_field_set_on_not_found(self) -> None:
+        """
+        TEST_ID: T027.25
+        SPEC: S027
+
+        Given: Package does not exist on npm
+        When: get_package_metadata is called
+        Then: Returns metadata with registry="npm"
+        """
+        respx.get("https://registry.npmjs.org/nonexistent").mock(
+            return_value=httpx.Response(404)
+        )
+
+        async with NpmClient() as client:
+            metadata = await client.get_package_metadata("nonexistent")
+
+        assert metadata.registry == "npm"

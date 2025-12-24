@@ -115,14 +115,15 @@ class NpmClient:
 
         # Handle status codes
         if response.status_code == 404:
-            return PackageMetadata(name=name, exists=False)
+            return PackageMetadata(name=name, exists=False, registry="npm")
 
         if response.status_code == 429:
             retry_after = response.headers.get("Retry-After")
-            raise RegistryRateLimitError(
-                "npm",
-                int(retry_after) if retry_after else None,
-            )
+            retry_seconds = None
+            if retry_after:
+                with contextlib.suppress(ValueError):
+                    retry_seconds = int(retry_after)
+            raise RegistryRateLimitError("npm", retry_seconds)
 
         if response.status_code >= 500:
             raise RegistryUnavailableError("npm", response.status_code)
@@ -143,16 +144,14 @@ class NpmClient:
         npm response format is different from PyPI.
         """
         if not data:
-            return PackageMetadata(name=name, exists=True)
+            return PackageMetadata(name=name, exists=True, registry="npm")
 
         # npm uses "time" object for timestamps
         time_data: dict[str, Any] = data.get("time", {})
         created_at = None
         if "created" in time_data:
             with contextlib.suppress(ValueError):
-                created_at = datetime.fromisoformat(
-                    time_data["created"].replace("Z", "+00:00")
-                )
+                created_at = datetime.fromisoformat(time_data["created"].replace("Z", "+00:00"))
 
         # Get latest version
         dist_tags: dict[str, Any] = data.get("dist-tags", {})
@@ -177,6 +176,7 @@ class NpmClient:
         return PackageMetadata(
             name=data.get("name", name),
             exists=True,
+            registry="npm",
             created_at=created_at,
             downloads_last_month=None,  # Fetched separately via downloads API
             repository_url=repository_url,
@@ -220,9 +220,7 @@ class NpmClient:
         except Exception:
             return None
 
-    async def get_package_metadata_with_downloads(
-        self, name: str
-    ) -> PackageMetadata:
+    async def get_package_metadata_with_downloads(self, name: str) -> PackageMetadata:
         """
         IMPLEMENTS: S027, S029
 
@@ -240,6 +238,7 @@ class NpmClient:
         return PackageMetadata(
             name=metadata.name,
             exists=metadata.exists,
+            registry="npm",
             created_at=metadata.created_at,
             downloads_last_month=downloads,
             repository_url=metadata.repository_url,

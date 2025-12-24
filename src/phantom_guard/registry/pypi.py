@@ -6,6 +6,7 @@ PyPI registry client.
 
 from __future__ import annotations
 
+import contextlib
 from datetime import datetime
 from typing import Any
 
@@ -82,33 +83,21 @@ class PyPIClient:
         normalized = name.lower().replace("_", "-")
         return f"{PYPISTATS_API_BASE}/{normalized}/recent"
 
-    def _find_earliest_upload(
-        self, releases: dict[str, list[dict[str, Any]]]
-    ) -> datetime | None:
+    def _find_earliest_upload(self, releases: dict[str, list[dict[str, Any]]]) -> datetime | None:
         """
         Find earliest upload timestamp from releases.
 
         Optimized: Uses generator expression with min() instead of
         nested loops, efficient for packages with many releases.
         """
-
-        def parse_upload_times() -> list[datetime]:
-            """Generate valid datetime objects from upload_time fields."""
-            timestamps: list[datetime] = []
-            for release_files in releases.values():
-                for file_info in release_files:
-                    upload_time = file_info.get("upload_time")
-                    if upload_time:
-                        try:
-                            parsed = datetime.fromisoformat(
-                                upload_time.replace("Z", "+00:00")
-                            )
-                            timestamps.append(parsed)
-                        except ValueError:
-                            pass
-            return timestamps
-
-        timestamps = parse_upload_times()
+        timestamps: list[datetime] = []
+        for release_files in releases.values():
+            for file_info in release_files:
+                upload_time = file_info.get("upload_time")
+                if upload_time:
+                    with contextlib.suppress(ValueError):
+                        parsed = datetime.fromisoformat(upload_time.replace("Z", "+00:00"))
+                        timestamps.append(parsed)
         return min(timestamps) if timestamps else None
 
     async def get_package_metadata(self, name: str) -> PackageMetadata:
@@ -134,14 +123,15 @@ class PyPIClient:
 
         # Handle status codes
         if response.status_code == 404:
-            return PackageMetadata(name=name, exists=False)
+            return PackageMetadata(name=name, exists=False, registry="pypi")
 
         if response.status_code == 429:
             retry_after = response.headers.get("Retry-After")
-            raise RegistryRateLimitError(
-                "pypi",
-                int(retry_after) if retry_after else None,
-            )
+            retry_seconds = None
+            if retry_after:
+                with contextlib.suppress(ValueError):
+                    retry_seconds = int(retry_after)
+            raise RegistryRateLimitError("pypi", retry_seconds)
 
         if response.status_code >= 500:
             raise RegistryUnavailableError("pypi", response.status_code)
@@ -161,7 +151,7 @@ class PyPIClient:
         Parse PyPI JSON response.
         """
         if not data:
-            return PackageMetadata(name=name, exists=True)
+            return PackageMetadata(name=name, exists=True, registry="pypi")
 
         info: dict[str, Any] = data.get("info", {})
         releases: dict[str, list[dict[str, Any]]] = data.get("releases", {})
@@ -186,6 +176,7 @@ class PyPIClient:
         return PackageMetadata(
             name=info.get("name", name),
             exists=True,
+            registry="pypi",
             created_at=created_at,
             downloads_last_month=None,  # Fetched separately via pypistats
             repository_url=repository_url,
@@ -227,9 +218,7 @@ class PyPIClient:
         except Exception:
             return None
 
-    async def get_package_metadata_with_downloads(
-        self, name: str
-    ) -> PackageMetadata:
+    async def get_package_metadata_with_downloads(self, name: str) -> PackageMetadata:
         """
         IMPLEMENTS: S020, S023
 
@@ -247,6 +236,7 @@ class PyPIClient:
         return PackageMetadata(
             name=metadata.name,
             exists=metadata.exists,
+            registry="pypi",
             created_at=metadata.created_at,
             downloads_last_month=downloads,
             repository_url=metadata.repository_url,

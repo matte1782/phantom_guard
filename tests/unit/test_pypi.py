@@ -609,3 +609,49 @@ class TestPyPIMetadataWithDownloads:
             downloads = await client.get_downloads("flask")
 
         assert downloads is None
+
+
+class TestPyPIRegistryField:
+    """Tests to verify registry field is correctly set."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_registry_field_set_on_exists(self):
+        """
+        TEST_ID: T020.24
+        SPEC: S020
+
+        Given: Package exists on PyPI
+        When: get_package_metadata is called
+        Then: Returns metadata with registry="pypi"
+        """
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(
+                200, json={"info": {"name": "flask"}, "releases": {}}
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("flask")
+
+        assert metadata.registry == "pypi"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_registry_field_set_on_not_found(self):
+        """
+        TEST_ID: T020.25
+        SPEC: S020
+
+        Given: Package does not exist on PyPI
+        When: get_package_metadata is called
+        Then: Returns metadata with registry="pypi"
+        """
+        respx.get("https://pypi.org/pypi/nonexistent/json").mock(
+            return_value=httpx.Response(404)
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("nonexistent")
+
+        assert metadata.registry == "pypi"

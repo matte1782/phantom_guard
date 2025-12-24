@@ -635,3 +635,49 @@ class TestCratesMetadataWithOwners:
 
         request = route.calls[0].request
         assert request.headers["User-Agent"] == custom_ua
+
+
+class TestCratesRegistryField:
+    """Tests to verify registry field is correctly set."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_registry_field_set_on_exists(self) -> None:
+        """
+        TEST_ID: T033.25
+        SPEC: S033
+
+        Given: Crate exists on crates.io
+        When: get_package_metadata is called
+        Then: Returns metadata with registry="crates"
+        """
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(
+                200, json={"crate": {"name": "serde"}, "versions": []}
+            )
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("serde")
+
+        assert metadata.registry == "crates"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_registry_field_set_on_not_found(self) -> None:
+        """
+        TEST_ID: T033.26
+        SPEC: S033
+
+        Given: Crate does not exist on crates.io
+        When: get_package_metadata is called
+        Then: Returns metadata with registry="crates"
+        """
+        respx.get("https://crates.io/api/v1/crates/nonexistent").mock(
+            return_value=httpx.Response(404)
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("nonexistent")
+
+        assert metadata.registry == "crates"

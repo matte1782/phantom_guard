@@ -114,14 +114,15 @@ class CratesClient:
 
         # Handle status codes
         if response.status_code == 404:
-            return PackageMetadata(name=name, exists=False)
+            return PackageMetadata(name=name, exists=False, registry="crates")
 
         if response.status_code == 429:
             retry_after = response.headers.get("Retry-After")
-            raise RegistryRateLimitError(
-                "crates.io",
-                int(retry_after) if retry_after else None,
-            )
+            retry_seconds = None
+            if retry_after:
+                with contextlib.suppress(ValueError):
+                    retry_seconds = int(retry_after)
+            raise RegistryRateLimitError("crates.io", retry_seconds)
 
         if response.status_code >= 500:
             raise RegistryUnavailableError("crates.io", response.status_code)
@@ -133,7 +134,7 @@ class CratesClient:
             raise RegistryParseError("crates.io", str(e)) from e
 
         if not data or "crate" not in data:
-            return PackageMetadata(name=name, exists=True)
+            return PackageMetadata(name=name, exists=True, registry="crates")
 
         return self._parse_metadata(name, data)
 
@@ -151,9 +152,7 @@ class CratesClient:
         created_at = None
         if crate.get("created_at"):
             with contextlib.suppress(ValueError):
-                created_at = datetime.fromisoformat(
-                    crate["created_at"].replace("Z", "+00:00")
-                )
+                created_at = datetime.fromisoformat(crate["created_at"].replace("Z", "+00:00"))
 
         # Get downloads - crates.io provides recent_downloads directly
         downloads = crate.get("recent_downloads")
@@ -163,6 +162,7 @@ class CratesClient:
         return PackageMetadata(
             name=crate.get("name", name),
             exists=True,
+            registry="crates",
             created_at=created_at,
             downloads_last_month=downloads,
             repository_url=crate.get("repository"),
@@ -203,9 +203,7 @@ class CratesClient:
         except Exception:
             return None
 
-    async def get_package_metadata_with_owners(
-        self, name: str
-    ) -> PackageMetadata:
+    async def get_package_metadata_with_owners(self, name: str) -> PackageMetadata:
         """
         IMPLEMENTS: S033, S035
 
@@ -223,6 +221,7 @@ class CratesClient:
         return PackageMetadata(
             name=metadata.name,
             exists=metadata.exists,
+            registry="crates",
             created_at=metadata.created_at,
             downloads_last_month=metadata.downloads_last_month,
             repository_url=metadata.repository_url,
