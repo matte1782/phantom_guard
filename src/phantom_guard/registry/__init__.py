@@ -13,10 +13,12 @@ from phantom_guard.registry.exceptions import (
     RegistryTimeoutError,
     RegistryUnavailableError,
 )
+from phantom_guard.registry.npm import NpmClient
 from phantom_guard.registry.pypi import PyPIClient
 
 __all__ = [
-    # Clients
+    # Clients (alphabetical)
+    "NpmClient",
     "PyPIClient",
     # Exceptions (alphabetical)
     "RegistryError",
