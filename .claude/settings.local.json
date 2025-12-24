@@ -3,7 +3,8 @@
     "allow": [
       "Bash(curl:*)",
       "Bash(python -c:*)",
-      "Bash(python -m ruff check:*)"
+      "Bash(python -m ruff check:*)",
+      "Bash(test:*)"
     ]
   }
 }

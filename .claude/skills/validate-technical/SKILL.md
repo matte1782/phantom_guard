@@ -1,235 +1,332 @@
 ---
-name: phantom:validate-technical
+name: validate-technical
 description: Technical validation of APIs and detection approaches. Use to verify registry APIs work and detection algorithms are viable.
 ---
 
-# Skill: Technical Validation for Phantom Guard
+# TECHNICAL VALIDATION — API & ALGORITHM VERIFICATION
 
-> **Purpose**: Validate that Phantom Guard can actually be built by testing real APIs and detection approaches
-> **Time Budget**: 2-3 hours maximum
-> **Output**: `research-output/TECHNICAL_VALIDATION.md`
-
----
-
-## Objective
-
-Answer the 4 critical unknowns that could block production:
-
-1. **API Availability**: Do PyPI/npm/crates.io APIs expose the data we need?
-2. **Rate Limits**: Can we query at scale without being blocked?
-3. **Detection Reliability**: Can we distinguish slopsquatting from legitimate new packages?
-4. **False Positive Rate**: Will real-world usage trigger too many false alarms?
+> **Frequency**: Monthly or when APIs change
+> **Purpose**: Ensure technical foundation is still valid
+> **Action**: Verify APIs work, algorithms effective
 
 ---
 
-## Execution Steps
+## INVOCATION
 
-### Step 1: API Capability Testing (45 min)
+```
+/validate-technical          # Full validation
+/validate-technical api      # API endpoints only
+/validate-technical algo     # Algorithm effectiveness only
+```
 
-Test each registry API for required signals:
+---
 
-| Signal Needed | PyPI | npm | crates.io |
-|---------------|------|-----|-----------|
-| Package exists | Test | Test | Test |
-| Package age (created date) | Test | Test | Test |
-| Download count | Test | Test | Test |
-| Maintainer info | Test | Test | Test |
-| Repository URL | Test | Test | Test |
-| Version history | Test | Test | Test |
+## VALIDATION PROTOCOL
 
-**For each registry**:
+### 1. Registry API Validation
+
+#### PyPI API
+
 ```bash
-# PyPI - Test with a known package
-curl -s "https://pypi.org/pypi/requests/json" | jq '.info.author, .info.home_page, .releases | keys | first'
+# Test package metadata endpoint
+curl -s "https://pypi.org/pypi/flask/json" | python -c "
+import json, sys
+data = json.load(sys.stdin)
+print(f'Name: {data[\"info\"][\"name\"]}')
+print(f'Version: {data[\"info\"][\"version\"]}')
+print(f'Author: {data[\"info\"][\"author\"]}')
+print(f'Downloads: Available via stats API')
+print(f'Repository: {data[\"info\"].get(\"project_urls\", {}).get(\"Homepage\", \"N/A\")}')
+print('STATUS: OK')
+"
 
-# npm - Test with a known package
-curl -s "https://registry.npmjs.org/express" | jq '.time.created, .repository.url'
+# Test non-existent package
+curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/definitely-not-real-pkg-xyz/json"
+# Expected: 404
 
-# crates.io - Test with a known package
-curl -s "https://crates.io/api/v1/crates/serde" | jq '.crate.created_at, .crate.downloads, .crate.repository'
+# Test rate limiting (make 10 rapid requests)
+for i in {1..10}; do
+  curl -s -o /dev/null -w "%{http_code} " "https://pypi.org/pypi/flask/json"
+done
+# Expected: All 200s (no rate limit for read-only)
 ```
 
-**Document**: Which signals are available, which are missing, any authentication required.
+#### npm Registry
+
+```bash
+# Test package metadata endpoint
+curl -s "https://registry.npmjs.org/express" | python -c "
+import json, sys
+data = json.load(sys.stdin)
+print(f'Name: {data[\"name\"]}')
+print(f'Latest: {data[\"dist-tags\"][\"latest\"]}')
+print(f'Repository: {data.get(\"repository\", {}).get(\"url\", \"N/A\")}')
+print('STATUS: OK')
+"
+
+# Test non-existent package
+curl -s -o /dev/null -w "%{http_code}" "https://registry.npmjs.org/definitely-not-real-pkg-xyz"
+# Expected: 404
+```
+
+#### crates.io API
+
+```bash
+# Test package metadata endpoint
+curl -s "https://crates.io/api/v1/crates/serde" -H "User-Agent: phantom-guard" | python -c "
+import json, sys
+data = json.load(sys.stdin)
+crate = data['crate']
+print(f'Name: {crate[\"name\"]}')
+print(f'Downloads: {crate[\"downloads\"]}')
+print(f'Repository: {crate.get(\"repository\", \"N/A\")}')
+print('STATUS: OK')
+"
+
+# Test non-existent package
+curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/definitely-not-real-xyz" -H "User-Agent: phantom-guard"
+# Expected: 404
+```
 
 ---
 
-### Step 2: Rate Limit Discovery (30 min)
+### 2. Detection Signal Validation
 
-For each registry, determine:
+#### Signal: Package Age
 
-| Registry | Unauthenticated Limit | Authenticated Limit | Burst Behavior |
-|----------|----------------------|---------------------|----------------|
-| PyPI | ? | ? | ? |
-| npm | ? | ? | ? |
-| crates.io | ? | ? | ? |
+```python
+# Validate that new packages are detectable
+from datetime import datetime, timedelta
 
-**Test method**: Make 100 rapid requests, observe:
-- Response codes (429 = rate limited)
-- Headers (X-RateLimit-Remaining, Retry-After)
-- Actual throughput achieved
+# Test: Can we detect packages created recently?
+# Known new package (find one from PyPI recently uploaded)
+# Verify: created_date < 30 days ago = SUSPICIOUS
 
-**Calculate**: For a typical `requirements.txt` with 50 packages, can we validate in <5 seconds?
+def test_package_age_signal():
+    # Simulate package created yesterday
+    created = datetime.now() - timedelta(days=1)
+    assert is_suspicious_age(created) == True
+
+    # Simulate package created 2 years ago
+    created = datetime.now() - timedelta(days=730)
+    assert is_suspicious_age(created) == False
+```
+
+#### Signal: Download Count
+
+```python
+# Validate download count thresholds
+def test_download_signal():
+    # Very low downloads = suspicious
+    assert is_suspicious_downloads(10) == True
+    assert is_suspicious_downloads(50) == True
+
+    # High downloads = not suspicious
+    assert is_suspicious_downloads(10000) == False
+    assert is_suspicious_downloads(1000000) == False
+```
+
+#### Signal: Repository Link
+
+```python
+# Validate repository presence check
+def test_repository_signal():
+    # No repo = suspicious
+    assert is_suspicious_no_repo(None) == True
+    assert is_suspicious_no_repo("") == True
+
+    # Has repo = not suspicious
+    assert is_suspicious_no_repo("https://github.com/org/repo") == False
+```
+
+#### Signal: Hallucination Patterns
+
+```python
+# Validate pattern matching
+HALLUCINATION_PATTERNS = [
+    r"flask[-_].*[-_]helper",
+    r"django[-_].*[-_]utils",
+    r".*[-_]common[-_].*",
+    r"py[-_]?[a-z]+[-_]?client",
+]
+
+def test_hallucination_patterns():
+    # Should match
+    assert matches_hallucination_pattern("flask-redis-helper") == True
+    assert matches_hallucination_pattern("django-auth-utils") == True
+
+    # Should not match
+    assert matches_hallucination_pattern("flask") == False
+    assert matches_hallucination_pattern("requests") == False
+```
 
 ---
 
-### Step 3: Detection Signal Testing (45 min)
+### 3. Algorithm Effectiveness Testing
 
-Test detection heuristics against real packages:
+#### False Positive Rate
 
-**Test Set A - Known Legitimate Packages**:
+```python
+# Test against TOP 1000 PyPI packages
+# None should be flagged as suspicious
+
+TOP_PACKAGES = ["requests", "flask", "django", "numpy", "pandas", ...]
+
+def test_false_positive_rate():
+    false_positives = 0
+    for package in TOP_PACKAGES:
+        result = validate_package(package)
+        if result.risk_score > 0.5:
+            false_positives += 1
+            print(f"FALSE POSITIVE: {package} scored {result.risk_score}")
+
+    rate = false_positives / len(TOP_PACKAGES)
+    assert rate < 0.05, f"False positive rate {rate:.2%} exceeds 5% target"
 ```
-flask, django, requests, numpy, pandas, fastapi, pydantic, httpx
-```
 
-**Test Set B - Suspicious Patterns (likely slopsquatting candidates)**:
-```
-Search PyPI for packages matching:
-- flask-*-helper
-- django-*-utils
-- requests-*-client
-- *-gpt-*
-- *-openai-*
-```
+#### True Positive Rate
 
-**For each suspicious package found, score**:
-- Age < 30 days?
-- Downloads < 100?
-- No repository URL?
-- Maintainer has < 2 packages?
-- Name matches hallucination pattern?
+```python
+# Test against known suspicious patterns
+# All should be flagged
 
-**Document**: How many legitimate packages would be flagged? How many suspicious packages would be missed?
+SUSPICIOUS_PATTERNS = [
+    "flask-redis-helper",  # Classic hallucination pattern
+    "django-common-utils",  # Common pattern
+    "py-aws-client",  # AI tends to generate these
+]
+
+def test_true_positive_rate():
+    true_positives = 0
+    for package in SUSPICIOUS_PATTERNS:
+        result = validate_package(package)
+        if result.risk_score > 0.5:
+            true_positives += 1
+        else:
+            print(f"MISS: {package} scored {result.risk_score}")
+
+    rate = true_positives / len(SUSPICIOUS_PATTERNS)
+    assert rate > 0.95, f"True positive rate {rate:.2%} below 95% target"
+```
 
 ---
 
-### Step 4: False Positive Estimation (30 min)
-
-Take 5 real `requirements.txt` files from popular open source projects:
-
-1. https://github.com/tiangolo/fastapi/blob/master/requirements.txt
-2. https://github.com/pallets/flask/blob/main/requirements/dev.txt
-3. https://github.com/django/django/blob/main/tests/requirements/py3.txt
-4. https://github.com/encode/httpx/blob/master/requirements.txt
-5. https://github.com/pydantic/pydantic/blob/main/requirements/testing.txt
-
-**For each file**:
-- Run detection heuristics on all dependencies
-- Count false positives (legitimate packages flagged)
-- Calculate false positive rate
-
-**Acceptable threshold**: <5% false positive rate on known-good dependencies.
-
----
-
-## Output Format
-
-Create `research-output/TECHNICAL_VALIDATION.md`:
+## VALIDATION REPORT TEMPLATE
 
 ```markdown
-# Technical Validation Results
+# Technical Validation Report — YYYY-MM-DD
 
-**Date**: [date]
-**Verdict**: PROCEED / BLOCKED / NEEDS_MITIGATION
+## API Status
 
----
+### PyPI
+- Metadata endpoint: ✅ Working
+- 404 handling: ✅ Working
+- Rate limiting: ✅ Not hit
+- Response time: Xms average
 
-## 1. API Capability Matrix
+### npm
+- Metadata endpoint: ✅ Working
+- 404 handling: ✅ Working
+- Response time: Xms average
 
-| Signal | PyPI | npm | crates.io | Notes |
-|--------|------|-----|-----------|-------|
-| Package exists | YES/NO | YES/NO | YES/NO | |
-| Created date | YES/NO | YES/NO | YES/NO | |
-| Downloads | YES/NO | YES/NO | YES/NO | |
-| Maintainer | YES/NO | YES/NO | YES/NO | |
-| Repository URL | YES/NO | YES/NO | YES/NO | |
-
-**Blockers Found**: [list or "None"]
-
----
-
-## 2. Rate Limits
-
-| Registry | Limit | Sufficient for MVP? | Mitigation Needed |
-|----------|-------|---------------------|-------------------|
-| PyPI | X req/min | YES/NO | |
-| npm | X req/min | YES/NO | |
-| crates.io | X req/min | YES/NO | |
-
-**Blockers Found**: [list or "None"]
+### crates.io
+- Metadata endpoint: ✅ Working
+- User-Agent required: ✅ Handled
+- Response time: Xms average
 
 ---
 
-## 3. Detection Reliability
+## Detection Signals
 
-| Test | Result | Acceptable? |
-|------|--------|-------------|
-| Legitimate packages correctly passed | X/8 | YES/NO |
-| Suspicious packages correctly flagged | X/Y | YES/NO |
-| Detection confidence | X% | YES/NO |
-
-**Blockers Found**: [list or "None"]
-
----
-
-## 4. False Positive Rate
-
-| Project | Dependencies | False Positives | Rate |
-|---------|--------------|-----------------|------|
-| FastAPI | X | X | X% |
-| Flask | X | X | X% |
-| Django | X | X | X% |
-| httpx | X | X | X% |
-| Pydantic | X | X | X% |
-| **TOTAL** | X | X | X% |
-
-**Threshold**: <5%
-**Result**: PASS / FAIL
+| Signal | Status | Notes |
+|:-------|:-------|:------|
+| Package age | ✅ Working | Threshold: 30 days |
+| Download count | ✅ Working | Threshold: 100 |
+| Repository link | ✅ Working | Binary check |
+| Hallucination patterns | ✅ Working | X patterns |
 
 ---
 
-## Final Verdict
+## Algorithm Performance
 
-**Overall**: PROCEED / BLOCKED
+| Metric | Target | Measured | Status |
+|:-------|:-------|:---------|:-------|
+| False Positive Rate | <5% | X% | ✅/❌ |
+| True Positive Rate | >95% | X% | ✅/❌ |
+| Detection Latency | <200ms | Xms | ✅/❌ |
 
-**Blockers** (if any):
-1. [blocker]
-2. [blocker]
+---
 
-**Mitigations Required** (if any):
-1. [mitigation]
-2. [mitigation]
+## Issues Found
 
-**Recommended Next Step**: [action]
+### Critical
+- [None]
+
+### Warning
+- [List any degraded signals]
+
+### Info
+- [List any observations]
+
+---
+
+## Recommendations
+
+1. [Recommendation based on findings]
+2. [Recommendation based on findings]
+
+---
+
+## Next Validation
+
+Date: [Next month date]
 ```
 
 ---
 
-## Decision Rules
+## RESPONSE TO FAILURES
 
-| Condition | Verdict |
-|-----------|---------|
-| All 4 tests pass | PROCEED to development |
-| 1-2 tests fail with known mitigation | PROCEED with mitigation plan |
-| Any test reveals fundamental blocker | BLOCKED - document and reassess |
-| False positive rate > 10% | BLOCKED - detection approach flawed |
+### API Endpoint Changed
+
+```
+1. Document the change
+2. Update client code
+3. Re-run validation
+4. Update tests
+```
+
+### API Rate Limited
+
+```
+1. Implement backoff strategy
+2. Add caching layer
+3. Consider API key if available
+4. Document rate limits
+```
+
+### Detection Accuracy Degraded
+
+```
+1. Analyze false positives/negatives
+2. Adjust thresholds
+3. Update pattern database
+4. Re-validate with new settings
+```
 
 ---
 
-## Tools Allowed
+## TECHNICAL DEBT TRACKING
 
-- `curl` / `httpx` for API testing
-- `jq` for JSON parsing
-- Web browser for documentation lookup
-- Python REPL for quick calculations
-- WebSearch for API documentation
+Record any technical issues:
+
+```markdown
+# .fortress/reports/technical/TECH_DEBT.md
+
+| Date | Issue | Impact | Resolution |
+|:-----|:------|:-------|:-----------|
+| YYYY-MM-DD | [Issue] | [Impact] | [Status] |
+```
 
 ---
 
-## Time Limit
-
-**HARD STOP at 3 hours**. If validation incomplete:
-- Document what was tested
-- List remaining unknowns
-- Make PROCEED/BLOCKED decision on available evidence
-
-Paralysis is worse than imperfect data.
+*Technical Validation: Because assumptions rot faster than code.*

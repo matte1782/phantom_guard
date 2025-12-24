@@ -1,176 +1,217 @@
 ---
-name: phantom:master
+name: master
 description: Master engineering principles and command index for Phantom Guard. Use at session start to understand project context, commands, and quality gates.
 ---
 
-# Phantom Guard Engineering Command System
+# PHANTOM GUARD — FORTRESS 2.0 MASTER PROTOCOL
 
-> **Project**: phantom-guard - Slopsquatting Detection for AI-Generated Code
-> **Name Status**: AVAILABLE on PyPI, npm, GitHub
-> **Version**: 0.0.0 (Pre-Development)
-
----
-
-## Command Index
-
-Execute these commands by running the skill with the specified name.
-
-### Phase 1: Planning & Architecture
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/phantom:roadmap` | View/update development roadmap | Start of each session |
-| `/phantom:architect` | Design system architecture | Before implementing features |
-| `/phantom:spec` | Write technical specifications | Before coding a component |
-
-### Phase 2: Implementation
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/phantom:implement` | Guided implementation workflow | When building features |
-| `/phantom:checkpoint` | Save progress, validate state | After completing a unit of work |
-| `/phantom:debug` | Structured debugging workflow | When stuck or tests fail |
-
-### Phase 3: Quality Assurance
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/phantom:test` | Run and analyze tests | After implementation |
-| `/phantom:hostile-review` | **CRITICAL**: Adversarial code review | Before ANY merge/commit |
-| `/phantom:security-audit` | Security-focused review | Before release |
-
-### Phase 4: Release
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/phantom:release-check` | Pre-release validation | Before version bump |
-| `/phantom:changelog` | Generate changelog | Before release |
-| `/phantom:publish` | Publish to PyPI/npm | Release time |
-
-### Monitoring
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/phantom:competitive-watch` | Scan for competition | Weekly |
-| `/phantom:validate-technical` | Revalidate technical approach | Monthly |
+> **Classification**: MILITARY-GRADE DEVELOPMENT PROTOCOL
+> **Project**: Phantom Guard - Slopsquatting Detection
+> **Framework**: FORTRESS 2.0
+> **Violation Response**: STOP. FIX. CONTINUE.
 
 ---
 
-## Engineering Principles
+## MISSION STATEMENT
 
-### 1. Hostile-First Development
+**Build a slopsquatting detection library that protects developers from AI-hallucinated malicious packages.**
 
-Every significant change MUST pass hostile review before commit:
-- No exceptions for "simple" changes
-- Reviewer actively tries to break the code
-- Document all attack vectors considered
-
-### 2. MVP Focus
-
-The goal is SHIP, not PERFECT:
-- 90-day MVP deadline is sacred
-- Cut scope, not quality
-- Features require justification against roadmap
-
-### 3. Detection Accuracy Priority
-
-False positives kill adoption:
-- Target <5% false positive rate
-- Every heuristic must be tested against real-world packages
-- User overrides must be trivial
-
-### 4. Performance Budget
-
-Real-time validation requires speed:
-- Single package check: <200ms
-- Full requirements.txt (50 packages): <5s concurrent
-- No network = graceful degradation
+- Target: <5% false positive rate
+- Speed: <200ms per package
+- Scope: PyPI, npm, crates.io
 
 ---
 
-## Project Status Tracking
-
-### Current Phase: PRE-MVP
+## GATE SYSTEM — MANDATORY PROGRESSION
 
 ```
-[x] Research Complete (Fortress v7)
-[x] Technical Validation (APIs tested)
-[x] Competitive Scan (Window closing - accelerate)
-[ ] Architecture Design
-[ ] Core Detection Engine
-[ ] CLI Tool
-[ ] Package Hooks
-[ ] GitHub Action
-[ ] v0.1.0 Release
+┌─────────────────────────────────────────────────────────────────────┐
+│                    FORTRESS 2.0 GATE SYSTEM                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   GATE 0: PROBLEM DEFINITION                                        │
+│   Status: ✅ COMPLETE (Research Fortress v7)                        │
+│   Output: PROJECT_FOUNDATION.md                                     │
+│                                                                     │
+│   GATE 1: ARCHITECTURE                                              │
+│   Command: /architect                                               │
+│   Status: 🟡 PENDING                                                │
+│   Output: docs/architecture/ARCHITECTURE.md                         │
+│   ⛔ STOP: Every decision needs SPEC_ID, HOSTILE_ARCHITECT review   │
+│                                                                     │
+│   GATE 2: SPECIFICATION                                             │
+│   Command: /spec                                                    │
+│   Status: ⬜ BLOCKED (needs Gate 1)                                 │
+│   Output: docs/specification/SPECIFICATION.md                       │
+│   ⛔ STOP: Every invariant numbered, every edge case documented     │
+│                                                                     │
+│   GATE 3: TEST DESIGN                                               │
+│   Command: /test                                                    │
+│   Status: ⬜ BLOCKED (needs Gate 2)                                 │
+│   Output: tests/ stubs, TEST_MATRIX.md                              │
+│   ⛔ STOP: Tests exist BEFORE code, coverage targets defined        │
+│                                                                     │
+│   GATE 4: PLANNING                                                  │
+│   Command: /roadmap                                                 │
+│   Status: ⬜ BLOCKED (needs Gate 3)                                 │
+│   Output: docs/planning/ROADMAP.md with traced tasks                │
+│   ⛔ STOP: Every task < 8 hours, every task traces to SPEC_ID       │
+│                                                                     │
+│   GATE 5: VALIDATION                                                │
+│   Command: /hostile-review                                          │
+│   Status: ⬜ BLOCKED (needs implementation)                         │
+│   Output: VALIDATION_REPORT.md                                      │
+│   ⛔ STOP: HOSTILE_VALIDATOR has VETO power                         │
+│                                                                     │
+│   GATE 6: RELEASE                                                   │
+│   Command: /release                                                 │
+│   Status: ⬜ BLOCKED (needs Gate 5)                                 │
+│   Output: Release artifacts, CHANGELOG.md                           │
+│   ⛔ STOP: RELEASE_GUARDIAN final sign-off                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Risk Register
+---
 
-| Risk | Status | Mitigation |
-|------|--------|------------|
-| SlopGuard ships PyPI support | MONITOR | Differentiate on UX/speed |
-| Endor Labs adds detection | MONITOR | OSS vs Enterprise positioning |
-| High false positive rate | TESTING | Extensive real-world validation |
-| Rate limiting by registries | MITIGATED | Caching layer planned |
+## COMMAND INDEX
+
+### Gate Commands (Sequential - Cannot Skip)
+
+| Command | Gate | Purpose | Can Skip? |
+|---------|------|---------|-----------|
+| `/architect` | 1 | System architecture design | **NO** |
+| `/spec` | 2 | Specification, invariants | **NO** |
+| `/test` | 3 | Test design before code | **NO** |
+| `/roadmap` | 4 | Task breakdown | **NO** |
+| `/hostile-review` | 5 | Validation (VETO POWER) | **NO** |
+| `/release` | 6 | Release preparation | **NO** |
+
+### Implementation Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/implement` | Guided TDD implementation |
+| `/competitive-watch` | Scan for competition (weekly) |
+| `/validate-technical` | Validate APIs still work (monthly) |
 
 ---
 
-## Quality Gates
+## ABSOLUTE RULES — NO EXCEPTIONS
 
-### Before ANY Commit
+### Rule 1: Gates Cannot Be Skipped
 
-1. All tests pass
-2. No new type errors
-3. Hostile review completed (for significant changes)
-4. Documentation updated
+```
+❌ FORBIDDEN: "Let's skip architecture and start coding"
+❌ FORBIDDEN: "We'll add tests later"
+❌ FORBIDDEN: "This is simple, no spec needed"
 
-### Before PR Merge
+✅ REQUIRED: Complete Gate N before starting Gate N+1
+✅ REQUIRED: Gate outputs must exist before proceeding
+✅ REQUIRED: If blocked, fix the blocker first
+```
 
-1. CI passes
-2. Coverage maintained or improved
-3. Hostile review documented
-4. Changelog entry added
+### Rule 2: HOSTILE_VALIDATOR Has Veto Power
 
-### Before Release
+```
+If HOSTILE_VALIDATOR says NO_GO:
+  1. STOP all work
+  2. Address every issue raised
+  3. Re-run validation
+  4. Only proceed after GO verdict
 
-1. Full hostile review
-2. Security audit
-3. Performance benchmarks
-4. Real-world testing on 5+ projects
+NO EXCEPTIONS. NO SHORTCUTS. NO "WE'LL FIX IT LATER."
+```
+
+### Rule 3: TDD Is Mandatory
+
+```
+Before writing ANY production code:
+  1. Test stub MUST exist
+  2. Test MUST fail when run
+  3. Write ONLY enough code to pass test
+  4. Refactor if needed
+  5. THEN commit
+```
+
+### Rule 4: Trace Everything
+
+```
+Every function: # IMPLEMENTS: S001
+Every test: # SPEC: S001, T001.1
+Every task: TRACES: S001, INV001
+
+Orphan code (no trace) = BUILD FAILURE
+```
+
+### Rule 5: Performance Budget Is Sacred
+
+```
+| Operation | Budget | Violation = |
+|-----------|--------|-------------|
+| Single package (cached) | <10ms | BLOCK MERGE |
+| Single package (uncached) | <200ms | BLOCK MERGE |
+| 50 packages | <5s | BLOCK MERGE |
+
+No exceptions. No "we'll optimize later."
+```
 
 ---
 
-## Session Start Checklist
+## SESSION START PROTOCOL
 
-Every development session should begin with:
+Every development session MUST begin with:
 
-1. Run `/phantom:roadmap` - Know where we are
-2. Check TODO.md - What's the immediate priority?
-3. Review last hostile review - Any unaddressed issues?
-4. Verify tests pass - Clean starting state
+```
+1. /master                    # Load this context
+2. Check .fortress/FORTRESS.md # Know gate status
+3. Proceed with current gate   # Continue work
+```
 
 ---
 
-## File Structure
+## FILE STRUCTURE
 
 ```
 phantom-guard/
-├── .claude/
-│   ├── skills/           # Command definitions
-│   │   ├── 00-master.md  # This file
-│   │   ├── 01-architect.md
-│   │   ├── 02-implement.md
-│   │   ├── 03-test.md
-│   │   ├── 04-hostile-review.md
-│   │   └── 05-release.md
-│   ├── rules/            # Engineering rules
-│   └── settings.local.json
+├── .fortress/                    # FORTRESS 2.0 config
+│   ├── FORTRESS.md               # Framework status
+│   └── gates/                    # Gate completion records
+├── .claude/skills/               # Command definitions
+│   ├── master/                   # This command
+│   ├── architect/                # Gate 1
+│   ├── spec/                     # Gate 2
+│   ├── test/                     # Gate 3
+│   ├── roadmap/                  # Gate 4
+│   ├── hostile-review/           # Gate 5
+│   ├── release/                  # Gate 6
+│   ├── implement/                # TDD workflow
+│   ├── competitive-watch/        # Competition scan
+│   └── validate-technical/       # API validation
 ├── docs/
-│   ├── ROADMAP.md        # Living roadmap
-│   ├── ARCHITECTURE.md   # System design
-│   └── HOSTILE_REVIEWS/  # Review history
-├── src/phantom_guard/    # Main package
-├── tests/                # Test suite
-├── research-output/      # Research artifacts
-└── PROJECT_FOUNDATION.md # Original research
+│   ├── frameworks/               # FORTRESS 2.0 docs
+│   └── research/                 # Technical research
+└── PROJECT_FOUNDATION.md         # SOURCE OF TRUTH
 ```
+
+---
+
+## CURRENT STATUS
+
+**Active Gate**: Gate 1 (Architecture)
+
+**Next Action**: Run `/architect` to begin architecture design
+
+**Blockers**: None
+
+---
+
+## SOURCE OF TRUTH
+
+1. **PROJECT_FOUNDATION.md** - Original research
+2. **.fortress/FORTRESS.md** - Framework configuration
+3. **docs/frameworks/FORTRESS_2.0_FRAMEWORK.md** - Full framework docs
+
+---
+
+*FORTRESS 2.0 — Because bugs escape reviews, but they don't escape gates.*

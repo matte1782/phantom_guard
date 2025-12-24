@@ -1,313 +1,346 @@
 ---
-name: phantom:architect
+name: architect
 description: Design system architecture before implementing new features. Use when starting major components or making design decisions with long-term impact.
 ---
 
-# Skill: Architecture Planning
+# GATE 1: ARCHITECTURE — META_ARCHITECT PROTOCOL
 
-> **Purpose**: Design and document system architecture before implementation
-> **Output**: `docs/ARCHITECTURE.md` updates and component specifications
-
----
-
-## When to Use
-
-1. Starting a new major component
-2. Making design decisions with long-term impact
-3. Before implementing any feature that touches multiple modules
-4. When refactoring existing architecture
+> **Agent**: META_ARCHITECT
+> **Gate**: 1 of 6
+> **Prerequisite**: Gate 0 (Problem Definition) COMPLETE
+> **Output**: docs/architecture/ARCHITECTURE.md
 
 ---
 
-## Architecture Decision Process
+## GATE 1 ENTRY CHECKLIST
 
-### Step 1: Problem Statement
+Before proceeding, verify:
 
-Before designing, clearly state:
+- [ ] PROJECT_FOUNDATION.md exists and is read
+- [ ] Problem statement is clear (from Gate 0)
+- [ ] Success criteria are measurable (from Gate 0)
+- [ ] No prior Gate 1 exists (or explicit re-architecture requested)
+
+**If any checkbox fails**: STOP. Complete Gate 0 first.
+
+---
+
+## META_ARCHITECT PROTOCOL
+
+### Step 1: Extract Requirements
+
+From PROJECT_FOUNDATION.md, extract:
 
 ```markdown
-## Problem Statement
+## REQUIREMENT EXTRACTION
 
-**What are we building?**
-[Clear, one-sentence description]
+### Functional Requirements
+- FR001: [requirement from foundation]
+- FR002: [requirement from foundation]
+- ...
 
-**Why is this needed?**
-[Business/technical justification]
+### Non-Functional Requirements
+- NFR001: Detection latency <200ms per package
+- NFR002: False positive rate <5%
+- NFR003: Support PyPI, npm, crates.io
+- ...
 
-**What are the constraints?**
-- Performance: [requirements]
-- Security: [requirements]
-- Compatibility: [requirements]
-- Dependencies: [limits]
-
-**What are the non-goals?**
-[What we're explicitly NOT building]
+### Constraints
+- CON001: Python 3.11+ target
+- CON002: Minimal dependencies (httpx, typer, pydantic)
+- CON003: Works offline (cached mode)
+- ...
 ```
 
-### Step 2: Options Analysis
+### Step 2: Design System Components
 
-For any significant decision, document at least 2 options:
-
-```markdown
-## Options Considered
-
-### Option A: [Name]
-**Description**: [How it works]
-**Pros**:
-- [Pro 1]
-- [Pro 2]
-**Cons**:
-- [Con 1]
-- [Con 2]
-**Effort**: [Low/Medium/High]
-
-### Option B: [Name]
-**Description**: [How it works]
-**Pros**:
-- [Pro 1]
-**Cons**:
-- [Con 1]
-**Effort**: [Low/Medium/High]
-
-### Decision: [Option X]
-**Rationale**: [Why this option wins]
-```
-
-### Step 3: Component Design
-
-For each component, specify:
+For each major component, define:
 
 ```markdown
-## Component: [Name]
+## COMPONENT: [NAME]
 
-### Responsibility
-[Single sentence: what this component does]
+### SPEC_ID: S001
+
+### Purpose
+[Why this component exists]
 
 ### Interface
 ```python
-class ComponentName:
-    def method_name(self, arg: Type) -> ReturnType:
-        """Brief description."""
-        ...
+# Public API
+def validate_package(name: str, registry: str = "pypi") -> PackageRisk:
+    """
+    IMPLEMENTS: S001
+    INVARIANT: INV001 - Return value always has risk_score in [0, 1]
+    """
+    ...
 ```
 
-### Dependencies
-- Internal: [other components it uses]
-- External: [third-party libraries]
-
-### Data Flow
-[Input] -> [Processing] -> [Output]
-
-### Error Handling
-- [Error case 1]: [How handled]
-- [Error case 2]: [How handled]
-
-### Testing Strategy
-- Unit tests: [what to test]
-- Integration tests: [what to test]
-```
-
----
-
-## Phantom Guard Component Architecture
-
-### Core Components
-
-```
-phantom-guard/
-├── src/phantom_guard/
-│   ├── __init__.py           # Public API
-│   ├── core/
-│   │   ├── detector.py       # Main detection logic
-│   │   ├── scorer.py         # Risk scoring engine
-│   │   └── patterns.py       # Hallucination pattern matching
-│   ├── registry/
-│   │   ├── base.py           # Registry interface
-│   │   ├── pypi.py           # PyPI client
-│   │   ├── npm.py            # npm client
-│   │   └── crates.py         # crates.io client
-│   ├── cache/
-│   │   ├── memory.py         # In-memory cache
-│   │   └── persistent.py     # SQLite cache
-│   ├── cli/
-│   │   └── main.py           # CLI entry point
-│   └── hooks/
-│       ├── pip_hook.py       # pip install hook
-│       └── npm_hook.py       # npm install hook
-```
-
-### Component Interaction
-
-```
-User Input (requirements.txt / package name)
-           │
-           ▼
-    ┌──────────────┐
-    │   CLI/Hook   │  ◄── Entry points
-    └──────────────┘
-           │
-           ▼
-    ┌──────────────┐
-    │   Detector   │  ◄── Orchestrates validation
-    └──────────────┘
-           │
-     ┌─────┴─────┐
-     ▼           ▼
-┌─────────┐ ┌─────────┐
-│  Cache  │ │ Scorer  │
-└─────────┘ └─────────┘
-     │           │
-     │     ┌─────┴─────┐
-     │     ▼           ▼
-     │ ┌─────────┐ ┌─────────┐
-     │ │ Patterns│ │Registry │
-     │ └─────────┘ │ Clients │
-     │             └─────────┘
-     │                  │
-     └────────┬─────────┘
-              ▼
-    ┌──────────────────┐
-    │ ValidationResult │
-    └──────────────────┘
-```
-
----
-
-## Data Models
-
-### Core Types
-
+### Data Structures
 ```python
-from dataclasses import dataclass
-from enum import Enum
-from typing import List, Optional
-
-class RiskLevel(Enum):
-    SAFE = "safe"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
-class SignalType(Enum):
-    NOT_FOUND = "not_found"
-    NEW_PACKAGE = "new_package"
-    LOW_DOWNLOADS = "low_downloads"
-    NO_REPOSITORY = "no_repository"
-    HALLUCINATION_PATTERN = "hallucination_pattern"
-    SINGLE_MAINTAINER = "single_maintainer"
-    NO_DESCRIPTION = "no_description"
-
-@dataclass
-class PackageMetadata:
-    name: str
-    exists: bool
-    created_at: Optional[datetime]
-    downloads_last_month: Optional[int]
-    repository_url: Optional[str]
-    maintainer_count: int
-    release_count: int
-    has_description: bool
-
-@dataclass
-class RiskSignal:
-    signal_type: SignalType
-    weight: float
-    details: str
-
 @dataclass
 class PackageRisk:
-    package_name: str
-    risk_level: RiskLevel
-    risk_score: float  # 0.0 - 1.0
-    signals: List[RiskSignal]
-    recommendation: str
-    metadata: Optional[PackageMetadata]
+    """Size: ~200 bytes per instance"""
+    name: str           # 8 bytes (pointer)
+    risk_score: float   # 8 bytes
+    signals: list[str]  # 8 bytes (pointer)
+    recommendation: Recommendation  # 1 byte (enum)
+```
 
-@dataclass
-class ValidationResult:
-    safe: List[str]
-    suspicious: List[PackageRisk]
-    blocked: List[PackageRisk]
-    errors: List[str]
-    validation_time_ms: int
+### Invariants
+- INV001: risk_score is always in range [0.0, 1.0]
+- INV002: signals list is never None (empty list if no signals)
+
+### Dependencies
+- Depends on: RegistryClient
+- Used by: CLI, Hooks
+
+### Performance Budget
+- Single call: <200ms (uncached)
+- Cached call: <10ms
+```
+
+### Step 3: Define Performance Budget
+
+```markdown
+## PERFORMANCE BUDGET
+
+| Operation | Budget | Constraint | Measurement |
+|:----------|:-------|:-----------|:------------|
+| validate_package (uncached) | <200ms | P99 | bench_validate |
+| validate_package (cached) | <10ms | P99 | bench_validate_cached |
+| batch_validate (50) | <5s | P99 | bench_batch |
+| pattern_match | <1ms | P99 | bench_pattern |
+| registry_api_call | <500ms | P99 | network dependent |
+
+### Memory Budget
+| Structure | Size | Max Instances | Total |
+|:----------|:-----|:--------------|:------|
+| PackageRisk | 200B | 1000 | 200KB |
+| PatternDB | 50KB | 1 | 50KB |
+| Cache | 10MB | 1 | 10MB |
+```
+
+### Step 4: Create Invariant Registry
+
+```markdown
+## INVARIANT REGISTRY
+
+| INV_ID | Statement | Enforcement | Test Type |
+|:-------|:----------|:------------|:----------|
+| INV001 | "risk_score in [0.0, 1.0]" | property test | proptest |
+| INV002 | "signals never None" | type system | unit |
+| INV003 | "cache TTL honored" | timer mock | unit |
+| INV004 | "API timeout <500ms" | timeout config | integration |
+| INV005 | "No network in offline mode" | mock assert | unit |
+```
+
+### Step 5: Document Decisions
+
+Every architectural decision MUST follow this template:
+
+```markdown
+## DECISION: [SPEC_ID] - [Title]
+
+### Context
+[What led to this decision]
+
+### Options Considered
+1. [Option A] - pros/cons
+2. [Option B] - pros/cons
+3. [Option C] - pros/cons
+
+### Decision
+[The chosen option and why]
+
+### Consequences
+- Positive: [benefits]
+- Negative: [trade-offs]
+- Neutral: [observations]
+
+### Verification
+- How we'll know this was right
+- Metrics to track
+- Rollback criteria
+
+### Trace Links
+- Related specs: [SPEC_IDs]
+- Test requirements: [TEST_IDs]
 ```
 
 ---
 
-## API Design
+## ARCHITECTURE DOCUMENT TEMPLATE
 
-### Public API (src/phantom_guard/__init__.py)
+The output MUST follow this structure:
 
-```python
-# Simple API - most users need only this
-def check(package: str, registry: str = "pypi") -> PackageRisk:
-    """Check a single package for slopsquatting risk."""
-    ...
+```markdown
+# Phantom Guard — System Architecture
 
-def check_many(packages: List[str], registry: str = "pypi") -> ValidationResult:
-    """Check multiple packages concurrently."""
-    ...
+> **Version**: 0.1.0
+> **Date**: YYYY-MM-DD
+> **Status**: DRAFT | REVIEW | APPROVED
+> **Approver**: [name] | PENDING
 
-def check_requirements(path: str) -> ValidationResult:
-    """Check a requirements.txt or package.json file."""
-    ...
+---
 
-# Configuration
-def configure(
-    cache_enabled: bool = True,
-    cache_ttl_hours: int = 24,
-    risk_threshold: float = 0.7,
-    block_not_found: bool = True,
-) -> None:
-    """Configure global settings."""
-    ...
+## 1. Overview
+
+### 1.1 System Purpose
+[From PROJECT_FOUNDATION.md]
+
+### 1.2 Architecture Diagram
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Phantom Guard                         │
+├─────────────────────────────────────────────────────────┤
+│  CLI Layer                                               │
+│  ├── typer CLI                                          │
+│  └── IMPLEMENTS: S010-S015                              │
+├─────────────────────────────────────────────────────────┤
+│  Core Layer                                              │
+│  ├── Detector (S001-S005)                               │
+│  ├── Analyzer (S006-S009)                               │
+│  └── Cache (S020-S025)                                  │
+├─────────────────────────────────────────────────────────┤
+│  Registry Layer                                          │
+│  ├── PyPI Client (S030-S035)                            │
+│  ├── npm Client (S040-S045)                             │
+│  └── crates.io Client (S050-S055)                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+## 2. Component Specifications
+
+### 2.1 Core Detection Engine
+[SPEC_ID: S001-S005]
+...
+
+### 2.2 Registry Clients
+[SPEC_ID: S030-S055]
+...
+
+### 2.3 CLI Interface
+[SPEC_ID: S010-S015]
+...
+
+## 3. Data Structures
+
+### 3.1 Core Types
+[With sizes, invariants]
+
+### 3.2 API Contracts
+[Request/response formats]
+
+## 4. Performance Budget
+[Table from Step 3]
+
+## 5. Invariant Registry
+[Table from Step 4]
+
+## 6. Architectural Decisions
+[ADR format from Step 5]
+
+## 7. Security Considerations
+- Input validation
+- No shell execution
+- API key handling
+
+## 8. Trace Matrix
+| SPEC_ID | Description | Component | Tests |
+|---------|-------------|-----------|-------|
+| S001 | Package validation | Detector | T001.* |
+| ... | ... | ... | ... |
+
+---
+
+## Appendix A: Open Questions
+[List any unresolved decisions]
+
+## Appendix B: Future Considerations
+[Explicitly out of scope but noted]
 ```
 
 ---
 
-## Performance Requirements
+## GATE 1 EXIT CHECKLIST
 
-| Operation | Target | Measurement |
-|-----------|--------|-------------|
-| Single package (cached) | <10ms | Time from call to result |
-| Single package (uncached) | <200ms | Time including API call |
-| 50 packages (concurrent) | <3s | Parallel API calls |
-| Pattern matching | <1ms | Per package name |
-| Cache lookup | <1ms | SQLite query |
+Before Gate 1 is complete:
 
----
+- [ ] docs/architecture/ARCHITECTURE.md exists
+- [ ] Every component has SPEC_ID
+- [ ] Every data structure has size estimate
+- [ ] Every public function documented
+- [ ] Performance budget defined for all operations
+- [ ] Invariant registry complete
+- [ ] All decisions have ADR format
+- [ ] Security considerations documented
+- [ ] HOSTILE_ARCHITECT review requested
 
-## Security Requirements
-
-| Concern | Mitigation |
-|---------|------------|
-| Package name injection | Validate against regex, no shell usage |
-| API response manipulation | Validate JSON schema, handle errors |
-| Cache poisoning | Signed cache entries, TTL enforcement |
-| Sensitive data in logs | No API keys, sanitize package names |
-| Path traversal | Validate paths, use pathlib |
+**If any checkbox fails**: DO NOT PROCEED TO GATE 2.
 
 ---
 
-## Extensibility Points
+## HOSTILE_ARCHITECT REVIEW
 
-### Adding New Registries
+After completing the architecture document, invoke hostile review:
 
-1. Implement `RegistryClient` interface
-2. Add to registry factory
-3. Update CLI options
-4. Add tests
+```
+/hostile-review architecture
+```
 
-### Adding New Signals
+The reviewer will check:
+- Are there gaps in the design?
+- Are invariants actually enforceable?
+- Are performance budgets realistic?
+- Are there security holes?
+- Are there missing edge cases?
 
-1. Add `SignalType` enum value
-2. Implement scorer method
-3. Configure weight in scoring matrix
-4. Add pattern tests
+**Only after HOSTILE_ARCHITECT approval can Gate 1 be marked complete.**
 
-### Adding New Output Formats
+---
 
-1. Implement `Formatter` interface
-2. Add CLI flag
-3. Add tests
+## RECORDING GATE COMPLETION
+
+After approval, create:
+
+```markdown
+# .fortress/gates/GATE_1_ARCHITECTURE.md
+
+## Gate 1: Architecture — COMPLETE
+
+**Date**: YYYY-MM-DD
+**Approver**: HOSTILE_ARCHITECT
+**Output**: docs/architecture/ARCHITECTURE.md
+
+### Summary
+[Brief summary of architecture]
+
+### Key Decisions
+- [Decision 1]
+- [Decision 2]
+
+### Known Risks
+- [Risk 1]
+- [Risk 2]
+
+### Next Gate
+Gate 2: Specification
+```
+
+---
+
+## PROTOCOL VIOLATIONS
+
+If any of these occur, STOP:
+
+| Violation | Response |
+|:----------|:---------|
+| No SPEC_ID on component | Add SPEC_ID |
+| No performance budget | Define budget |
+| No invariant registry | Create registry |
+| Skipped HOSTILE review | Run /hostile-review |
+| Proceeding to Gate 2 without approval | BLOCKED |
+
+---
+
+*Gate 1 is about DESIGNING the solution. Gate 2 is about SPECIFYING the details.*

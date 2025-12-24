@@ -1,410 +1,430 @@
 ---
-name: phantom:implement
+name: implement
 description: Guided workflow for implementing features with quality gates. Use when building new features - includes spec, test-first, implementation, and verification steps.
 ---
 
-# Skill: Implementation Workflow
+# IMPLEMENTATION — TDD STRICT MODE PROTOCOL
 
-> **Purpose**: Guided workflow for implementing features with quality gates
-> **Mindset**: Write code that your hostile reviewer cannot break
-
----
-
-## Implementation Checklist
-
-Before writing ANY code, verify:
-
-- [ ] Feature is on the roadmap
-- [ ] Architecture is documented
-- [ ] Edge cases identified
-- [ ] Test plan exists
-- [ ] No blockers from previous hostile reviews
+> **Agent**: ENGINEER
+> **Prerequisite**: Gate 4 (Planning) COMPLETE
+> **Mode**: Test-Driven Development (MANDATORY)
 
 ---
 
-## Implementation Steps
+## INVOCATION
 
-### Step 1: Specification (10 min)
+```
+/implement           # Show current task queue
+/implement W1.1      # Implement specific task
+/implement next      # Pick next task from roadmap
+```
 
-Write a mini-spec before coding:
+---
+
+## TDD STRICT MODE
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                     TDD STRICT MODE                                 │
+│                                                                    │
+│  1. TEST STUB MUST EXIST                                           │
+│  2. TEST MUST FAIL FIRST (Red)                                     │
+│  3. WRITE MINIMAL CODE TO PASS (Green)                             │
+│  4. REFACTOR IF NEEDED (Refactor)                                  │
+│  5. COMMIT                                                         │
+│                                                                    │
+│  ❌ Writing code without test = PROTOCOL VIOLATION                 │
+│  ❌ Test passes before code = SOMETHING IS WRONG                   │
+│  ❌ Skipping refactor = TECHNICAL DEBT                             │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## IMPLEMENTATION WORKFLOW
+
+### Phase 1: Load Task
 
 ```markdown
-## Feature: [Name]
+## TASK LOADING
 
-### What
-[One sentence: what does this do?]
+Task ID: W1.1
+Description: Implement Core Types
 
-### Why
-[Why is this needed for MVP?]
+### Traces
+- SPEC: S001
+- INVARIANTS: INV001, INV002
+- TESTS: T001.1, T001.2, T001.3
 
-### Inputs
-- [Input 1]: [Type, validation rules]
-- [Input 2]: [Type, validation rules]
+### Pre-Conditions
+✅ Test stubs exist (T001.1, T001.2, T001.3)
+✅ Architecture defined (GATE 1)
+✅ Specification complete (GATE 2)
 
-### Outputs
-- Success: [What returns on success]
-- Failure: [What returns on failure]
-
-### Edge Cases
-1. [Edge case 1]: [How to handle]
-2. [Edge case 2]: [How to handle]
-3. [Edge case 3]: [How to handle]
-
-### Security Considerations
-- [Consideration 1]
-- [Consideration 2]
-
-### Dependencies
-- Internal: [modules used]
-- External: [packages used]
+### Acceptance Criteria
+- [ ] T001.1 passes
+- [ ] T001.2 passes
+- [ ] T001.3 passes
+- [ ] mypy --strict passes
+- [ ] ruff check passes
+- [ ] Coverage ≥90% on new code
 ```
-
-### Step 2: Test First (15 min)
-
-Write failing tests before implementation:
-
-```python
-# tests/test_feature.py
-
-def test_feature_happy_path():
-    """Feature works with valid input."""
-    result = feature(valid_input)
-    assert result == expected_output
-
-def test_feature_edge_case_1():
-    """Feature handles [edge case 1]."""
-    result = feature(edge_case_input)
-    assert result == expected_edge_output
-
-def test_feature_invalid_input():
-    """Feature rejects invalid input gracefully."""
-    with pytest.raises(ValidationError):
-        feature(invalid_input)
-
-def test_feature_empty_input():
-    """Feature handles empty input."""
-    result = feature([])
-    assert result == empty_result
-```
-
-### Step 3: Implementation (varies)
-
-Write the code:
-
-```python
-# src/phantom_guard/feature.py
-
-def feature(input: InputType) -> OutputType:
-    """
-    Brief description.
-
-    Args:
-        input: Description of input
-
-    Returns:
-        Description of output
-
-    Raises:
-        ValidationError: When input is invalid
-    """
-    # Validate input FIRST
-    if not input:
-        return empty_result
-
-    _validate_input(input)
-
-    # Main logic
-    result = _process(input)
-
-    return result
-```
-
-### Step 4: Verify (5 min)
-
-Run the verification suite:
-
-```bash
-# Run tests
-pytest tests/test_feature.py -v
-
-# Check types
-mypy src/phantom_guard/feature.py
-
-# Check style
-ruff check src/phantom_guard/feature.py
-
-# Run all tests
-pytest
-```
-
-### Step 5: Document (5 min)
-
-Update documentation if needed:
-
-- [ ] Docstrings complete
-- [ ] README updated (if public API changed)
-- [ ] CHANGELOG.md entry added
-- [ ] Architecture doc updated (if design changed)
-
-### Step 6: Hostile Self-Review (5 min)
-
-Before committing, ask yourself:
-
-1. "What would break this?"
-2. "What did I assume that might be wrong?"
-3. "What happens at 10x scale?"
-4. "Did I handle all error cases?"
-5. "Is there a simpler way?"
 
 ---
 
-## Code Standards
+### Phase 2: Red Phase — Make Test Fail
 
-### File Structure
+```python
+# 1. Find the test stub
+# tests/unit/test_detector.py
+
+@pytest.mark.skip(reason="Stub - implement with S001")
+def test_valid_package_name_passes(self):
+    """
+    SPEC: S001
+    TEST_ID: T001.1
+    """
+    result = validate_package("flask-redis-helper")
+    assert result is not None
+
+# 2. Remove the skip decorator
+def test_valid_package_name_passes(self):
+    """
+    SPEC: S001
+    TEST_ID: T001.1
+    """
+    result = validate_package("flask-redis-helper")
+    assert result is not None
+
+# 3. Run the test
+pytest tests/unit/test_detector.py::test_valid_package_name_passes -v
+
+# 4. VERIFY IT FAILS
+# Expected: ImportError or AttributeError (function doesn't exist)
+```
+
+**If test passes without code**: STOP. Something is wrong.
+
+---
+
+### Phase 3: Green Phase — Write Minimal Code
+
+```python
+# src/phantom_guard/core/detector.py
+
+"""
+IMPLEMENTS: S001
+INVARIANTS: INV001, INV002
+"""
+
+from dataclasses import dataclass
+from typing import List
+
+
+@dataclass
+class PackageRisk:
+    """
+    Risk assessment for a package.
+
+    IMPLEMENTS: S001
+    INVARIANT: INV001 - risk_score in [0.0, 1.0]
+    INVARIANT: INV002 - signals is never None
+    """
+    name: str
+    risk_score: float
+    signals: List[str]
+
+    def __post_init__(self):
+        # INV001: Enforce risk_score bounds
+        if not 0.0 <= self.risk_score <= 1.0:
+            raise ValueError(f"risk_score must be in [0.0, 1.0], got {self.risk_score}")
+
+        # INV002: Enforce signals not None
+        if self.signals is None:
+            self.signals = []
+
+
+def validate_package(name: str) -> PackageRisk:
+    """
+    Validate a package name and return risk assessment.
+
+    IMPLEMENTS: S001
+    INVARIANTS: INV001, INV002
+    TESTS: T001.1, T001.2, T001.3
+
+    Args:
+        name: Package name to validate
+
+    Returns:
+        PackageRisk with assessment
+
+    Raises:
+        ValidationError: If name is invalid
+    """
+    if not name:
+        raise ValidationError("Package name cannot be empty")
+
+    # Minimal implementation to pass test
+    return PackageRisk(
+        name=name,
+        risk_score=0.0,
+        signals=[]
+    )
+```
+
+---
+
+### Phase 4: Verify Green
+
+```bash
+# Run the specific test
+pytest tests/unit/test_detector.py::test_valid_package_name_passes -v
+
+# Expected: PASSED
+
+# Run all related tests
+pytest tests/unit/test_detector.py -v
+
+# Run type check
+mypy src/phantom_guard/core/detector.py --strict
+
+# Run lint
+ruff check src/phantom_guard/core/detector.py
+```
+
+---
+
+### Phase 5: Refactor (If Needed)
+
+```python
+# Questions to ask:
+# 1. Is there duplication?
+# 2. Are names clear?
+# 3. Is the function too long (>50 lines)?
+# 4. Are there magic numbers?
+# 5. Could this be simpler?
+
+# If refactoring:
+# 1. Make small changes
+# 2. Run tests after each change
+# 3. Ensure tests still pass
+```
+
+---
+
+### Phase 6: Commit
+
+```bash
+# Pre-commit checks
+ruff format src/
+ruff check src/
+mypy src/ --strict
+pytest tests/unit/test_detector.py -v
+
+# Commit with trace
+git add src/phantom_guard/core/detector.py tests/unit/test_detector.py
+git commit -m "feat(S001): Implement PackageRisk and validate_package
+
+IMPLEMENTS: S001
+TESTS: T001.1, T001.2
+INVARIANTS: INV001, INV002
+
+- Add PackageRisk dataclass with invariant enforcement
+- Add validate_package function with validation
+- Add unit tests for valid/invalid inputs"
+```
+
+---
+
+### Phase 7: Repeat
+
+Move to next test:
+1. Remove skip from T001.2
+2. Run test → RED
+3. Add code → GREEN
+4. Refactor
+5. Commit
+6. Next test...
+
+---
+
+## CODE STANDARDS
+
+### Required Comments
 
 ```python
 """
-Module description.
-
-This module provides [functionality].
+IMPLEMENTS: S001, S002
+INVARIANTS: INV001
+TESTS: T001.1, T001.2
 """
+```
 
-from __future__ import annotations
+### Import Order
 
+```python
 # Standard library
-import logging
-from typing import TYPE_CHECKING
+import json
+from typing import TYPE_CHECKING, List, Optional
 
 # Third party
 import httpx
+from pydantic import BaseModel
 
 # Local
 from phantom_guard.core import types
-
-if TYPE_CHECKING:
-    from phantom_guard.registry import RegistryClient
-
-logger = logging.getLogger(__name__)
-
-
-# Constants
-DEFAULT_TIMEOUT = 10.0
-MAX_RETRIES = 3
-
-
-# Public API
-__all__ = ["PublicClass", "public_function"]
-
-
-class PublicClass:
-    """Class description."""
-
-    def __init__(self, config: Config) -> None:
-        """Initialize with config."""
-        self._config = config
-
-    def public_method(self, arg: str) -> Result:
-        """
-        Method description.
-
-        Args:
-            arg: Argument description
-
-        Returns:
-            Result description
-
-        Raises:
-            ValueError: When arg is invalid
-        """
-        ...
-
-
-def public_function(arg: str) -> Result:
-    """Function description."""
-    ...
-
-
-# Private helpers
-def _private_helper() -> None:
-    """Internal helper."""
-    ...
+from phantom_guard.registry import client
 ```
 
-### Naming Conventions
+### Type Hints (MANDATORY)
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Module | snake_case | `registry_client.py` |
-| Class | PascalCase | `RegistryClient` |
-| Function | snake_case | `check_package` |
-| Constant | UPPER_SNAKE | `MAX_RETRIES` |
-| Private | _prefix | `_validate_input` |
-| Type alias | PascalCase | `PackageList = List[str]` |
+```python
+# Good
+def validate_package(name: str, registry: str = "pypi") -> PackageRisk:
+    ...
+
+# Bad - NO TYPE HINTS
+def validate_package(name, registry="pypi"):
+    ...
+```
 
 ### Error Handling
 
 ```python
-# Good: Specific exceptions with context
-class PackageNotFoundError(Exception):
-    """Raised when package doesn't exist in registry."""
-
-    def __init__(self, package: str, registry: str):
-        self.package = package
-        self.registry = registry
-        super().__init__(f"Package '{package}' not found in {registry}")
-
-# Good: Handle expected errors, let unexpected propagate
+# Good - Specific exceptions
 try:
     response = await client.get(url)
 except httpx.TimeoutException:
-    logger.warning(f"Timeout fetching {url}")
-    return cached_result or default_result
-except httpx.HTTPStatusError as e:
-    if e.response.status_code == 404:
-        return PackageNotFoundResult(package)
-    raise  # Unexpected status, propagate
+    logger.warning("Timeout for %s", url)
+    return cached_result
 
-# Bad: Catching everything
+# Bad - Catch all
 try:
     result = do_something()
-except Exception:
-    return None  # Lost error context!
+except:
+    return None
 ```
 
 ### Logging
 
 ```python
 import logging
-
 logger = logging.getLogger(__name__)
 
-# Good: Structured, appropriate levels
-logger.debug("Checking package %s", package_name)
+# Good - Structured, no secrets
 logger.info("Validated %d packages in %dms", count, time_ms)
-logger.warning("Rate limited by %s, retrying in %ds", registry, delay)
-logger.error("Failed to fetch %s: %s", url, error)
 
-# Bad: Print statements, sensitive data
-print(f"Checking {package}")  # Don't use print
-logger.info(f"API key: {api_key}")  # Don't log secrets
+# Bad - Print statements, secrets
+print(f"Checking {package}")
+logger.info(f"API key: {key}")  # NEVER DO THIS
 ```
 
 ---
 
-## Common Patterns
+## QUALITY GATES
 
-### Async HTTP Client
+### Per-Commit
 
-```python
-async def fetch_package_info(
-    client: httpx.AsyncClient,
-    package: str,
-    timeout: float = 10.0,
-) -> PackageInfo:
-    """Fetch package info with retry and timeout."""
-    url = f"https://pypi.org/pypi/{package}/json"
-
-    for attempt in range(MAX_RETRIES):
-        try:
-            response = await client.get(url, timeout=timeout)
-            response.raise_for_status()
-            return PackageInfo.from_dict(response.json())
-        except httpx.TimeoutException:
-            if attempt == MAX_RETRIES - 1:
-                raise
-            await asyncio.sleep(2 ** attempt)
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                return PackageInfo.not_found(package)
-            raise
+```bash
+# All must pass before commit
+ruff format --check src/
+ruff check src/
+mypy src/ --strict
+pytest tests/unit/ -v
 ```
 
-### Caching
+### Per-Task Completion
 
-```python
-from functools import lru_cache
-from datetime import datetime, timedelta
+```bash
+# Run related tests
+pytest tests/unit/test_[module].py -v
 
-class TTLCache:
-    """Simple TTL cache."""
+# Check coverage
+pytest --cov=phantom_guard/core/[module] --cov-report=term
 
-    def __init__(self, ttl_seconds: int = 3600):
-        self._cache: dict[str, tuple[Any, datetime]] = {}
-        self._ttl = timedelta(seconds=ttl_seconds)
-
-    def get(self, key: str) -> Optional[Any]:
-        if key not in self._cache:
-            return None
-        value, timestamp = self._cache[key]
-        if datetime.now() - timestamp > self._ttl:
-            del self._cache[key]
-            return None
-        return value
-
-    def set(self, key: str, value: Any) -> None:
-        self._cache[key] = (value, datetime.now())
-```
-
-### Validation
-
-```python
-import re
-from pydantic import BaseModel, validator
-
-PACKAGE_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$')
-
-class PackageRequest(BaseModel):
-    name: str
-    registry: str = "pypi"
-
-    @validator('name')
-    def validate_name(cls, v):
-        if not PACKAGE_NAME_PATTERN.match(v):
-            raise ValueError(f"Invalid package name: {v}")
-        if len(v) > 100:
-            raise ValueError("Package name too long")
-        return v.lower()
-
-    @validator('registry')
-    def validate_registry(cls, v):
-        allowed = {'pypi', 'npm', 'crates'}
-        if v not in allowed:
-            raise ValueError(f"Registry must be one of: {allowed}")
-        return v
+# Verify invariants enforced
+grep -n "INVARIANT:" src/phantom_guard/core/[module].py
 ```
 
 ---
 
-## Checkpoint Command
+## TASK COMPLETION
 
-After completing a unit of work, run checkpoint:
+### Verify Acceptance Criteria
 
 ```markdown
-## Checkpoint: [Feature Name]
-
-**Date**: [date]
-**Status**: COMPLETE / IN_PROGRESS / BLOCKED
-
-### Completed
-- [x] [Task 1]
-- [x] [Task 2]
+## TASK W1.1 — COMPLETION VERIFICATION
 
 ### Tests
-- [x] Unit tests passing
-- [x] Integration tests passing
-- [ ] Edge case tests (need more)
+- [x] T001.1 passes
+- [x] T001.2 passes
+- [x] T001.3 passes
 
 ### Quality
-- [x] Type checked
-- [x] Linted
-- [ ] Hostile reviewed
+- [x] mypy --strict passes
+- [x] ruff check clean
+- [x] Coverage: 95% (target: 90%)
 
-### Remaining
-- [ ] [Remaining task 1]
+### Traces
+- [x] IMPLEMENTS comments present
+- [x] INVARIANT comments present
+- [x] TEST_ID references correct
 
-### Blockers
-- [None / blocker description]
-
-### Next Session
-- [What to do next]
+### Status: COMPLETE
 ```
+
+### Update Roadmap
+
+```markdown
+# docs/planning/ROADMAP.md
+
+| Task | SPEC | Hours | Status |
+|:-----|:-----|:------|:-------|
+| W1.1 | S001 | 10 | ✅ COMPLETE |
+| W1.2 | S002 | 8 | PENDING |
+```
+
+---
+
+## PROTOCOL VIOLATIONS
+
+| Violation | Response |
+|:----------|:---------|
+| Writing code before test stub | STOP, create stub first |
+| Test passes before code | Investigate, fix test |
+| No IMPLEMENTS comment | Add comment |
+| Skip refactor | Review for tech debt |
+| Commit without checks | Run pre-commit checks |
+| Task complete without verification | Verify acceptance criteria |
+
+---
+
+## IMPLEMENTATION CHECKLIST
+
+```markdown
+## IMPLEMENTATION CHECKLIST
+
+### Before Starting
+- [ ] Task loaded (/implement W1.1)
+- [ ] Test stubs exist
+- [ ] Pre-conditions verified
+
+### For Each Test
+- [ ] Remove skip decorator
+- [ ] Run test → FAILS
+- [ ] Write minimal code
+- [ ] Run test → PASSES
+- [ ] Refactor if needed
+- [ ] Commit
+
+### After All Tests
+- [ ] All task tests pass
+- [ ] Coverage meets target
+- [ ] Type check passes
+- [ ] Lint passes
+- [ ] Task marked complete in roadmap
+```
+
+---
+
+*Implementation is about DISCIPLINE, not creativity. Creativity happens in architecture.*

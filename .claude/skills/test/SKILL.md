@@ -1,363 +1,420 @@
 ---
-name: phantom:test
+name: test
 description: Testing workflow for quality assurance. Use after implementation to run tests, check coverage, and validate critical paths.
 ---
 
-# Skill: Testing Workflow
+# GATE 3: TEST DESIGN — TEST_ARCHITECT PROTOCOL
 
-> **Purpose**: Structured testing for quality assurance
-> **Philosophy**: Tests are documentation that runs
+> **Agent**: TEST_ARCHITECT
+> **Gate**: 3 of 6
+> **Prerequisite**: Gate 2 (Specification) COMPLETE
+> **Output**: Test stubs in tests/, TEST_MATRIX.md
 
 ---
 
-## Test Structure
+## GATE 3 ENTRY CHECKLIST
+
+Before proceeding, verify:
+
+- [ ] .fortress/gates/GATE_2_SPECIFICATION.md exists
+- [ ] docs/specification/SPECIFICATION.md is approved
+- [ ] All TEST_IDs from Gate 2 are listed
+- [ ] Coverage targets defined in specification
+
+**If any checkbox fails**: STOP. Complete Gate 2 first.
+
+---
+
+## TEST_ARCHITECT PROTOCOL
+
+### Core Principle: TESTS BEFORE CODE
+
+```
+❌ FORBIDDEN: Write implementation, then tests
+✅ REQUIRED: Write test stubs, then implementation
+
+The test stub IS the contract.
+If you can't write the test, you don't understand the requirement.
+```
+
+---
+
+### Step 1: Create Test Structure
 
 ```
 tests/
-├── conftest.py           # Shared fixtures
-├── unit/                 # Unit tests (fast, isolated)
-│   ├── test_scorer.py
-│   ├── test_patterns.py
-│   └── test_registry/
-│       ├── test_pypi.py
-│       ├── test_npm.py
-│       └── test_crates.py
-├── integration/          # Integration tests (slower, real APIs)
-│   ├── test_detection.py
-│   └── test_cli.py
-└── e2e/                  # End-to-end tests (full workflows)
-    └── test_requirements_check.py
+├── __init__.py
+├── conftest.py              # Shared fixtures
+├── unit/
+│   ├── __init__.py
+│   ├── test_detector.py     # S001-S005
+│   ├── test_analyzer.py     # S006-S009
+│   ├── test_cli.py          # S010-S015
+│   ├── test_cache.py        # S020-S025
+│   ├── test_pypi.py         # S030-S035
+│   ├── test_npm.py          # S040-S045
+│   └── test_crates.py       # S050-S055
+├── property/
+│   ├── __init__.py
+│   ├── test_detector_props.py
+│   └── test_analyzer_props.py
+├── integration/
+│   ├── __init__.py
+│   ├── test_pypi_live.py
+│   ├── test_npm_live.py
+│   └── test_crates_live.py
+└── benchmarks/
+    ├── __init__.py
+    ├── bench_detector.py
+    └── bench_cache.py
 ```
 
----
+### Step 2: Write Test Stubs
 
-## Running Tests
-
-```bash
-# All tests
-pytest
-
-# With coverage
-pytest --cov=phantom_guard --cov-report=html
-
-# Unit tests only (fast)
-pytest tests/unit -v
-
-# Integration tests (needs network)
-pytest tests/integration -v
-
-# Specific test
-pytest tests/unit/test_scorer.py::test_score_new_package -v
-
-# Run tests matching pattern
-pytest -k "pattern" -v
-```
-
----
-
-## Test Categories
-
-### Unit Tests
-
-Fast, isolated, mock external dependencies:
+For each TEST_ID in the specification, create a stub:
 
 ```python
-# tests/unit/test_scorer.py
+# tests/unit/test_detector.py
+"""
+SPEC: S001 - Package Validation
+TEST_IDs: T001.1-T001.10
+"""
+
 import pytest
-from phantom_guard.core.scorer import RiskScorer
-from phantom_guard.core.types import PackageMetadata
+from phantom_guard.core.detector import validate_package
 
-@pytest.fixture
-def scorer():
-    return RiskScorer()
 
-class TestRiskScorer:
-    def test_score_established_package(self, scorer):
-        """Established packages score as safe."""
-        metadata = PackageMetadata(
-            name="requests",
-            exists=True,
-            release_count=150,
-            downloads_last_month=1_000_000,
-            has_repository=True,
-            maintainer_count=5,
-        )
-        result = scorer.score(metadata)
-        assert result.risk_level == RiskLevel.SAFE
-        assert result.risk_score < 0.3
+class TestValidatePackage:
+    """Tests for validate_package function."""
 
-    def test_score_nonexistent_package(self, scorer):
-        """Non-existent packages are blocked."""
-        metadata = PackageMetadata(
-            name="flask-gpt-helper",
-            exists=False,
-        )
-        result = scorer.score(metadata)
-        assert result.risk_level == RiskLevel.CRITICAL
-        assert result.risk_score > 0.9
+    # T001.1: Valid package name
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    def test_valid_package_name_passes(self):
+        """
+        SPEC: S001
+        TEST_ID: T001.1
+        Given: A valid package name "flask-redis-helper"
+        When: validate_package is called
+        Then: Returns PackageRisk with valid structure
+        """
+        # Arrange
+        package_name = "flask-redis-helper"
 
-    def test_score_new_suspicious_package(self, scorer):
-        """New packages with suspicious signals score high."""
-        metadata = PackageMetadata(
-            name="gpt4-api",
-            exists=True,
-            release_count=2,
-            downloads_last_month=50,
-            has_repository=False,
-            maintainer_count=1,
-        )
-        result = scorer.score(metadata)
-        assert result.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
+        # Act
+        result = validate_package(package_name)
+
+        # Assert
+        assert result is not None
+        assert result.name == package_name
+        assert 0.0 <= result.risk_score <= 1.0
+
+    # T001.2: Empty package name
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    def test_empty_package_name_raises(self):
+        """
+        SPEC: S001
+        TEST_ID: T001.2
+        EDGE_CASE: EC001
+        Given: An empty package name ""
+        When: validate_package is called
+        Then: Raises ValidationError
+        """
+        with pytest.raises(ValidationError):
+            validate_package("")
+
+    # T001.3: Risk score bounds (property test marker)
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    @pytest.mark.property
+    def test_risk_score_always_in_bounds(self):
+        """
+        SPEC: S001
+        TEST_ID: T001.3
+        INVARIANT: INV001
+        Property: For all valid inputs, risk_score in [0.0, 1.0]
+        """
+        # Will use hypothesis for property testing
+        pass
 ```
 
-### Integration Tests
-
-Test real API interactions:
+### Step 3: Create Property Test Stubs
 
 ```python
-# tests/integration/test_pypi_client.py
+# tests/property/test_detector_props.py
+"""
+SPEC: S001, S002
+Property Tests for Detector Module
+"""
+
 import pytest
-from phantom_guard.registry.pypi import PyPIClient
+from hypothesis import given, strategies as st
+
+
+class TestDetectorProperties:
+    """Property-based tests for invariant enforcement."""
+
+    # INV001: Risk score bounds
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    @given(package_name=st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=('L', 'N', 'Pd'))))
+    def test_risk_score_always_bounded(self, package_name):
+        """
+        INVARIANT: INV001
+        For ANY valid package name, risk_score is in [0.0, 1.0]
+        """
+        result = validate_package(package_name)
+        assert 0.0 <= result.risk_score <= 1.0
+
+    # INV002: Signals never None
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    @given(package_name=st.text(min_size=1, max_size=100))
+    def test_signals_never_none(self, package_name):
+        """
+        INVARIANT: INV002
+        For ANY input, signals is a list (possibly empty), never None
+        """
+        try:
+            result = validate_package(package_name)
+            assert result.signals is not None
+            assert isinstance(result.signals, list)
+        except ValidationError:
+            pass  # Invalid input is allowed to raise
+```
+
+### Step 4: Create Integration Test Stubs
+
+```python
+# tests/integration/test_pypi_live.py
+"""
+SPEC: S030-S035
+Integration Tests for PyPI Client (LIVE API)
+"""
+
+import pytest
+
 
 @pytest.mark.integration
-class TestPyPIClient:
-    @pytest.fixture
-    def client(self):
-        return PyPIClient()
+@pytest.mark.network
+class TestPyPILive:
+    """Live tests against PyPI API."""
 
-    async def test_fetch_existing_package(self, client):
-        """Can fetch metadata for existing package."""
-        metadata = await client.fetch("requests")
-        assert metadata.exists
-        assert metadata.release_count > 100
-        assert metadata.has_repository
+    @pytest.mark.skip(reason="Stub - implement with S030")
+    def test_known_package_exists(self):
+        """
+        SPEC: S030
+        TEST_ID: T030.1
+        Given: Package "flask" (known to exist)
+        When: Query PyPI API
+        Then: Returns package metadata
+        """
+        pass
 
-    async def test_fetch_nonexistent_package(self, client):
-        """Returns not-found for fake package."""
-        metadata = await client.fetch("asdfjkl-nonexistent-xyz")
-        assert not metadata.exists
+    @pytest.mark.skip(reason="Stub - implement with S030")
+    def test_nonexistent_package_not_found(self):
+        """
+        SPEC: S030
+        TEST_ID: T030.2
+        EDGE_CASE: EC012
+        Given: Package "definitely-not-a-real-package-xyz123"
+        When: Query PyPI API
+        Then: Returns not found status
+        """
+        pass
 
-    async def test_fetch_handles_timeout(self, client, mocker):
-        """Gracefully handles timeout."""
-        mocker.patch.object(
-            client._http,
-            'get',
-            side_effect=httpx.TimeoutException("timeout")
-        )
-        with pytest.raises(RegistryTimeoutError):
-            await client.fetch("requests")
+    @pytest.mark.skip(reason="Stub - implement with S030")
+    def test_api_response_time_within_budget(self):
+        """
+        SPEC: S030
+        TEST_ID: T030.3
+        PERFORMANCE: <500ms per request
+        Given: Package "requests"
+        When: Query PyPI API
+        Then: Response time < 500ms
+        """
+        pass
 ```
 
-### End-to-End Tests
-
-Test full user workflows:
+### Step 5: Create Benchmark Stubs
 
 ```python
-# tests/e2e/test_requirements_check.py
+# tests/benchmarks/bench_detector.py
+"""
+SPEC: S001
+Performance Benchmarks for Detector
+"""
+
 import pytest
-from click.testing import CliRunner
-from phantom_guard.cli.main import app
 
-@pytest.mark.e2e
-class TestRequirementsCheck:
-    @pytest.fixture
-    def runner(self):
-        return CliRunner()
 
-    def test_check_clean_requirements(self, runner, tmp_path):
-        """Clean requirements pass."""
-        req_file = tmp_path / "requirements.txt"
-        req_file.write_text("flask==2.0.0\nrequests==2.28.0\n")
+@pytest.mark.benchmark
+class TestDetectorBenchmarks:
+    """Performance benchmarks for detector operations."""
 
-        result = runner.invoke(app, ["check", str(req_file)])
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    def test_validate_package_latency(self, benchmark):
+        """
+        SPEC: S001
+        BUDGET: <200ms uncached, <10ms cached
+        """
+        pass
 
-        assert result.exit_code == 0
-        assert "All packages safe" in result.output
-
-    def test_check_suspicious_requirements(self, runner, tmp_path):
-        """Suspicious packages are flagged."""
-        req_file = tmp_path / "requirements.txt"
-        req_file.write_text("flask==2.0.0\nflask-gpt-helper==0.1.0\n")
-
-        result = runner.invoke(app, ["check", str(req_file)])
-
-        assert result.exit_code == 1
-        assert "SUSPICIOUS" in result.output
-        assert "flask-gpt-helper" in result.output
+    @pytest.mark.skip(reason="Stub - implement with S001")
+    def test_batch_validate_latency(self, benchmark):
+        """
+        SPEC: S001
+        BUDGET: 50 packages in <5s
+        """
+        pass
 ```
 
----
+### Step 6: Create Test Matrix Document
 
-## Test Fixtures
+```markdown
+# docs/testing/TEST_MATRIX.md
 
-### Common Fixtures
+## Test Matrix
 
-```python
-# tests/conftest.py
-import pytest
-from phantom_guard.core.types import PackageMetadata
+| SPEC_ID | Unit | Property | Fuzz | Integration | Bench | Total | Status |
+|:--------|:-----|:---------|:-----|:------------|:------|:------|:-------|
+| S001 | 5 | 2 | 1 | 1 | 1 | 10 | STUBS |
+| S002 | 10 | 3 | 1 | 0 | 1 | 15 | STUBS |
+| S010 | 5 | 0 | 0 | 3 | 0 | 8 | STUBS |
+| S020 | 6 | 1 | 0 | 2 | 1 | 10 | STUBS |
+| S030 | 4 | 0 | 0 | 3 | 1 | 8 | STUBS |
+| ... | ... | ... | ... | ... | ... | ... | ... |
 
-@pytest.fixture
-def safe_package_metadata():
-    """Metadata for a known-safe package."""
-    return PackageMetadata(
-        name="flask",
-        exists=True,
-        release_count=63,
-        downloads_last_month=180_000_000,
-        has_repository=True,
-        repository_url="https://github.com/pallets/flask",
-        maintainer_count=5,
-        created_at=datetime(2010, 4, 6),
-    )
+## Test Status Legend
 
-@pytest.fixture
-def suspicious_package_metadata():
-    """Metadata for a suspicious package."""
-    return PackageMetadata(
-        name="gpt4-api",
-        exists=True,
-        release_count=3,
-        downloads_last_month=42,
-        has_repository=False,
-        maintainer_count=1,
-        created_at=datetime(2024, 1, 15),
-    )
+- STUBS: Test stubs created, marked skip
+- IN_PROGRESS: Some tests passing
+- COMPLETE: All tests passing
+- VERIFIED: Passing + coverage met
 
-@pytest.fixture
-def nonexistent_package_metadata():
-    """Metadata for a non-existent package."""
-    return PackageMetadata(
-        name="flask-gpt-helper",
-        exists=False,
-    )
+## Coverage Targets
 
-@pytest.fixture
-def mock_pypi_response():
-    """Mock PyPI API response."""
-    return {
-        "info": {
-            "name": "flask",
-            "author": "Pallets",
-            "summary": "A simple framework...",
-            "project_urls": {"Source": "https://github.com/pallets/flask"},
-        },
-        "releases": {"2.0.0": [...], "2.1.0": [...]},
-    }
-```
-
----
-
-## Test Data
-
-### Hallucination Pattern Test Cases
-
-```python
-# tests/data/hallucination_patterns.py
-HALLUCINATION_TEST_CASES = [
-    # (package_name, should_match_pattern)
-    ("flask-gpt-helper", True),
-    ("django-ai-utils", True),
-    ("requests-openai-client", True),
-    ("numpy-chatgpt", True),
-    ("flask", False),
-    ("django-rest-framework", False),
-    ("requests-oauthlib", False),
-]
-
-LEGITIMATE_PACKAGES = [
-    "flask", "django", "requests", "numpy", "pandas",
-    "fastapi", "pydantic", "httpx", "pytest", "typer",
-]
-
-SUSPICIOUS_PACKAGES = [
-    "gpt4-api", "chatgpt-python", "openai-helper",
-    "django-chatgpt", "flask-gpt", "requests-ai",
-]
-```
-
----
-
-## Mocking Strategy
-
-### Mock External APIs
-
-```python
-# Mock PyPI responses
-@pytest.fixture
-def mock_pypi(mocker):
-    async def mock_get(url):
-        if "requests" in url:
-            return MockResponse(200, REQUESTS_METADATA)
-        elif "nonexistent" in url:
-            return MockResponse(404, {"message": "Not Found"})
-        else:
-            return MockResponse(200, DEFAULT_METADATA)
-
-    mocker.patch("httpx.AsyncClient.get", side_effect=mock_get)
-```
-
-### Don't Mock These
-- Core business logic (scorer, patterns)
-- Data validation
-- Configuration loading
-
----
-
-## Coverage Requirements
-
-| Component | Minimum | Target |
-|-----------|---------|--------|
-| Core (scorer, patterns) | 90% | 95% |
-| Registry clients | 80% | 90% |
-| CLI | 70% | 85% |
-| Hooks | 70% | 80% |
-| Overall | 80% | 85% |
-
----
+| Metric | Target | Current | Status |
+|:-------|:-------|:--------|:-------|
+| Line coverage | 90% | 0% | N/A |
+| Branch coverage | 85% | 0% | N/A |
+| SPEC coverage | 100% | 100% | STUBS ONLY |
 
 ## Test Commands
 
 ```bash
-# Run with verbose output
-pytest -v
+# Run all tests
+pytest
 
-# Stop on first failure
-pytest -x
+# Run unit tests only
+pytest tests/unit/
 
-# Run last failed
-pytest --lf
+# Run with coverage
+pytest --cov=phantom_guard --cov-report=html
 
-# Run tests in parallel
-pytest -n auto
+# Run property tests
+pytest -m property
 
-# Generate coverage report
-pytest --cov=phantom_guard --cov-report=term-missing
+# Run integration tests (requires network)
+pytest -m integration
 
-# Profile slow tests
-pytest --durations=10
+# Run benchmarks
+pytest -m benchmark --benchmark-only
+```
 ```
 
 ---
 
-## CI Test Matrix
+## GATE 3 EXIT CHECKLIST
 
-```yaml
-# .github/workflows/test.yml
-jobs:
-  test:
-    strategy:
-      matrix:
-        python: ["3.11", "3.12", "3.13"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Install dependencies
-        run: pip install -e ".[dev]"
-      - name: Run tests
-        run: pytest --cov
+Before Gate 3 is complete:
+
+- [ ] Test structure created (tests/ directory)
+- [ ] Every TEST_ID from spec has a stub
+- [ ] Every stub has SPEC/TEST_ID/description
+- [ ] Stubs are marked `@pytest.mark.skip`
+- [ ] Property tests stubbed for all invariants
+- [ ] Integration tests stubbed for all external APIs
+- [ ] Benchmark tests stubbed for performance budgets
+- [ ] TEST_MATRIX.md created
+- [ ] All stubs compile (`pytest --collect-only`)
+- [ ] TEST_ARCHITECT review requested
+
+**If any checkbox fails**: DO NOT PROCEED TO GATE 4.
+
+---
+
+## VERIFICATION: STUBS COMPILE
+
+Run this to verify all stubs are valid:
+
+```bash
+# Should collect all tests without error
+pytest --collect-only
+
+# Should show all skipped tests
+pytest -v 2>&1 | grep -c "SKIPPED"
 ```
+
+Expected: Number of skipped tests = Number of TEST_IDs in spec
+
+---
+
+## RECORDING GATE COMPLETION
+
+```markdown
+# .fortress/gates/GATE_3_TEST_DESIGN.md
+
+## Gate 3: Test Design — COMPLETE
+
+**Date**: YYYY-MM-DD
+**Approver**: TEST_ARCHITECT
+**Output**: tests/, TEST_MATRIX.md
+
+### Summary
+- X test stubs created
+- Y property tests stubbed
+- Z integration tests stubbed
+
+### Test Inventory
+| Category | Count |
+|:---------|:------|
+| Unit | X |
+| Property | Y |
+| Integration | Z |
+| Benchmark | W |
+| **Total** | **N** |
+
+### Next Gate
+Gate 4: Planning
+```
+
+---
+
+## TDD ENFORCEMENT
+
+During Gate 4-5 (implementation), tests drive development:
+
+```
+1. Pick a test stub
+2. Remove @pytest.mark.skip
+3. Run test → MUST FAIL (Red)
+4. Write minimal code to pass
+5. Run test → MUST PASS (Green)
+6. Refactor if needed
+7. Commit
+```
+
+**If test passes before code exists**: Something is wrong.
+
+---
+
+## PROTOCOL VIOLATIONS
+
+| Violation | Response |
+|:----------|:---------|
+| TEST_ID without stub | Create stub |
+| Stub without SPEC reference | Add SPEC |
+| Stub doesn't compile | Fix syntax |
+| Skipped TEST_ARCHITECT review | Run review |
+| Writing code before test stub | STOP, write stub first |
+
+---
+
+*Gate 3 is about DESIGNING tests. Implementation comes in Gate 4-5.*

@@ -1,228 +1,282 @@
 ---
-name: phantom:competitive-watch
+name: competitive-watch
 description: Weekly competition scan. Detects if competitors have emerged that could invalidate the project. Run WEEKLY during development.
 ---
 
-# Skill: Competitive Watch for Phantom Guard
+# COMPETITIVE WATCH — MARKET SENTINEL PROTOCOL
 
-> **Purpose**: Detect if competition has emerged that invalidates the project
-> **Frequency**: Run WEEKLY during development, DAILY before major milestones
-> **Time Budget**: 30 minutes maximum
-> **Output**: `research-output/COMPETITIVE_SCAN.md`
-
----
-
-## Objective
-
-Kill the project FAST if any of these occur:
-
-1. **Direct Competitor**: Someone launches slopsquatting-specific detection
-2. **Big Tech Move**: GitHub/npm/PyPI announces built-in protection
-3. **Funded Startup**: VC money enters slopsquatting defense space
-4. **Feature Absorption**: Socket/Snyk/Endor Labs adds hallucination detection
+> **Frequency**: WEEKLY (minimum)
+> **Purpose**: Detect competitive threats before they become problems
+> **Action**: Early warning system for pivot decisions
 
 ---
 
-## Threat Detection Queries
-
-### Tier 1: Direct Competition (CRITICAL)
-
-Run these searches:
+## INVOCATION
 
 ```
-Web Search Queries:
-- "slopsquatting detection tool"
-- "AI hallucination package detection"
-- "phantom package detection"
-- "hallucinated dependency scanner"
-- site:github.com slopsquatting detection
-- site:github.com "hallucinated packages"
-```
-
-**GitHub Search**:
-```
-https://github.com/search?q=slopsquatting&type=repositories
-https://github.com/search?q=hallucinated+packages&type=repositories
-https://github.com/search?q=phantom+package+detection&type=repositories
-```
-
-**If found**: Document immediately. Assess: Is it serious? Active? Funded?
-
----
-
-### Tier 2: Big Tech Announcements (CRITICAL)
-
-Check official channels:
-
-| Source | Check For |
-|--------|-----------|
-| GitHub Blog | Copilot security features, dependency scanning updates |
-| GitHub Changelog | New security features |
-| npm Blog | Security announcements |
-| PyPI Blog/Twitter | New safety features |
-| Socket Blog | New detection capabilities |
-| Snyk Blog | AI-related security features |
-| Endor Labs Blog | Hallucination detection |
-
-**Search queries**:
-```
-- site:github.blog AI hallucination OR slopsquatting
-- site:socket.dev/blog hallucination OR slopsquatting
-- site:snyk.io/blog AI code security 2025
-- "GitHub Copilot" security dependencies 2025
+/competitive-watch          # Full scan
+/competitive-watch quick    # Quick news scan only
+/competitive-watch deep     # Deep analysis mode
 ```
 
 ---
 
-### Tier 3: Funding Events (HIGH)
-
-Check for new funding in adjacent space:
+## COMPETITIVE THREAT LEVELS
 
 ```
-Web Search Queries:
-- "supply chain security" startup funding 2025
-- "AI code security" seed funding 2025
-- "dependency security" series A 2025
-- site:techcrunch.com supply chain security funding
-- site:crunchbase.com AI code security
+🟢 GREEN  — No new competition, window open
+🟡 YELLOW — New entrant detected, monitor closely
+🟠 ORANGE — Funded competitor, accelerate timeline
+🔴 RED    — Market saturated, consider pivot
 ```
-
-**If new funding found**: Is slopsquatting in their scope? Check their website/pitch.
 
 ---
 
-### Tier 4: Community Signals (MEDIUM)
+## SCAN PROTOCOL
 
-Monitor discussion:
+### 1. News & Announcements Scan
+
+Search for recent news (past 7 days):
 
 ```
-- site:news.ycombinator.com slopsquatting
-- site:reddit.com/r/programming slopsquatting
-- site:reddit.com/r/netsec AI hallucination packages
-- site:twitter.com slopsquatting detection
+Queries to run:
+- "slopsquatting detection" site:techcrunch.com OR site:venturebeat.com
+- "AI hallucination package" security tool
+- "supply chain security" AI new startup
+- Socket + Snyk + Endor Labs announcements
+- PyPI security new tool
 ```
 
-**Look for**: Someone announcing they're building this, security researchers claiming the space.
+### 2. Funding Announcements
+
+Check for funding in adjacent space:
+
+```
+- Crunchbase: supply chain security funding
+- TechCrunch: security startup funding
+- LinkedIn: DevSecOps company announcements
+```
+
+### 3. Product Launches
+
+Monitor for new products:
+
+```
+- ProductHunt: security category
+- GitHub Trending: security + python
+- HackerNews: security tools
+```
+
+### 4. Competitor Feature Updates
+
+Check existing competitors:
+
+```
+- Socket.dev blog/changelog
+- Snyk blog/releases
+- Endor Labs announcements
+- GitHub Advanced Security updates
+```
 
 ---
 
-## Output Format
-
-Create/Update `research-output/COMPETITIVE_SCAN.md`:
+## SCAN REPORT TEMPLATE
 
 ```markdown
-# Competitive Scan Results
+# Competitive Scan — YYYY-MM-DD
 
-**Date**: [date]
-**Verdict**: CLEAR / THREAT_DETECTED / WINDOW_CLOSING
-
----
-
-## Tier 1: Direct Competition
-
-| Query | Results Found | Threat Level |
-|-------|---------------|--------------|
-| slopsquatting detection tool | X results | NONE/LOW/MEDIUM/HIGH |
-| GitHub repos | X repos | NONE/LOW/MEDIUM/HIGH |
-| ... | ... | ... |
-
-**Threats Identified**:
-- [None / List with links]
+## Threat Level: [GREEN | YELLOW | ORANGE | RED]
 
 ---
 
-## Tier 2: Big Tech Moves
+## Direct Competitors
 
-| Company | Recent Announcements | Threat Level |
-|---------|---------------------|--------------|
-| GitHub | [summary] | NONE/LOW/MEDIUM/HIGH |
-| npm | [summary] | NONE/LOW/MEDIUM/HIGH |
-| PyPI | [summary] | NONE/LOW/MEDIUM/HIGH |
-| Socket | [summary] | NONE/LOW/MEDIUM/HIGH |
-| Snyk | [summary] | NONE/LOW/MEDIUM/HIGH |
-| Endor Labs | [summary] | NONE/LOW/MEDIUM/HIGH |
+### Slopsquatting-Specific Tools
+| Name | Status | Funding | Threat |
+|:-----|:-------|:--------|:-------|
+| [None found] | - | - | - |
 
-**Threats Identified**:
-- [None / List with links]
-
----
-
-## Tier 3: Funding Events
-
-| Company | Amount | Focus | Overlap Risk |
-|---------|--------|-------|--------------|
-| [name] | $XM | [focus] | NONE/LOW/MEDIUM/HIGH |
-
-**Threats Identified**:
-- [None / List with links]
+### Adjacent Tools (Supply Chain Security)
+| Name | Recent Update | Slopsquatting Feature? |
+|:-----|:--------------|:-----------------------|
+| Socket | [date] | [Yes/No/Partial] |
+| Snyk | [date] | [Yes/No/Partial] |
+| Endor Labs | [date] | [Yes/No/Partial] |
 
 ---
 
-## Tier 4: Community Signals
+## New Entrants This Week
 
-| Source | Signal | Concern Level |
-|--------|--------|---------------|
-| HN | [summary] | NONE/LOW/MEDIUM/HIGH |
-| Reddit | [summary] | NONE/LOW/MEDIUM/HIGH |
-| Twitter | [summary] | NONE/LOW/MEDIUM/HIGH |
-
-**Threats Identified**:
-- [None / List with links]
+| Name | Type | Funding | Threat Level |
+|:-----|:-----|:--------|:-------------|
+| [None] | - | - | - |
 
 ---
 
-## Verdict
+## News & Announcements
 
-**Status**: CLEAR / THREAT_DETECTED / WINDOW_CLOSING
+### Relevant Articles
+1. [Title](URL) — [Summary]
+2. [Title](URL) — [Summary]
 
-**Rationale**: [1-2 sentences]
+### Funding News
+- [None this week]
 
-**Recommended Action**:
-- CLEAR: Continue development
-- THREAT_DETECTED: [specific response - accelerate? pivot? differentiate?]
-- WINDOW_CLOSING: [evaluate kill vs accelerate]
+### Product Launches
+- [None this week]
 
 ---
 
-## Historical Log
+## Market Window Assessment
 
-| Date | Verdict | Key Findings |
-|------|---------|--------------|
-| [date] | CLEAR | No threats |
-| ... | ... | ... |
+**Status**: OPEN / CLOSING / CLOSED
+
+**Reasoning**:
+[Analysis of market window]
+
+**Time Remaining**: X months (estimate)
+
+---
+
+## Recommendations
+
+### If GREEN:
+- Continue current plan
+- No acceleration needed
+
+### If YELLOW:
+- Increase scan frequency to 2x/week
+- Accelerate MVP timeline if possible
+
+### If ORANGE:
+- Consider feature differentiation
+- Accelerate to market immediately
+- Focus on unique value proposition
+
+### If RED:
+- Evaluate pivot options
+- Consider acquisition targets
+- Reassess project viability
+
+---
+
+## Action Items
+
+| Priority | Action | Deadline |
+|:---------|:-------|:---------|
+| [P0/P1/P2] | [Action] | [Date] |
+
+---
+
+## Next Scan
+
+Date: [Next week date]
 ```
 
 ---
 
-## Decision Matrix
+## THREAT DETECTION TRIGGERS
 
-| Finding | Verdict | Action |
-|---------|---------|--------|
-| No results in any tier | CLEAR | Continue |
-| Hobby project on GitHub | CLEAR | Monitor, continue |
-| Active OSS project with traction | THREAT_DETECTED | Assess differentiation |
-| Big Tech blog post hinting at feature | WINDOW_CLOSING | Accelerate MVP |
-| Funded startup in space | THREAT_DETECTED | Evaluate pivot or accelerate |
-| Direct competitor with funding | KILL | Document and archive project |
+### YELLOW — Monitor
+
+- New blog post about slopsquatting from major vendor
+- GitHub repo with similar functionality appears
+- Academic paper on detection methods
+- Patent filing in space
+
+### ORANGE — Accelerate
+
+- Startup announces slopsquatting focus
+- Any funding in slopsquatting space
+- Major vendor (Snyk, Socket) mentions adding feature
+- Copilot/Cursor announces protection
+
+### RED — Pivot
+
+- VC-funded startup with $5M+ launches
+- GitHub/Microsoft adds native protection
+- Snyk/Socket ships full solution
+- Market coverage articles appear
 
 ---
 
-## Escalation Rules
+## RESPONSE PROTOCOLS
 
-**Immediate escalation required if**:
-- Any result with >100 GitHub stars on similar tool
-- Any Big Tech announcement mentioning slopsquatting
-- Any funding >$5M in directly adjacent space
-- Any YC/a16z/Sequoia investment in supply chain AI security
+### Green Response
 
-**Response time**: If threat detected, decide within 24 hours: accelerate, pivot, or kill.
+```
+Continue with current roadmap.
+Focus on quality and differentiation.
+Run weekly scans.
+```
+
+### Yellow Response
+
+```
+1. Document the new entrant
+2. Analyze their approach
+3. Identify differentiation opportunities
+4. Continue development, no timeline change
+5. Increase scan frequency
+```
+
+### Orange Response
+
+```
+1. Emergency assessment meeting
+2. Cut non-essential features from MVP
+3. Focus on fastest path to launch
+4. Consider early launch with limited features
+5. Prepare differentiation messaging
+```
+
+### Red Response
+
+```
+1. Stop current development
+2. Full competitive analysis
+3. Evaluate:
+   - Can we differentiate enough?
+   - Is there an adjacent niche?
+   - Should we pivot entirely?
+4. Decision within 48 hours
+5. Either: Pivot, Partner, or Exit
+```
 
 ---
 
-## Time Limit
+## HISTORICAL SCANS
 
-**HARD STOP at 30 minutes**.
+Record all scans for pattern detection:
 
-- If scans incomplete, note what was checked
-- Default to CLEAR if no obvious threats found
-- Better to ship fast than scan forever
+```markdown
+# .fortress/reports/competitive/SCAN_LOG.md
+
+| Date | Threat Level | Key Finding | Action Taken |
+|:-----|:-------------|:------------|:-------------|
+| 2025-12-23 | GREEN | No new entrants | Continue |
+| ... | ... | ... | ... |
+```
+
+---
+
+## DIFFERENTIATION MATRIX
+
+Track what makes Phantom Guard unique:
+
+```markdown
+## DIFFERENTIATION MATRIX
+
+| Feature | Phantom Guard | Socket | Snyk | Endor |
+|:--------|:--------------|:-------|:-----|:------|
+| Hallucination patterns | ✅ Core focus | ❌ | ❌ | ❌ |
+| Real-time detection | ✅ | ✅ | ❌ | ❌ |
+| pip hook | ✅ | ✅ | ❌ | ❌ |
+| OSS core | ✅ | ❌ | ❌ | ❌ |
+| AI-focused | ✅ | Partial | ❌ | ✅ |
+| Pattern database | ✅ Specialized | ❌ | ❌ | ❌ |
+```
+
+---
+
+*Competitive Watch: Because surprise is the enemy of strategy.*

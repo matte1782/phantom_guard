@@ -1,240 +1,208 @@
-# Phantom Guard - Claude Code Rules
+# Phantom Guard — FORTRESS 2.0 Protocol
 
-> Project: phantom-guard
-> Purpose: Detect AI-hallucinated package attacks (slopsquatting)
-> Status: Pre-MVP Development
+> **Project**: phantom-guard
+> **Purpose**: Detect AI-hallucinated package attacks (slopsquatting)
+> **Framework**: FORTRESS 2.0 (Military-Grade Development Protocol)
+> **Status**: Gate 0 Complete → Gate 1 (Architecture) Pending
 
 ---
 
-## Project Context
+## FORTRESS 2.0 — MANDATORY PROTOCOL
 
-Phantom Guard is a security tool that detects slopsquatting attacks - where AI coding assistants hallucinate package names that attackers then register with malware.
+This project follows **FORTRESS 2.0**, a strict gate-based development protocol.
+**Gates cannot be skipped. Hostile review has veto power. Tests come before code.**
 
-### Key Files
-- `PROJECT_FOUNDATION.md` - Original research and business case
-- `docs/ROADMAP.md` - Development roadmap to MVP
-- `.claude/skills/` - Engineering commands and workflows
+### Gate System
 
-### Architecture
 ```
-src/phantom_guard/
-├── core/        # Detection logic
-├── registry/    # PyPI/npm/crates clients
-├── cache/       # Caching layer
-├── cli/         # CLI interface
-└── hooks/       # pip/npm install hooks
+Gate 0: Problem Definition    ✅ COMPLETE (PROJECT_FOUNDATION.md)
+Gate 1: Architecture          🟡 PENDING
+Gate 2: Specification         ⬜ BLOCKED
+Gate 3: Test Design           ⬜ BLOCKED
+Gate 4: Planning              ⬜ BLOCKED
+Gate 5: Validation            ⬜ BLOCKED
+Gate 6: Release               ⬜ BLOCKED
 ```
 
 ---
 
-## Engineering Commands
+## Commands
 
-### Essential Commands (Use These!)
+### Session Start (ALWAYS RUN FIRST)
 
-| Command | When to Use |
-|---------|-------------|
-| `/phantom:roadmap` | Start of each session |
-| `/phantom:architect` | Before implementing new features |
-| `/phantom:implement` | Guided implementation workflow |
-| `/phantom:hostile-review` | **REQUIRED** before commits |
-| `/phantom:test` | After implementation |
-| `/phantom:release-check` | Before version releases |
+```
+/master                       # Load FORTRESS 2.0 context and gate status
+```
+
+### Gate Commands (Sequential - Cannot Skip)
+
+| Command | Gate | Purpose |
+|---------|------|---------|
+| `/architect` | 1 | Design system architecture |
+| `/spec` | 2 | Create specification (invariants, edge cases) |
+| `/test` | 3 | Design test stubs BEFORE code |
+| `/roadmap` | 4 | Create traced task breakdown |
+| `/hostile-review` | 5 | MANDATORY validation (VETO POWER) |
+| `/release` | 6 | Release preparation |
+
+### Implementation Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/implement` | TDD implementation workflow |
+| `/competitive-watch` | Weekly competition scan |
+| `/validate-technical` | Monthly API validation |
 
 ---
 
-## Development Rules
+## Absolute Rules — NO EXCEPTIONS
 
-### Rule 1: Hostile Review is Mandatory
+### Rule 1: Gates Cannot Be Skipped
 
-**NEVER** commit significant changes without hostile review.
+```
+❌ FORBIDDEN: "Let's skip architecture and start coding"
+❌ FORBIDDEN: "We'll add tests later"
+❌ FORBIDDEN: "This is simple, no spec needed"
 
-The hostile reviewer:
-- Actively tries to break the code
-- Looks for security vulnerabilities
-- Tests edge cases
-- Questions design decisions
+✅ REQUIRED: Complete Gate N before starting Gate N+1
+```
 
-If hostile review finds CRITICAL issues, STOP and fix immediately.
+### Rule 2: HOSTILE_VALIDATOR Has Veto Power
 
-### Rule 2: MVP Focus
+```
+If HOSTILE_VALIDATOR says NO_GO:
+  1. STOP all work
+  2. Address every issue raised
+  3. Re-run validation
+  4. Only proceed after GO verdict
 
-Every feature must answer: "Does this help ship v0.1.0?"
+NO EXCEPTIONS. NO SHORTCUTS. NO "WE'LL FIX IT LATER."
+```
 
-If not clearly needed for MVP, it goes to backlog.
+### Rule 3: TDD Is Mandatory
 
-90-day deadline is sacred. Cut scope, not quality.
+```
+Before writing ANY production code:
+  1. Test stub MUST exist
+  2. Test MUST fail when run (Red)
+  3. Write ONLY enough code to pass (Green)
+  4. Refactor if needed
+  5. THEN commit
+```
 
-### Rule 3: Detection Accuracy is Critical
+### Rule 4: Trace Everything
 
+```
+Every function: # IMPLEMENTS: S001
+Every test: # SPEC: S001, TEST_ID: T001.1
+Every task: TRACES: S001, INV001
+
+Orphan code (no trace) = BUILD FAILURE
+```
+
+### Rule 5: Detection Accuracy Is Sacred
+
+```
 False positives kill adoption.
 - Target: <5% false positive rate
-- Test against real-world packages
+- Test against top 1000 packages
 - Every heuristic needs justification
-
-### Rule 4: Security First
-
-This is a security tool. It MUST be secure.
-
-- Validate ALL inputs (package names, file paths)
-- No shell command execution
-- No path traversal possible
-- Errors don't leak sensitive info
-
-### Rule 5: Test First
-
-Write failing tests before implementation.
-
-Coverage requirements:
-- Core logic: 90%+
-- Overall: 80%+
+```
 
 ---
 
-## Code Standards
+## Project Structure
 
-### Imports Order
-```python
-# Standard library
-import json
-from typing import TYPE_CHECKING
-
-# Third party
-import httpx
-from pydantic import BaseModel
-
-# Local
-from phantom_guard.core import types
+```
+phantom-guard/
+├── .fortress/                    # FORTRESS 2.0 config
+│   ├── FORTRESS.md               # Framework status
+│   └── gates/                    # Gate completion records
+├── .claude/skills/               # Command definitions
+│   ├── master/                   # Session start
+│   ├── architect/                # Gate 1
+│   ├── spec/                     # Gate 2
+│   ├── test/                     # Gate 3
+│   ├── roadmap/                  # Gate 4
+│   ├── hostile-review/           # Gate 5
+│   ├── release/                  # Gate 6
+│   ├── implement/                # TDD workflow
+│   ├── competitive-watch/        # Competition scan
+│   └── validate-technical/       # API validation
+├── docs/
+│   ├── frameworks/               # FORTRESS 2.0 framework docs
+│   └── research/                 # Technical research
+└── PROJECT_FOUNDATION.md         # SOURCE OF TRUTH
 ```
 
-### Type Hints Required
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `PROJECT_FOUNDATION.md` | SOURCE OF TRUTH - Original research |
+| `.fortress/FORTRESS.md` | Gate status and quality standards |
+| `docs/frameworks/FORTRESS_2.0_FRAMEWORK.md` | Full framework documentation |
+| `docs/research/TECHNICAL_VALIDATION.md` | API validation research |
+
+---
+
+## Performance Budget
+
+| Operation | Budget | Constraint |
+|-----------|--------|------------|
+| Single package (cached) | <10ms | P99 |
+| Single package (uncached) | <200ms | P99 |
+| 50 packages (concurrent) | <5s | P99 |
+| Pattern matching | <1ms | P99 |
+
+**Violation = BLOCK MERGE**
+
+---
+
+## Code Standards (For Implementation)
+
+### Required Trace Comments
+
 ```python
-# Good
+"""
+IMPLEMENTS: S001, S002
+INVARIANTS: INV001
+TESTS: T001.1, T001.2
+"""
+def validate_package(name: str) -> PackageRisk:
+    ...
+```
+
+### Type Hints (MANDATORY)
+
+```python
+# Required
 def check_package(name: str, registry: str = "pypi") -> PackageRisk:
     ...
 
-# Bad
+# Forbidden
 def check_package(name, registry="pypi"):
     ...
 ```
-
-### Error Handling
-```python
-# Good - specific exceptions
-try:
-    response = await client.get(url)
-except httpx.TimeoutException:
-    logger.warning("Timeout for %s", url)
-    return cached_result
-
-# Bad - catch all
-try:
-    result = do_something()
-except Exception:
-    return None
-```
-
-### Logging
-```python
-import logging
-logger = logging.getLogger(__name__)
-
-# Good - structured, no secrets
-logger.info("Validated %d packages in %dms", count, time_ms)
-
-# Bad - print statements, secrets
-print(f"Checking {package}")
-logger.info(f"API key: {key}")
-```
-
----
-
-## Quality Gates
-
-### Before Every Commit
-- [ ] Tests pass: `pytest`
-- [ ] Types pass: `mypy src/`
-- [ ] Lint passes: `ruff check src/`
-- [ ] Hostile review (for significant changes)
-
-### Before Every PR
-- [ ] All above
-- [ ] Coverage maintained
-- [ ] Documentation updated
-- [ ] CHANGELOG entry
-
-### Before Every Release
-- [ ] Full hostile review
-- [ ] Security audit
-- [ ] Performance benchmarks
-- [ ] Real-world testing
-
----
-
-## Performance Budgets
-
-| Operation | Max Time |
-|-----------|----------|
-| Single package (cached) | 10ms |
-| Single package (uncached) | 200ms |
-| 50 packages (concurrent) | 5s |
-| Pattern matching | 1ms |
 
 ---
 
 ## Current Focus
 
-**Phase**: P0 - Project Setup
+**Active Gate**: Gate 1 (Architecture)
 
-**Next Actions**:
-1. Initialize git repo
-2. Set up pre-commit hooks
-3. Configure CI/CD
-4. Begin P1 (Core Detection Engine)
+**Next Action**: Run `/architect` to begin system design
 
----
-
-## Useful Snippets
-
-### Run Tests
-```bash
-pytest -v
-pytest --cov=phantom_guard
-```
-
-### Type Check
-```bash
-mypy src/
-```
-
-### Lint
-```bash
-ruff check src/
-ruff format src/
-```
-
-### Build Package
-```bash
-python -m build
-```
-
-### Test API Endpoints
-```bash
-# PyPI
-curl -s "https://pypi.org/pypi/flask/json" | python -m json.tool
-
-# npm
-curl -s "https://registry.npmjs.org/express"
-
-# crates.io
-curl -s "https://crates.io/api/v1/crates/serde" -H "User-Agent: phantom-guard"
-```
+**Blockers**: None
 
 ---
 
 ## Don't Forget
 
-1. Window is closing - competitors are emerging
-2. Ship fast, iterate based on feedback
-3. Every line of code must survive hostile review
-4. Security tool must be secure
-5. False positives kill adoption
+1. **Gates cannot be skipped** - Complete N before N+1
+2. **HOSTILE_VALIDATOR has veto** - NO_GO = STOP
+3. **Tests before code** - TDD is mandatory
+4. **Trace everything** - No orphan code
+5. **False positives kill adoption** - Accuracy is sacred
