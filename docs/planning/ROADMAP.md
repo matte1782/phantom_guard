@@ -41,21 +41,21 @@
 
 | Task | SPEC | Description | Hours | Status |
 |:-----|:-----|:------------|:------|:-------|
-| W1.1 | S001 | Core types (PackageRisk, Signal, etc.) | 4 | PENDING |
-| W1.2 | S004 | Signal extraction logic | 6 | PENDING |
-| W1.3 | S005, S050-S059 | Pattern matching engine | 6 | PENDING |
-| W1.4 | S006 | Typosquat detection | 6 | PENDING |
-| W1.5 | S007-S009 | Risk scoring and thresholds | 6 | PENDING |
-| W1.6 | S001-S003 | Detector orchestrator | 4 | PENDING |
+| W1.1 | S001 | Core types (PackageRisk, Signal, etc.) | 4 | ✅ COMPLETE |
+| W1.2 | S004 | Signal extraction logic | 6 | ✅ COMPLETE |
+| W1.3 | S005, S050-S059 | Pattern matching engine | 6 | ✅ COMPLETE |
+| W1.4 | S006 | Typosquat detection | 6 | ✅ COMPLETE |
+| W1.5 | S007-S009 | Risk scoring and thresholds | 6 | ✅ COMPLETE |
+| W1.6 | S001-S003 | Detector orchestrator | 4 | ✅ COMPLETE |
 | **Buffer** | - | Contingency (20%) | 8 | - |
 | **Total** | - | Week 1 | **40** | - |
 
 ### Exit Criteria
-- [ ] All W1.* tasks complete
-- [ ] T001-T009 unit tests passing
-- [ ] Property tests for INV001, INV010 passing
-- [ ] mypy --strict passes
-- [ ] Coverage ≥90% on core/
+- [x] All W1.* tasks complete
+- [x] T001-T009 unit tests passing (348 tests)
+- [x] Property tests for INV001, INV010 passing
+- [x] mypy --strict passes
+- [x] Coverage ≥90% on core/ (99% achieved)
 
 ---
 
@@ -550,13 +550,13 @@ W1.1 → W1.5 → W1.6 → W2.1 → W2.4 → W3.1 → W3.6 → W4.6 → W4.7 →
 ## Progress Tracking
 
 ### Week 1
-- [ ] W1.1 Complete
-- [ ] W1.2 Complete
-- [ ] W1.3 Complete
-- [ ] W1.4 Complete
-- [ ] W1.5 Complete
-- [ ] W1.6 Complete
-- [ ] Week 1 hostile review
+- [x] W1.1 Complete
+- [x] W1.2 Complete
+- [x] W1.3 Complete
+- [x] W1.4 Complete
+- [x] W1.5 Complete
+- [x] W1.6 Complete
+- [x] Week 1 hostile review (GO verdict)
 
 ### Week 2
 - [ ] W2.1 Complete

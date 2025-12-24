@@ -15,6 +15,7 @@ import pytest
 from phantom_guard.core import (
     InvalidPackageNameError,
     InvalidRegistryError,
+    PackageMetadata,
     PackageRisk,
     PhantomGuardError,
     Recommendation,
@@ -421,3 +422,67 @@ class TestValidateRegistry:
         """Unknown registry raises error."""
         with pytest.raises(InvalidRegistryError, match="Unknown registry"):
             validate_registry("unknown")
+
+
+class TestPackageMetadata:
+    """Tests for PackageMetadata dataclass.
+
+    SPEC: S004
+    """
+
+    @pytest.mark.unit
+    def test_age_days_with_naive_datetime(self) -> None:
+        """age_days handles naive datetime by assuming UTC."""
+        from datetime import datetime, timedelta
+
+        # Create a naive datetime (no timezone)
+        naive_created = datetime.now() - timedelta(days=10)
+
+        metadata = PackageMetadata(
+            name="test-pkg",
+            exists=True,
+            created_at=naive_created,
+        )
+
+        # Should work and return approximately 10 days
+        assert metadata.age_days is not None
+        assert 9 <= metadata.age_days <= 11
+
+    @pytest.mark.unit
+    def test_age_days_with_aware_datetime(self) -> None:
+        """age_days works with timezone-aware datetime."""
+        from datetime import UTC, datetime, timedelta
+
+        aware_created = datetime.now(tz=UTC) - timedelta(days=5)
+
+        metadata = PackageMetadata(
+            name="test-pkg",
+            exists=True,
+            created_at=aware_created,
+        )
+
+        assert metadata.age_days is not None
+        assert 4 <= metadata.age_days <= 6
+
+
+class TestPackageRiskSignalsValidation:
+    """Additional tests for PackageRisk signals validation.
+
+    INV: INV002
+    """
+
+    @pytest.mark.unit
+    def test_signals_none_rejected(self) -> None:
+        """INV002: Signals cannot be None."""
+        # This is a defensive check for runtime construction bypass
+        # PackageRisk uses slots=True, so we use object.__setattr__
+        with pytest.raises(ValueError, match="signals cannot be None"):
+            risk = object.__new__(PackageRisk)
+            object.__setattr__(risk, "name", "test")
+            object.__setattr__(risk, "registry", "pypi")
+            object.__setattr__(risk, "exists", True)
+            object.__setattr__(risk, "risk_score", 0.5)
+            object.__setattr__(risk, "signals", None)  # Deliberately set to None
+            object.__setattr__(risk, "recommendation", Recommendation.SAFE)
+            object.__setattr__(risk, "latency_ms", 0.0)
+            risk.__post_init__()

@@ -469,6 +469,24 @@ class TestResultAggregation:
         assert agg.overall_risk == Recommendation.HIGH_RISK
 
     @pytest.mark.unit
+    def test_aggregate_only_not_found(self) -> None:
+        """
+        TEST_ID: T009.06
+        SPEC: S009
+
+        Given: List with only NOT_FOUND packages
+        When: aggregate_results is called
+        Then: overall_risk is NOT_FOUND
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", False, 1.0, (), Recommendation.NOT_FOUND),
+            PackageRisk("pkg2", "pypi", False, 1.0, (), Recommendation.NOT_FOUND),
+        ]
+        agg = aggregate_results(results)
+        assert agg.overall_risk == Recommendation.NOT_FOUND
+        assert agg.not_found_count == 2
+
+    @pytest.mark.unit
     def test_aggregate_to_dict(self) -> None:
         """
         TEST_ID: T009.05
@@ -588,10 +606,16 @@ class TestThresholdConfig:
         assert config.suspicious == 0.7
 
     @pytest.mark.unit
-    def test_safe_out_of_range(self) -> None:
-        """Safe threshold out of range is rejected."""
+    def test_safe_out_of_range_high(self) -> None:
+        """Safe threshold > 1.0 is rejected (caught by ordering first)."""
         with pytest.raises(ValueError):
             ThresholdConfig(safe=1.5, suspicious=0.8)
+
+    @pytest.mark.unit
+    def test_safe_out_of_range_low(self) -> None:
+        """Safe threshold < 0.0 is rejected."""
+        with pytest.raises(ValueError, match="Safe threshold must be"):
+            ThresholdConfig(safe=-0.1, suspicious=0.5)
 
     @pytest.mark.unit
     def test_suspicious_out_of_range_high(self) -> None:
