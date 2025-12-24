@@ -15,6 +15,7 @@ from phantom_guard.core.types import (
     Registry,
     Signal,
     SignalType,
+    ValidationError,
     validate_package_name,
     validate_registry,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "Registry",
     "Signal",
     "SignalType",
+    "ValidationError",
     "validate_package_name",
     "validate_registry",
 ]

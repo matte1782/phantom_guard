@@ -16,12 +16,47 @@ from phantom_guard.core import (
     InvalidPackageNameError,
     InvalidRegistryError,
     PackageRisk,
+    PhantomGuardError,
     Recommendation,
     Signal,
     SignalType,
+    ValidationError,
     validate_package_name,
     validate_registry,
 )
+
+
+class TestExceptionHierarchy:
+    """Tests for exception hierarchy.
+
+    SPEC: S001
+    """
+
+    @pytest.mark.unit
+    def test_validation_error_inherits_from_phantom_guard_error(self) -> None:
+        """ValidationError is a PhantomGuardError."""
+        assert issubclass(ValidationError, PhantomGuardError)
+
+    @pytest.mark.unit
+    def test_invalid_package_name_error_inherits_from_validation_error(self) -> None:
+        """InvalidPackageNameError is a ValidationError."""
+        assert issubclass(InvalidPackageNameError, ValidationError)
+        assert issubclass(InvalidPackageNameError, PhantomGuardError)
+
+    @pytest.mark.unit
+    def test_invalid_registry_error_inherits_from_validation_error(self) -> None:
+        """InvalidRegistryError is a ValidationError."""
+        assert issubclass(InvalidRegistryError, ValidationError)
+        assert issubclass(InvalidRegistryError, PhantomGuardError)
+
+    @pytest.mark.unit
+    def test_can_catch_validation_errors_generically(self) -> None:
+        """All validation errors can be caught with ValidationError."""
+        with pytest.raises(ValidationError):
+            validate_package_name("")
+
+        with pytest.raises(ValidationError):
+            validate_registry("unknown")
 
 
 class TestRecommendationEnum:

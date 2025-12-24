@@ -18,10 +18,6 @@ from typing import Literal
 # INV020: Maximum package name length (npm standard)
 MAX_PACKAGE_NAME_LENGTH = 214
 
-# Package name validation pattern (alphanumeric, hyphen, underscore)
-# Must start with alphanumeric, no consecutive hyphens, no leading/trailing hyphens
-PACKAGE_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$|^[a-zA-Z0-9]$")
-
 
 # =============================================================================
 # EXCEPTIONS
@@ -32,7 +28,14 @@ class PhantomGuardError(Exception):
     """Base exception for all Phantom Guard errors."""
 
 
-class InvalidPackageNameError(PhantomGuardError):
+class ValidationError(PhantomGuardError):
+    """
+    IMPLEMENTS: S001
+    Base class for all input validation errors.
+    """
+
+
+class InvalidPackageNameError(ValidationError):
     """
     IMPLEMENTS: S001
     INV: INV019
@@ -46,7 +49,7 @@ class InvalidPackageNameError(PhantomGuardError):
         super().__init__(f"Invalid package name '{name}': {reason}")
 
 
-class InvalidRegistryError(PhantomGuardError):
+class InvalidRegistryError(ValidationError):
     """
     IMPLEMENTS: S001
     INV: INV021
@@ -151,7 +154,10 @@ class PackageRisk:
         if not 0.0 <= self.risk_score <= 1.0:
             raise ValueError(f"risk_score must be in [0.0, 1.0], got {self.risk_score}")
 
-        # INV002: Signals must not be None (runtime check for defensive programming)
+        # INV002: Signals must not be None
+        # Note: This is a defensive runtime check. While the type system prevents None
+        # at compile time, this guard protects against dynamic construction (e.g., from
+        # JSON deserialization, external APIs, or test mocks that bypass type checking).
         if self.signals is None:
             raise ValueError("signals cannot be None, use empty tuple")
 
