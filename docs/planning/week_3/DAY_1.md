@@ -372,9 +372,7 @@ EC: EC080-EC083
 - Add ASCII art phantom ghost branding
 - Implement validate command with exit codes
 - Add Rich output formatting (colors, icons)
-- Support verbose and quiet modes
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+- Support verbose and quiet modes"
 ```
 
 ---

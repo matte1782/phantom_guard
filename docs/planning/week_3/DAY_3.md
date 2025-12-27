@@ -5,7 +5,7 @@
 > **Tasks**: W3.3, W3.5
 > **Hours**: 6-8 hours
 > **SPEC_IDs**: S016-S019
-> **TEST_IDs**: T010.19-T010.20, T010.02-T010.03
+> **TEST_IDs**: T010.22-T010.24, T010.02-T010.03
 > **EC_IDs**: EC089, EC094
 
 ---
@@ -46,7 +46,7 @@ def cache_clear(
 ) -> None:
     """
     IMPLEMENTS: S016
-    TEST: T010.19
+    TEST: T010.22
     EC: EC094
 
     Clear the local cache.
@@ -90,7 +90,7 @@ async def _clear_cache(cache_path: Path, registry: str | None) -> None:
 def cache_stats() -> None:
     """
     IMPLEMENTS: S017
-    TEST: T010.20
+    TEST: T010.23
 
     Show cache statistics.
     """
@@ -205,9 +205,9 @@ async def get_stats(self) -> dict[str, dict]:
 ```python
 # tests/unit/test_cli.py
 # Remove @pytest.mark.skip from:
-# - test_cache_clear (T010.19)
-# - test_cache_stats (T010.20)
-# - test_cache_path
+# - test_cache_clear (T010.22)
+# - test_cache_stats (T010.23)
+# - test_cache_path (T010.24)
 ```
 
 ### Step 4: Run Cache Command Tests (30min)
@@ -218,9 +218,19 @@ pytest tests/unit/test_cli.py -v -k "cache" --tb=short
 
 ### Step 5: Add platformdirs Dependency (15min)
 
+Add `platformdirs` to project dependencies in `pyproject.toml`:
+
+```toml
+# pyproject.toml - add to dependencies section
+dependencies = [
+    # ... existing deps ...
+    "platformdirs>=4.0.0",
+]
+```
+
+Then install:
 ```bash
-# Add to pyproject.toml
-pip install platformdirs
+pip install -e .
 ```
 
 ---
@@ -566,7 +576,7 @@ phantom-guard check requirements.txt --output json
 - [ ] `ruff check src/phantom_guard/cli/` - No lint errors
 - [ ] `ruff format src/phantom_guard/cli/` - Code formatted
 - [ ] `mypy src/phantom_guard/cli/ --strict` - No type errors
-- [ ] All T010.19-T010.20, T010.02-T010.03 tests passing
+- [ ] All T010.22-T010.24, T010.02-T010.03 tests passing
 
 ### Documentation
 - [ ] All formatters have IMPLEMENTS tags
@@ -580,16 +590,14 @@ git add src/phantom_guard/cli/ tests/unit/
 git commit -m "feat(cli): Add cache management and output formatters
 
 IMPLEMENTS: S016-S019
-TESTS: T010.02-T010.03, T010.19-T010.20
+TESTS: T010.02-T010.03, T010.22-T010.24
 EC: EC089, EC094
 
 - Add cache clear/stats/path commands
 - Add platformdirs for cross-platform cache location
 - Add TextFormatter with colors and icons
 - Add JSONFormatter with summary stats
-- Add formatter factory function
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+- Add formatter factory function"
 ```
 
 ---

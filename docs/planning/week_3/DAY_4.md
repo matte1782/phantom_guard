@@ -671,9 +671,7 @@ EC: EC035
 - Ensure all packages in result (INV004)
 - Add progress callback support
 - Integrate with CLI check command
-- 50 packages in <5s performance target met
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+- 50 packages in <5s performance target met"
 ```
 
 ---

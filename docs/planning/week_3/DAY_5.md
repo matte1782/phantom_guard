@@ -658,9 +658,7 @@ git commit -m "feat(cli): Complete Week 3 - CLI & Integration
 - [x] phantom-guard check requirements.txt works
 - [x] JSON output valid
 - [x] <200ms single package
-- [x] <5s for 50 packages
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+- [x] <5s for 50 packages"
 ```
 
 ---

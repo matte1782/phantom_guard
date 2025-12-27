@@ -550,9 +550,7 @@ EC: EC084-EC090
 - Add Cargo.toml parser with complex deps
 - Add auto-detection of file format
 - Implement check command with progress bar
-- Support --fail-on and --ignore flags
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+- Support --fail-on and --ignore flags"
 ```
 
 ---
