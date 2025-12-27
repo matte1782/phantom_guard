@@ -22,6 +22,7 @@ from phantom_guard.core.types import (
     validate_registry,
 )
 from phantom_guard.registry import CachedRegistryClient, CratesClient, NpmClient, PyPIClient
+from phantom_guard.registry.cached import RegistryClientProtocol
 from phantom_guard.registry.exceptions import RegistryError
 
 # CLI app
@@ -97,6 +98,7 @@ async def _validate_package(
         # Use memory-only cache (no SQLite for CLI validation)
         cache = Cache(sqlite_enabled=False)
 
+        base_client: RegistryClientProtocol
         if validated_registry == "pypi":
             base_client = PyPIClient()
         elif validated_registry == "npm":

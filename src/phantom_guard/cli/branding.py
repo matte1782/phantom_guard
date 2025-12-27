@@ -18,6 +18,7 @@ PHANTOM_LOGO = r"""
 
 VERSION = "0.1.0"
 
+
 def print_banner(console: Console) -> None:
     """
     IMPLEMENTS: S010
