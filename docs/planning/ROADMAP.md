@@ -70,24 +70,27 @@
 
 | Task | SPEC | Description | Hours | Status |
 |:-----|:-----|:------------|:------|:-------|
-| W2.1 | S020-S026 | PyPI client + pypistats | 8 | PENDING |
-| W2.2 | S027-S032 | npm client | 6 | PENDING |
-| W2.3 | S033-S039 | crates.io client | 6 | PENDING |
-| W2.4 | S040-S049 | Two-tier cache (memory + SQLite) | 8 | PENDING |
-| W2.5 | - | Error handling and retries | 4 | PENDING |
+| W2.1 | S020-S026 | PyPI client + pypistats | 8 | ✅ COMPLETE |
+| W2.2 | S027-S032 | npm client | 6 | ✅ COMPLETE |
+| W2.3 | S033-S039 | crates.io client | 6 | ✅ COMPLETE |
+| W2.4 | S040-S049 | Two-tier cache (memory + SQLite) | 8 | ✅ COMPLETE |
+| W2.5 | - | Error handling and retries | 4 | ✅ COMPLETE |
 | **Buffer** | - | Contingency (20%) | 8 | - |
 | **Total** | - | Week 2 | **40** | - |
 
 ### Exit Criteria
-- [ ] All W2.* tasks complete
-- [ ] T020-T050 tests passing
-- [ ] Live integration tests passing
-- [ ] Cache TTL/LRU tests passing
-- [ ] Coverage ≥90% on registry/
+- [x] All W2.* tasks complete
+- [x] T020-T050 tests passing
+- [x] Live integration tests passing (21/21)
+- [x] Cache TTL/LRU tests passing
+- [x] Coverage ≥90% on registry/ (92% achieved)
 
 ---
 
 ## Phase 3: CLI & Integration (Week 3)
+
+> **Status**: PLANNED
+> **Day-by-day tasks**: See `docs/planning/week_3/`
 
 ### Goals
 - Implement CLI interface
@@ -559,11 +562,11 @@ W1.1 → W1.5 → W1.6 → W2.1 → W2.4 → W3.1 → W3.6 → W4.6 → W4.7 →
 - [x] Week 1 hostile review (GO verdict)
 
 ### Week 2
-- [ ] W2.1 Complete
-- [ ] W2.2 Complete
-- [ ] W2.3 Complete
-- [ ] W2.4 Complete
-- [ ] W2.5 Complete
+- [x] W2.1 Complete
+- [x] W2.2 Complete
+- [x] W2.3 Complete
+- [x] W2.4 Complete
+- [x] W2.5 Complete
 - [ ] Week 2 hostile review
 
 ### Week 3
