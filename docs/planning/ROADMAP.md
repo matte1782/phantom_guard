@@ -142,7 +142,7 @@
 | W3.1 | S010-S012 | CLI: validate command + branding | 6 | ✅ COMPLETE |
 | W3.2 | S013-S015 | CLI: check command (files) | 6 | ✅ COMPLETE |
 | W3.3 | S016-S017 | CLI: cache management | 4 | ✅ COMPLETE |
-| W3.4 | S002 | Batch validation (concurrent) | 6 | PENDING |
+| W3.4 | S002 | Batch validation (concurrent) | 6 | ✅ COMPLETE |
 | W3.5 | S018-S019 | Output formats (text, JSON) | 4 | ✅ COMPLETE |
 | W3.6 | - | End-to-end integration | 6 | PENDING |
 | **Buffer** | - | Contingency (20%) | 8 | - |
