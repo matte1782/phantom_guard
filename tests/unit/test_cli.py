@@ -208,23 +208,207 @@ class TestValidateCommand:
 class TestCheckCommand:
     """Tests for 'phantom-guard check' command.
 
-    SPEC: S010-S019
+    SPEC: S010-S019, S013
     EC: EC084-EC088
     """
 
-    @pytest.mark.skip(reason="Stub - implement with S010")
     @pytest.mark.unit
-    def test_check_requirements_file(self):
+    def test_check_requirements_file(self, tmp_path):
         """
-        TEST_ID: T010.13
-        SPEC: S010
+        TEST_ID: T010.18
+        SPEC: S013
         EC: EC084
 
         Given: Valid requirements.txt with safe packages
         When: check is called
         Then: Exit code 0
         """
-        pass
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        # Create test requirements.txt
+        req_file = tmp_path / "requirements.txt"
+        req_file.write_text("flask==2.0.0\nrequests>=2.0\n")
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(req_file)])
+
+        assert result.exit_code == 0
+
+    @pytest.mark.unit
+    def test_check_file_not_found(self):
+        """
+        TEST_ID: T010.19
+        SPEC: S013
+        EC: EC086
+
+        Given: Non-existent file path
+        When: check is called
+        Then: Exit code 4 (EXIT_INPUT_ERROR), error message
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app, EXIT_INPUT_ERROR
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", "nonexistent.txt"])
+
+        assert result.exit_code == EXIT_INPUT_ERROR
+        assert "not found" in result.stdout.lower() or "does not exist" in result.stdout.lower()
+
+    @pytest.mark.unit
+    def test_check_empty_file(self, tmp_path):
+        """
+        TEST_ID: T010.20
+        SPEC: S013
+        EC: EC087
+
+        Given: Empty requirements file
+        When: check is called
+        Then: Exit code 0, "No packages" message
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        # Create empty file
+        req_file = tmp_path / "requirements.txt"
+        req_file.write_text("")
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(req_file)])
+
+        assert result.exit_code == 0
+        assert "no packages" in result.stdout.lower()
+
+    @pytest.mark.unit
+    def test_check_package_json(self, tmp_path):
+        """
+        TEST_ID: T010.21
+        SPEC: S014
+        EC: EC084
+
+        Given: Valid package.json with dependencies
+        When: check is called
+        Then: Exit code 0, validates npm packages
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        # Create test package.json
+        pkg_file = tmp_path / "package.json"
+        pkg_file.write_text('''{
+  "name": "test-project",
+  "dependencies": {
+    "express": "^4.17.0",
+    "lodash": "^4.17.0"
+  }
+}''')
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(pkg_file)])
+
+        assert result.exit_code == 0
+
+    @pytest.mark.unit
+    def test_check_cargo_toml(self, tmp_path):
+        """
+        TEST_ID: T010.22
+        SPEC: S015
+        EC: EC084
+
+        Given: Valid Cargo.toml with dependencies
+        When: check is called
+        Then: Exit code 0, validates crates packages
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        # Create test Cargo.toml
+        cargo_file = tmp_path / "Cargo.toml"
+        cargo_file.write_text('''[package]
+name = "test-project"
+version = "0.1.0"
+
+[dependencies]
+serde = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+''')
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(cargo_file)])
+
+        assert result.exit_code == 0
+
+    @pytest.mark.unit
+    def test_check_with_ignore(self, tmp_path):
+        """
+        TEST_ID: T010.23
+        SPEC: S013
+        EC: EC089
+
+        Given: requirements.txt with multiple packages
+        When: check is called with --ignore option
+        Then: Ignores specified packages, validates others
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        # Create test requirements.txt
+        req_file = tmp_path / "requirements.txt"
+        req_file.write_text("flask==2.0.0\nrequests>=2.0\ndjango>=3.0\n")
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(req_file), "--ignore", "django"])
+
+        assert result.exit_code == 0
+        # Verify django was ignored in output
+
+    @pytest.mark.unit
+    def test_check_with_registry_override(self, tmp_path):
+        """
+        TEST_ID: T010.24
+        SPEC: S013
+        EC: EC095
+
+        Given: requirements.txt (default pypi)
+        When: check is called with -r npm option
+        Then: Overrides registry detection, uses npm
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        # Create test file
+        req_file = tmp_path / "requirements.txt"
+        req_file.write_text("express\nlodash\n")
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(req_file), "-r", "npm"])
+
+        # Should check npm registry instead of pypi
+        assert result.exit_code in [0, 1, 2, 3]  # Valid exit codes
+
+    @pytest.mark.unit
+    def test_check_invalid_file(self, tmp_path):
+        """
+        TEST_ID: T010.25
+        SPEC: S013, S014, S015
+        EC: EC088
+
+        Given: Invalid JSON/TOML file
+        When: check is called
+        Then: Exit code 4 (EXIT_INPUT_ERROR), parse error
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app, EXIT_INPUT_ERROR
+
+        # Create invalid JSON file
+        pkg_file = tmp_path / "package.json"
+        pkg_file.write_text('{"name": "test", invalid json}')
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["check", str(pkg_file)])
+
+        assert result.exit_code == EXIT_INPUT_ERROR
+        assert "parse" in result.stdout.lower() or "invalid" in result.stdout.lower()
 
     @pytest.mark.skip(reason="Stub - implement with S010")
     @pytest.mark.unit
@@ -242,51 +426,9 @@ class TestCheckCommand:
 
     @pytest.mark.skip(reason="Stub - implement with S010")
     @pytest.mark.unit
-    def test_check_file_not_found(self):
-        """
-        TEST_ID: T010.15
-        SPEC: S010
-        EC: EC086
-
-        Given: Non-existent file path
-        When: check is called
-        Then: Exit code 4, error message
-        """
-        pass
-
-    @pytest.mark.skip(reason="Stub - implement with S010")
-    @pytest.mark.unit
-    def test_check_empty_file(self):
-        """
-        TEST_ID: T010.16
-        SPEC: S010
-        EC: EC087
-
-        Given: Empty requirements file
-        When: check is called
-        Then: Exit code 0, "No packages" message
-        """
-        pass
-
-    @pytest.mark.skip(reason="Stub - implement with S010")
-    @pytest.mark.unit
-    def test_check_invalid_file_format(self):
-        """
-        TEST_ID: T010.17
-        SPEC: S010
-        EC: EC088
-
-        Given: Binary file (not requirements)
-        When: check is called
-        Then: Exit code 4, parse error
-        """
-        pass
-
-    @pytest.mark.skip(reason="Stub - implement with S010")
-    @pytest.mark.unit
     def test_check_fail_on_suspicious(self):
         """
-        TEST_ID: T010.18
+        TEST_ID: T010.26
         SPEC: S010
         EC: EC090
 

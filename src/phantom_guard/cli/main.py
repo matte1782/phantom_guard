@@ -20,6 +20,7 @@ from phantom_guard.core import detector
 from phantom_guard.core.types import (
     InvalidPackageNameError,
     InvalidRegistryError,
+    PackageRisk,
     Recommendation,
     validate_registry,
 )
@@ -270,11 +271,218 @@ async def _validate_package(
 
 @app.command()
 def check(
-    file: str = typer.Argument(..., help="Requirements file to check"),
+    file: Annotated[Path, typer.Argument(help="Dependency file to check")],
+    registry: Annotated[
+        str | None, typer.Option("-r", "--registry", help="Override registry detection")
+    ] = None,
+    fail_on: Annotated[
+        str | None,
+        typer.Option("--fail-on", help="Exit non-zero on: suspicious, high_risk"),
+    ] = None,
+    ignore: Annotated[
+        str | None, typer.Option("--ignore", help="Comma-separated packages to skip")
+    ] = None,
+    parallel: Annotated[int, typer.Option("--parallel", help="Concurrent validations")] = 10,
+    output_format: Annotated[
+        str, typer.Option("-o", "--output", help="Output format: text, json")
+    ] = "text",
+    quiet: Annotated[bool, typer.Option("-q", "--quiet", help="Minimal output")] = False,
+    no_banner: Annotated[bool, typer.Option("--no-banner", help="Hide banner")] = False,
 ) -> None:
-    """Check all packages in a requirements file."""
-    # Stub - will be implemented in W3.2
-    typer.echo(f"Checking packages in {file}...")
+    """
+    IMPLEMENTS: S013-S015
+    TEST: T010.18
+    EC: EC084-EC090
+
+    Check a dependency file for risky packages.
+
+    Supports:
+    - requirements.txt (Python/PyPI)
+    - package.json (JavaScript/npm)
+    - Cargo.toml (Rust/crates.io)
+    """
+    from phantom_guard.cli.parsers import ParserError, detect_and_parse
+
+    if not quiet and not no_banner:
+        print_banner(console)
+
+    # Validate file exists
+    if not file.exists():
+        console.print(f"[red]Error:[/red] File not found: {file}")
+        raise typer.Exit(code=EXIT_INPUT_ERROR)
+
+    # Parse file
+    try:
+        packages = detect_and_parse(file)
+    except ParserError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=EXIT_INPUT_ERROR) from None
+
+    if not packages:
+        console.print("[dim]No packages found in file[/dim]")
+        raise typer.Exit(code=EXIT_SAFE)
+
+    # Filter ignored packages
+    ignored_set = set(ignore.split(",")) if ignore else set()
+    packages = [p for p in packages if p.name not in ignored_set]
+
+    # Override registry if specified
+    if registry:
+        try:
+            validated_registry = validate_registry(registry)
+            for p in packages:
+                p.registry = validated_registry
+        except InvalidRegistryError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(code=EXIT_INPUT_ERROR) from None
+
+    # Run validation
+    exit_code = asyncio.run(_check_packages(packages, parallel, fail_on, output_format, quiet))
+    raise typer.Exit(code=exit_code)
+
+
+async def _check_packages(
+    packages: list[Any],
+    parallel: int,
+    fail_on: str | None,
+    output_format: str,
+    quiet: bool,
+) -> int:
+    """
+    Validate all packages from file.
+
+    Args:
+        packages: List of ParsedPackage instances
+        parallel: Maximum concurrent validations
+        fail_on: Fail threshold (suspicious or high_risk)
+        output_format: Output format (text or json)
+        quiet: Minimal output mode
+
+    Returns:
+        Exit code based on validation results
+    """
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+
+    from phantom_guard.cli.formatters import get_formatter
+    from phantom_guard.cli.parsers import ParsedPackage
+
+    # Create cache and registry clients
+    cache = Cache(sqlite_enabled=False)
+    results: list[PackageRisk] = []
+
+    if not quiet:
+        console.print(f"\n[cyan]Scanning {len(packages)} packages...[/cyan]\n")
+
+    # Create progress bar
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("{task.completed}/{task.total}"),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Validating", total=len(packages))
+
+        # Use semaphore for concurrent validation
+        semaphore = asyncio.Semaphore(parallel)
+
+        async def validate_one(pkg: ParsedPackage) -> PackageRisk:
+            """Validate a single package."""
+            async with semaphore:
+                # Validate and get registry
+                validated_registry = validate_registry(pkg.registry)
+
+                # Get appropriate registry client
+                base_client: RegistryClientProtocol
+                if validated_registry == "pypi":
+                    base_client = PyPIClient()
+                elif validated_registry == "npm":
+                    base_client = NpmClient()
+                else:  # crates
+                    base_client = CratesClient()
+
+                # Wrap with caching
+                async with CachedRegistryClient(base_client, cache, validated_registry) as client:
+                    result = await detector.validate_package(pkg.name, validated_registry, client)
+                    progress.advance(task)
+                    return result
+
+        # Validate all packages concurrently
+        async with cache:
+            results = await asyncio.gather(*[validate_one(p) for p in packages])
+
+    # Print results
+    console.print()
+    formatter = get_formatter(output_format, verbose=False, quiet=quiet)
+    formatter.print_results(results, console)
+
+    # Print summary (only for text format)
+    if output_format == "text" and not quiet:
+        _print_summary(results, console)
+
+    # Determine exit code
+    return _determine_exit_code(results, fail_on)
+
+
+def _print_summary(results: list[PackageRisk], console: Console) -> None:
+    """
+    Print summary line.
+
+    Args:
+        results: List of package risk assessments
+        console: Rich console for output
+    """
+    safe = sum(1 for r in results if r.recommendation == Recommendation.SAFE)
+    suspicious = sum(1 for r in results if r.recommendation == Recommendation.SUSPICIOUS)
+    high_risk = sum(1 for r in results if r.recommendation == Recommendation.HIGH_RISK)
+    not_found = sum(1 for r in results if r.recommendation == Recommendation.NOT_FOUND)
+
+    # Use ASCII-safe separator for Windows compatibility
+    separator = "-" * 60
+    console.print("\n" + separator)
+    summary = f"Summary: {len(results)} packages | "
+    summary += f"[green]{safe} safe[/green] | "
+    summary += f"[yellow]{suspicious} suspicious[/yellow] | "
+    summary += f"[red]{high_risk} high-risk[/red]"
+    if not_found:
+        summary += f" | [dim]{not_found} not found[/dim]"
+    console.print(summary)
+    console.print(separator + "\n")
+
+
+def _determine_exit_code(results: list[PackageRisk], fail_on: str | None) -> int:
+    """
+    Determine exit code based on results and fail_on setting.
+
+    Args:
+        results: List of package risk assessments
+        fail_on: Fail threshold (suspicious or high_risk)
+
+    Returns:
+        Appropriate exit code
+    """
+    has_high_risk = any(r.recommendation == Recommendation.HIGH_RISK for r in results)
+    has_suspicious = any(r.recommendation == Recommendation.SUSPICIOUS for r in results)
+    has_not_found = any(r.recommendation == Recommendation.NOT_FOUND for r in results)
+
+    # Always fail on high risk
+    if has_high_risk:
+        return EXIT_HIGH_RISK
+
+    # Fail on suspicious if requested
+    if fail_on == "suspicious" and has_suspicious:
+        return EXIT_SUSPICIOUS
+
+    # Default behavior: exit with suspicious code if suspicious packages found
+    if has_suspicious:
+        return EXIT_SUSPICIOUS
+
+    # Not found packages
+    if has_not_found:
+        return EXIT_NOT_FOUND
+
+    # All safe
+    return EXIT_SAFE
 
 
 if __name__ == "__main__":
