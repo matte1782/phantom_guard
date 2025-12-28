@@ -28,6 +28,7 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
     "aiosqlite>=0.19.0",  # ADR-003: Async SQLite for cache layer
+    "platformdirs>=4.0.0",  # Cross-platform cache directory
 ]
 
 [project.optional-dependencies]

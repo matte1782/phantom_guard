@@ -6,12 +6,14 @@ Command-line interface for Phantom Guard.
 from __future__ import annotations
 
 import asyncio
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
+from rich.table import Table
 
-from phantom_guard.cache import Cache
+from phantom_guard.cache import Cache, get_default_cache_path
 from phantom_guard.cli.branding import print_banner
 from phantom_guard.cli.output import OutputFormatter
 from phantom_guard.core import detector
@@ -33,6 +35,130 @@ app = typer.Typer(
 )
 
 console = Console()
+
+# Cache subcommand group
+cache_app = typer.Typer(help="Manage the local cache")
+app.add_typer(cache_app, name="cache")
+
+
+def _format_size(size_bytes: int) -> str:
+    """Format bytes as human-readable size."""
+    size = float(size_bytes)
+    for unit in ["B", "KB", "MB", "GB"]:
+        if size < 1024:
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
+
+
+@cache_app.command("clear")
+def cache_clear(
+    registry: Annotated[
+        str | None, typer.Option("-r", "--registry", help="Only clear specific registry")
+    ] = None,
+    force: Annotated[bool, typer.Option("-f", "--force", help="Skip confirmation")] = False,
+) -> None:
+    """
+    IMPLEMENTS: S016
+    TEST: T010.22
+    EC: EC094
+
+    Clear the local cache.
+    """
+    cache_path = get_default_cache_path()
+
+    if not cache_path.exists():
+        console.print("[dim]No cache found[/dim]")
+        raise typer.Exit(code=0)
+
+    # Confirmation
+    if not force:
+        msg = f"Clear cache for {registry}?" if registry else "Clear entire cache?"
+        if not typer.confirm(msg):
+            console.print("[dim]Cancelled[/dim]")
+            raise typer.Exit(code=0)
+
+    # Clear cache
+    deleted = asyncio.run(_clear_cache(cache_path, registry))
+    console.print(f"[green]Cache cleared successfully ({deleted} entries)[/green]")
+
+
+async def _clear_cache(cache_path: Path, registry: str | None) -> int:
+    """Clear cache entries."""
+    from phantom_guard.cache import Cache
+
+    cache = Cache(sqlite_path=cache_path)
+    async with cache:
+        if registry:
+            return await cache.clear_registry(registry)
+        else:
+            memory_count, sqlite_count = await cache.clear_all()
+            return memory_count + sqlite_count
+
+
+@cache_app.command("stats")
+def cache_stats() -> None:
+    """
+    IMPLEMENTS: S017
+    TEST: T010.23
+
+    Show cache statistics.
+    """
+    cache_path = get_default_cache_path()
+
+    if not cache_path.exists():
+        console.print("[dim]No cache found[/dim]")
+        raise typer.Exit(code=0)
+
+    stats = asyncio.run(_get_cache_stats(cache_path))
+
+    if not stats:
+        console.print("[dim]Cache is empty[/dim]")
+        raise typer.Exit(code=0)
+
+    # Display stats
+    table = Table(title="Cache Statistics")
+    table.add_column("Registry", style="cyan")
+    table.add_column("Entries", justify="right")
+    table.add_column("Size", justify="right")
+    table.add_column("Hit Rate", justify="right")
+
+    for reg, data in stats.items():
+        table.add_row(
+            reg,
+            str(data["entries"]),
+            _format_size(data["size_bytes"]),
+            f"{data['hit_rate']:.1%}" if data.get("hit_rate") else "N/A",
+        )
+
+    console.print(table)
+
+
+async def _get_cache_stats(cache_path: Path) -> dict[str, dict[str, Any]]:
+    """Get cache statistics."""
+    from phantom_guard.cache import Cache
+
+    cache = Cache(sqlite_path=cache_path)
+    async with cache:
+        return await cache.get_stats()
+
+
+@cache_app.command("path")
+def cache_path_cmd() -> None:
+    """
+    IMPLEMENTS: S016
+    TEST: T010.24
+
+    Show cache file location.
+    """
+    path = get_default_cache_path()
+    console.print(f"Cache path: [cyan]{path}[/cyan]")
+    if path.exists():
+        size = path.stat().st_size
+        console.print(f"Size: [dim]{_format_size(size)}[/dim]")
+    else:
+        console.print("[dim]Cache does not exist yet[/dim]")
+
 
 # Exit codes (from SPECIFICATION.md Section 6.4)
 EXIT_SAFE = 0

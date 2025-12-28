@@ -10,6 +10,7 @@ Standard sqlite3 is blocking and incompatible with async-first architecture.
 from __future__ import annotations
 
 import json
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -42,7 +43,8 @@ class AsyncSQLiteCache:
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL,
             created_at TEXT NOT NULL,
-            ttl_seconds INTEGER NOT NULL
+            ttl_seconds INTEGER NOT NULL,
+            expires_at REAL NOT NULL
         )
     """
 
@@ -167,13 +169,14 @@ class AsyncSQLiteCache:
 
         value_json = json.dumps(value, default=str)
         created_at = datetime.now(UTC).isoformat()
+        expires_at = time.time() + ttl
 
         await self._conn.execute(
             """
-            INSERT OR REPLACE INTO cache (key, value, created_at, ttl_seconds)
-            VALUES (?, ?, ?, ?)
+            INSERT OR REPLACE INTO cache (key, value, created_at, ttl_seconds, expires_at)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (key, value_json, created_at, ttl),
+            (key, value_json, created_at, ttl, expires_at),
         )
         await self._conn.commit()
 
@@ -249,3 +252,38 @@ class AsyncSQLiteCache:
         await self._conn.commit()
         count: int = cursor.rowcount
         return count
+
+    async def clear_by_prefix(self, prefix: str) -> int:
+        """Clear all entries with keys starting with prefix."""
+        if not self._conn:
+            return 0
+        cursor = await self._conn.execute(
+            "DELETE FROM cache WHERE key LIKE ?",
+            (f"{prefix}%",),
+        )
+        await self._conn.commit()
+        return cursor.rowcount
+
+    async def get_stats_by_registry(self) -> dict[str, dict[str, Any]]:
+        """Get entry counts grouped by registry prefix."""
+        if not self._conn:
+            return {}
+
+        stats: dict[str, dict[str, Any]] = {}
+        cursor = await self._conn.execute(
+            "SELECT key, LENGTH(value) as size FROM cache WHERE expires_at > ?",
+            (time.time(),),
+        )
+        rows = await cursor.fetchall()
+
+        for row in rows:
+            key = row[0]
+            size = row[1]
+            if ":" in key:
+                registry = key.split(":")[0]
+                if registry not in stats:
+                    stats[registry] = {"entries": 0, "size_bytes": 0}
+                stats[registry]["entries"] += 1
+                stats[registry]["size_bytes"] += size
+
+        return stats

@@ -300,15 +300,15 @@ class TestCheckCommand:
 class TestCacheCommand:
     """Tests for 'phantom-guard cache' command.
 
-    SPEC: S010
+    SPEC: S016, S017
     """
 
-    @pytest.mark.skip(reason="Stub - implement with S010")
+    @pytest.mark.skip(reason="Stub - implement with S016")
     @pytest.mark.unit
     def test_cache_clear(self):
         """
         TEST_ID: T010.19
-        SPEC: S010
+        SPEC: S016
 
         Given: Cache with entries
         When: cache clear is called
@@ -316,18 +316,35 @@ class TestCacheCommand:
         """
         pass
 
-    @pytest.mark.skip(reason="Stub - implement with S010")
+    @pytest.mark.skip(reason="Stub - implement with S017")
     @pytest.mark.unit
     def test_cache_stats(self):
         """
         TEST_ID: T010.20
-        SPEC: S010
+        SPEC: S017
 
         Given: Cache with entries
         When: cache stats is called
         Then: Shows entry count and size
         """
         pass
+
+    @pytest.mark.unit
+    def test_cache_path(self) -> None:
+        """
+        TEST_ID: T010.24
+        SPEC: S016
+
+        Test cache path command shows location.
+        """
+        from typer.testing import CliRunner
+        from phantom_guard.cli.main import app
+
+        runner = CliRunner()
+        result = runner.invoke(app, ["cache", "path"])
+
+        assert result.exit_code == 0
+        assert "Cache path:" in result.stdout
 
 
 class TestVersionCommand:

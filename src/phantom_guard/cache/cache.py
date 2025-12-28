@@ -212,3 +212,66 @@ class Cache:
         if self.sqlite:
             return await self.sqlite.count()
         return 0
+
+    async def clear_registry(self, registry: str) -> int:
+        """
+        IMPLEMENTS: S016
+        TEST: T010.22
+
+        Clear all entries for a specific registry.
+
+        Args:
+            registry: Registry name (pypi, npm, crates)
+
+        Returns:
+            Number of entries deleted
+        """
+        prefix = f"{registry}:"
+        deleted = 0
+
+        # Clear from memory
+        keys_to_delete = [k for k in self.memory._cache if k.startswith(prefix)]
+        for key in keys_to_delete:
+            if self.memory.delete(key):
+                deleted += 1
+
+        # Clear from SQLite
+        if self.sqlite:
+            deleted += await self.sqlite.clear_by_prefix(prefix)
+
+        return deleted
+
+    async def get_stats(self) -> dict[str, dict[str, Any]]:
+        """
+        IMPLEMENTS: S017
+        TEST: T010.23
+
+        Get cache statistics by registry.
+
+        Returns:
+            Dict mapping registry names to stats:
+            {
+                "pypi": {"entries": int, "size_bytes": int, "hit_rate": float | None},
+                ...
+            }
+        """
+        stats: dict[str, dict[str, Any]] = {}
+
+        # Gather from memory cache
+        for key in self.memory._cache:
+            if ":" in key:
+                registry = key.split(":")[0]
+                if registry not in stats:
+                    stats[registry] = {"entries": 0, "size_bytes": 0, "hit_rate": None}
+                stats[registry]["entries"] += 1
+
+        # Gather from SQLite (if enabled)
+        if self.sqlite:
+            sqlite_stats = await self.sqlite.get_stats_by_registry()
+            for registry, data in sqlite_stats.items():
+                if registry not in stats:
+                    stats[registry] = {"entries": 0, "size_bytes": 0, "hit_rate": None}
+                stats[registry]["entries"] += data.get("entries", 0)
+                stats[registry]["size_bytes"] += data.get("size_bytes", 0)
+
+        return stats
