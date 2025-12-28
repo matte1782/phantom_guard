@@ -140,7 +140,7 @@
 | Task | SPEC | Description | Hours | Status |
 |:-----|:-----|:------------|:------|:-------|
 | W3.1 | S010-S012 | CLI: validate command + branding | 6 | ✅ COMPLETE |
-| W3.2 | S013-S015 | CLI: check command (files) | 6 | PENDING |
+| W3.2 | S013-S015 | CLI: check command (files) | 6 | ✅ COMPLETE |
 | W3.3 | S016-S017 | CLI: cache management | 4 | ✅ COMPLETE |
 | W3.4 | S002 | Batch validation (concurrent) | 6 | PENDING |
 | W3.5 | S018-S019 | Output formats (text, JSON) | 4 | ✅ COMPLETE |
@@ -572,7 +572,7 @@ W1.1 → W1.5 → W1.6 → W2.1 → W2.4 → W3.1 → W3.6 → W4.6 → W4.7 →
 
 ### Week 3
 - [x] W3.1 Complete (Day 1 - validate command + branding)
-- [ ] W3.2 Complete (Day 2 - check command for files)
+- [x] W3.2 Complete (Day 2 - check command for files)
 - [x] W3.3 Complete (Day 3 - cache management)
 - [ ] W3.4 Complete (Day 4 - batch validation)
 - [x] W3.5 Complete (Day 3 - output formats)
