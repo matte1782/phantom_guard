@@ -6,6 +6,11 @@ IMPLEMENTS: S001-S009
 
 from __future__ import annotations
 
+from phantom_guard.core.batch import (
+    BatchConfig,
+    BatchResult,
+    BatchValidator,
+)
 from phantom_guard.core.detector import (
     RegistryClient,
     normalize_package_name,
@@ -98,6 +103,9 @@ __all__ = [
     "THRESHOLD_SAFE",
     "THRESHOLD_SUSPICIOUS",
     "AggregateResult",
+    "BatchConfig",
+    "BatchResult",
+    "BatchValidator",
     "HallucinationPattern",
     "InvalidPackageNameError",
     "InvalidRegistryError",

@@ -283,6 +283,9 @@ def check(
         str | None, typer.Option("--ignore", help="Comma-separated packages to skip")
     ] = None,
     parallel: Annotated[int, typer.Option("--parallel", help="Concurrent validations")] = 10,
+    fail_fast: Annotated[
+        bool, typer.Option("--fail-fast", help="Stop on first HIGH_RISK package")
+    ] = False,
     output_format: Annotated[
         str, typer.Option("-o", "--output", help="Output format: text, json")
     ] = "text",
@@ -337,7 +340,9 @@ def check(
             raise typer.Exit(code=EXIT_INPUT_ERROR) from None
 
     # Run validation
-    exit_code = asyncio.run(_check_packages(packages, parallel, fail_on, output_format, quiet))
+    exit_code = asyncio.run(
+        _check_packages(packages, parallel, fail_on, output_format, quiet, fail_fast)
+    )
     raise typer.Exit(code=exit_code)
 
 
@@ -347,9 +352,13 @@ async def _check_packages(
     fail_on: str | None,
     output_format: str,
     quiet: bool,
+    fail_fast: bool = False,
 ) -> int:
     """
-    Validate all packages from file.
+    Validate all packages from file using BatchValidator.
+
+    IMPLEMENTS: S002
+    INV: INV004, INV005
 
     Args:
         packages: List of ParsedPackage instances
@@ -357,71 +366,161 @@ async def _check_packages(
         fail_on: Fail threshold (suspicious or high_risk)
         output_format: Output format (text or json)
         quiet: Minimal output mode
+        fail_fast: Stop on first HIGH_RISK package
 
     Returns:
         Exit code based on validation results
     """
-    from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn
+    from typing import Literal, TypeAlias
+
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TaskID, TextColumn
 
     from phantom_guard.cli.formatters import get_formatter
     from phantom_guard.cli.parsers import ParsedPackage
+    from phantom_guard.core.batch import BatchConfig, BatchValidator
 
-    # Create cache and registry clients
+    RegistryLiteral: TypeAlias = Literal["pypi", "npm", "crates"]
+
+    # Group packages by registry
+    packages_by_registry: dict[RegistryLiteral, list[ParsedPackage]] = {}
+    for pkg in packages:
+        reg = validate_registry(pkg.registry)
+        if reg not in packages_by_registry:
+            packages_by_registry[reg] = []
+        packages_by_registry[reg].append(pkg)
+
+    # Create cache
     cache = Cache(sqlite_enabled=False)
-    results: list[PackageRisk] = []
+
+    # Configure batch validation
+    config = BatchConfig(
+        max_concurrent=parallel,
+        fail_fast=fail_fast,
+    )
+    validator = BatchValidator(config=config)
+
+    all_results: list[PackageRisk] = []
+    all_errors: dict[str, Exception] = {}
+    was_cancelled = False
+    total_time_ms = 0.0
 
     if not quiet:
         console.print(f"\n[cyan]Scanning {len(packages)} packages...[/cyan]\n")
 
     # Create progress bar
+    progress_task: TaskID | None = None
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TextColumn("{task.completed}/{task.total}"),
         console=console,
+        disable=quiet,
     ) as progress:
-        task = progress.add_task("Validating", total=len(packages))
+        progress_task = progress.add_task("Validating", total=len(packages))
 
-        # Use semaphore for concurrent validation
-        semaphore = asyncio.Semaphore(parallel)
+        def on_progress(done: int, total: int) -> None:
+            if progress_task is not None:
+                progress.update(progress_task, completed=done)
 
-        async def validate_one(pkg: ParsedPackage) -> PackageRisk:
-            """Validate a single package."""
-            async with semaphore:
-                # Validate and get registry
-                validated_registry = validate_registry(pkg.registry)
+        # Validate each registry group
+        async with cache:
+            for reg, reg_packages in packages_by_registry.items():
+                if was_cancelled:
+                    break
 
                 # Get appropriate registry client
                 base_client: RegistryClientProtocol
-                if validated_registry == "pypi":
+                if reg == "pypi":
                     base_client = PyPIClient()
-                elif validated_registry == "npm":
+                elif reg == "npm":
                     base_client = NpmClient()
                 else:  # crates
                     base_client = CratesClient()
 
                 # Wrap with caching
-                async with CachedRegistryClient(base_client, cache, validated_registry) as client:
-                    result = await detector.validate_package(pkg.name, validated_registry, client)
-                    progress.advance(task)
-                    return result
+                async with CachedRegistryClient(base_client, cache, reg) as client:
+                    result = await validator.validate_batch(
+                        packages=[p.name for p in reg_packages],
+                        registry=reg,
+                        client=client,
+                        on_progress=on_progress,
+                    )
 
-        # Validate all packages concurrently
-        async with cache:
-            results = await asyncio.gather(*[validate_one(p) for p in packages])
+                    all_results.extend(result.results)
+                    all_errors.update(result.errors)
+                    total_time_ms += result.total_time_ms
+
+                    if result.was_cancelled:
+                        was_cancelled = True
 
     # Print results
     console.print()
     formatter = get_formatter(output_format, verbose=False, quiet=quiet)
-    formatter.print_results(results, console)
+    formatter.print_results(all_results, console)
+
+    # Print errors if any
+    if all_errors and not quiet:
+        console.print("\n[yellow]Errors:[/yellow]")
+        for pkg, error in all_errors.items():
+            console.print(f"  [red]{pkg}:[/red] {error}")
 
     # Print summary (only for text format)
     if output_format == "text" and not quiet:
-        _print_summary(results, console)
+        _print_batch_summary(all_results, all_errors, was_cancelled, total_time_ms, console)
 
     # Determine exit code
-    return _determine_exit_code(results, fail_on)
+    return _determine_exit_code(all_results, fail_on)
+
+
+def _print_batch_summary(
+    results: list[PackageRisk],
+    errors: dict[str, Exception],
+    was_cancelled: bool,
+    total_time_ms: float,
+    console: Console,
+) -> None:
+    """
+    Print batch validation summary.
+
+    Args:
+        results: List of package risk assessments
+        errors: Dictionary of package errors
+        was_cancelled: Whether validation was cancelled (fail_fast)
+        total_time_ms: Total validation time in milliseconds
+        console: Rich console for output
+    """
+    safe = sum(1 for r in results if r.recommendation == Recommendation.SAFE)
+    suspicious = sum(1 for r in results if r.recommendation == Recommendation.SUSPICIOUS)
+    high_risk = sum(1 for r in results if r.recommendation == Recommendation.HIGH_RISK)
+    not_found = sum(1 for r in results if r.recommendation == Recommendation.NOT_FOUND)
+    error_count = len(errors)
+
+    # Use ASCII-safe separator for Windows compatibility
+    separator = "-" * 60
+    console.print("\n" + separator)
+
+    # Status line
+    if was_cancelled:
+        console.print("[yellow]Validation stopped early (fail-fast triggered)[/yellow]")
+
+    # Summary counts
+    total = len(results) + error_count
+    summary = f"Summary: {total} packages | "
+    summary += f"[green]{safe} safe[/green] | "
+    summary += f"[yellow]{suspicious} suspicious[/yellow] | "
+    summary += f"[red]{high_risk} high-risk[/red]"
+    if not_found:
+        summary += f" | [dim]{not_found} not found[/dim]"
+    if error_count:
+        summary += f" | [red]{error_count} errors[/red]"
+    console.print(summary)
+
+    # Timing
+    time_sec = total_time_ms / 1000
+    console.print(f"[dim]Completed in {time_sec:.2f}s[/dim]")
+    console.print(separator + "\n")
 
 
 def _print_summary(results: list[PackageRisk], console: Console) -> None:
