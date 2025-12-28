@@ -15,7 +15,7 @@ import httpx
 import pytest
 import respx
 
-from phantom_guard.registry.crates import CratesClient, USER_AGENT
+from phantom_guard.registry.crates import USER_AGENT, CratesClient
 from phantom_guard.registry.exceptions import (
     RegistryParseError,
     RegistryRateLimitError,

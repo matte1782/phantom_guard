@@ -77,27 +77,25 @@ class TestCacheIntegration:
         )
 
         cache1 = Cache(sqlite_path=db_path)
-        async with cache1:
-            async with CachedRegistryClient(mock_client, cache1, "pypi") as cached:
-                await cached.get_package_metadata("flask")
-                assert mock_client.get_package_metadata.call_count == 1
+        async with cache1, CachedRegistryClient(mock_client, cache1, "pypi") as cached:
+            await cached.get_package_metadata("flask")
+            assert mock_client.get_package_metadata.call_count == 1
 
         # Session 2: New cache instance, same database
         mock_client2 = MockRegistryClient()
         mock_client2.set_response("flask", exists=True)
 
         cache2 = Cache(sqlite_path=db_path)
-        async with cache2:
-            async with CachedRegistryClient(mock_client2, cache2, "pypi") as cached:
-                result = await cached.get_package_metadata("flask")
+        async with cache2, CachedRegistryClient(mock_client2, cache2, "pypi") as cached:
+            result = await cached.get_package_metadata("flask")
 
-                # Should NOT call the client - cache hit from SQLite
-                assert mock_client2.get_package_metadata.call_count == 0
+            # Should NOT call the client - cache hit from SQLite
+            assert mock_client2.get_package_metadata.call_count == 0
 
-                # Data should be from session 1
-                assert result.name == "flask"
-                assert result.exists is True
-                assert result.downloads_last_month == 1000000
+            # Data should be from session 1
+            assert result.name == "flask"
+            assert result.exists is True
+            assert result.downloads_last_month == 1000000
 
     @pytest.mark.asyncio
     async def test_concurrent_cache_access(self, tmp_path: Path) -> None:
@@ -121,26 +119,25 @@ class TestCacheIntegration:
         )
 
         cache = Cache(sqlite_path=db_path)
-        async with cache:
-            async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                # Initial cache population
-                await cached.get_package_metadata("requests")
+        async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+            # Initial cache population
+            await cached.get_package_metadata("requests")
 
-                # Concurrent reads
-                async def read_cached() -> PackageMetadata:
-                    return await cached.get_package_metadata("requests")
+            # Concurrent reads
+            async def read_cached() -> PackageMetadata:
+                return await cached.get_package_metadata("requests")
 
-                # Run 20 concurrent reads
-                results = await asyncio.gather(*[read_cached() for _ in range(20)])
+            # Run 20 concurrent reads
+            results = await asyncio.gather(*[read_cached() for _ in range(20)])
 
-                # All should return the same data
-                for result in results:
-                    assert result.name == "requests"
-                    assert result.exists is True
-                    assert result.downloads_last_month == 50000000
+            # All should return the same data
+            for result in results:
+                assert result.name == "requests"
+                assert result.exists is True
+                assert result.downloads_last_month == 50000000
 
-                # Only 1 call to actual client (initial population)
-                assert mock_client.get_package_metadata.call_count == 1
+            # Only 1 call to actual client (initial population)
+            assert mock_client.get_package_metadata.call_count == 1
 
     @pytest.mark.asyncio
     async def test_concurrent_write_read(self, tmp_path: Path) -> None:
@@ -172,25 +169,24 @@ class TestCacheIntegration:
         mock_client.get_package_metadata.side_effect = get_mock_metadata
 
         cache = Cache(sqlite_path=db_path)
-        async with cache:
-            async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                # Concurrent writes and reads
-                async def fetch_package(name: str) -> PackageMetadata:
-                    return await cached.get_package_metadata(name)
+        async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+            # Concurrent writes and reads
+            async def fetch_package(name: str) -> PackageMetadata:
+                return await cached.get_package_metadata(name)
 
-                # First wave: all cache misses (writes)
-                results1 = await asyncio.gather(*[fetch_package(p) for p in packages])
+            # First wave: all cache misses (writes)
+            results1 = await asyncio.gather(*[fetch_package(p) for p in packages])
 
-                # Second wave: all cache hits (reads)
-                results2 = await asyncio.gather(*[fetch_package(p) for p in packages])
+            # Second wave: all cache hits (reads)
+            results2 = await asyncio.gather(*[fetch_package(p) for p in packages])
 
-                # Verify no corruption
-                for r1, r2 in zip(results1, results2, strict=True):
-                    assert r1.name == r2.name
-                    assert r1.downloads_last_month == r2.downloads_last_month
+            # Verify no corruption
+            for r1, r2 in zip(results1, results2, strict=True):
+                assert r1.name == r2.name
+                assert r1.downloads_last_month == r2.downloads_last_month
 
-                # Each package should only trigger 1 client call
-                assert mock_client.get_package_metadata.call_count == len(packages)
+            # Each package should only trigger 1 client call
+            assert mock_client.get_package_metadata.call_count == len(packages)
 
 
 @pytest.mark.integration
@@ -258,17 +254,16 @@ class TestCacheCorruption:
         mock_client.set_response("badpkg", exists=True, description="Fresh data")
 
         cache2 = Cache(sqlite_path=db_path)
-        async with cache2:
-            async with CachedRegistryClient(mock_client, cache2, "pypi") as cached:
-                # Should handle invalid cache data gracefully
-                try:
-                    result = await cached.get_package_metadata("badpkg")
-                    # If it returns, it should have fetched fresh data
-                    # or returned the partial data
-                    assert result.name == "badpkg"
-                except (KeyError, TypeError):
-                    # Also acceptable: raise on invalid data
-                    pass
+        async with cache2, CachedRegistryClient(mock_client, cache2, "pypi") as cached:
+            # Should handle invalid cache data gracefully
+            try:
+                result = await cached.get_package_metadata("badpkg")
+                # If it returns, it should have fetched fresh data
+                # or returned the partial data
+                assert result.name == "badpkg"
+            except (KeyError, TypeError):
+                # Also acceptable: raise on invalid data
+                pass
 
 
 @pytest.mark.integration
@@ -304,33 +299,32 @@ class TestCacheInvariant003:
         )
 
         cache = Cache(sqlite_path=db_path)
-        async with cache:
-            async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                # Get uncached result (directly from mock)
-                uncached = await cached.get_package_metadata_uncached("flask")
+        async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+            # Get uncached result (directly from mock)
+            uncached = await cached.get_package_metadata_uncached("flask")
 
-                # Get cached result (will be stored in cache)
-                cached_result = await cached.get_package_metadata("flask")
+            # Get cached result (will be stored in cache)
+            cached_result = await cached.get_package_metadata("flask")
 
-                # Get again from cache
-                from_cache = await cached.get_package_metadata("flask")
+            # Get again from cache
+            from_cache = await cached.get_package_metadata("flask")
 
-                # All three should be identical
-                assert cached_result.name == uncached.name
-                assert cached_result.exists == uncached.exists
-                assert cached_result.registry == uncached.registry
-                assert cached_result.created_at == uncached.created_at
-                assert cached_result.downloads_last_month == uncached.downloads_last_month
-                assert cached_result.repository_url == uncached.repository_url
-                assert cached_result.maintainer_count == uncached.maintainer_count
-                assert cached_result.release_count == uncached.release_count
-                assert cached_result.latest_version == uncached.latest_version
-                assert cached_result.description == uncached.description
+            # All three should be identical
+            assert cached_result.name == uncached.name
+            assert cached_result.exists == uncached.exists
+            assert cached_result.registry == uncached.registry
+            assert cached_result.created_at == uncached.created_at
+            assert cached_result.downloads_last_month == uncached.downloads_last_month
+            assert cached_result.repository_url == uncached.repository_url
+            assert cached_result.maintainer_count == uncached.maintainer_count
+            assert cached_result.release_count == uncached.release_count
+            assert cached_result.latest_version == uncached.latest_version
+            assert cached_result.description == uncached.description
 
-                # Cache result should also match
-                assert from_cache.name == uncached.name
-                assert from_cache.created_at == uncached.created_at
-                assert from_cache.downloads_last_month == uncached.downloads_last_month
+            # Cache result should also match
+            assert from_cache.name == uncached.name
+            assert from_cache.created_at == uncached.created_at
+            assert from_cache.downloads_last_month == uncached.downloads_last_month
 
     @pytest.mark.asyncio
     async def test_cached_nonexistent_identical(self, tmp_path: Path) -> None:
@@ -345,14 +339,13 @@ class TestCacheInvariant003:
         mock_client.set_response("nonexistent-pkg", exists=False)
 
         cache = Cache(sqlite_path=db_path)
-        async with cache:
-            async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                uncached = await cached.get_package_metadata_uncached("nonexistent-pkg")
-                cached_result = await cached.get_package_metadata("nonexistent-pkg")
+        async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+            uncached = await cached.get_package_metadata_uncached("nonexistent-pkg")
+            cached_result = await cached.get_package_metadata("nonexistent-pkg")
 
-                assert cached_result.name == uncached.name
-                assert cached_result.exists == uncached.exists
-                assert cached_result.exists is False
+            assert cached_result.name == uncached.name
+            assert cached_result.exists == uncached.exists
+            assert cached_result.exists is False
 
 
 @pytest.mark.integration
@@ -475,25 +468,23 @@ class TestCacheEdgeCases:
         )
 
         cache1 = Cache(sqlite_path=db_path)
-        async with cache1:
-            async with CachedRegistryClient(online_client, cache1, "pypi") as cached:
-                await cached.get_package_metadata("cached-pkg")
+        async with cache1, CachedRegistryClient(online_client, cache1, "pypi") as cached:
+            await cached.get_package_metadata("cached-pkg")
 
         # Phase 2: Go "offline" - client raises for all requests
         offline_client = MockRegistryClient()
         offline_client.get_package_metadata.side_effect = RegistryUnavailableError("pypi", None)
 
         cache2 = Cache(sqlite_path=db_path)
-        async with cache2:
-            async with CachedRegistryClient(offline_client, cache2, "pypi") as cached:
-                # Cached package should work (no network call needed)
-                result = await cached.get_package_metadata("cached-pkg")
-                assert result.name == "cached-pkg"
-                assert result.downloads_last_month == 100000
+        async with cache2, CachedRegistryClient(offline_client, cache2, "pypi") as cached:
+            # Cached package should work (no network call needed)
+            result = await cached.get_package_metadata("cached-pkg")
+            assert result.name == "cached-pkg"
+            assert result.downloads_last_month == 100000
 
-                # Uncached package should fail (needs network)
-                with pytest.raises(RegistryUnavailableError):
-                    await cached.get_package_metadata("uncached-pkg")
+            # Uncached package should fail (needs network)
+            with pytest.raises(RegistryUnavailableError):
+                await cached.get_package_metadata("uncached-pkg")
 
     @pytest.mark.asyncio
     async def test_memory_fallback_when_sqlite_unavailable(self, tmp_path: Path) -> None:
@@ -508,13 +499,12 @@ class TestCacheEdgeCases:
         # Use memory-only cache (no SQLite path)
         cache = Cache(sqlite_path=None, memory_max_size=100)
 
-        async with cache:
-            async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                # First call - cache miss, fetches from client
-                await cached.get_package_metadata("testpkg")
-                assert mock_client.get_package_metadata.call_count == 1
+        async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+            # First call - cache miss, fetches from client
+            await cached.get_package_metadata("testpkg")
+            assert mock_client.get_package_metadata.call_count == 1
 
-                # Second call - cache hit from memory
-                result = await cached.get_package_metadata("testpkg")
-                assert mock_client.get_package_metadata.call_count == 1
-                assert result.name == "testpkg"
+            # Second call - cache hit from memory
+            result = await cached.get_package_metadata("testpkg")
+            assert mock_client.get_package_metadata.call_count == 1
+            assert result.name == "testpkg"

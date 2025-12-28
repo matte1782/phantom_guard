@@ -15,7 +15,6 @@ import httpx
 import pytest
 import respx
 
-from phantom_guard.core.types import PackageMetadata
 from phantom_guard.registry.exceptions import (
     RegistryParseError,
     RegistryRateLimitError,

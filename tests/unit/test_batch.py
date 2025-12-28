@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from phantom_guard.core.batch import BatchConfig, BatchResult, BatchValidator
-from phantom_guard.core.types import PackageRisk, Recommendation, Signal, SignalType
+from phantom_guard.core.types import PackageRisk, Recommendation
 
 
 class TestBatchConfig:

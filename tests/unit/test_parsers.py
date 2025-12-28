@@ -6,18 +6,17 @@ MODULE: phantom_guard.cli.parsers
 """
 
 import json
-import pytest
 from pathlib import Path
 
-from phantom_guard.cli.parsers import (
-    parse_requirements_txt,
-    parse_package_json,
-    parse_cargo_toml,
-    detect_and_parse,
-    ParserError,
-    ParsedPackage,
-)
+import pytest
 
+from phantom_guard.cli.parsers import (
+    ParserError,
+    detect_and_parse,
+    parse_cargo_toml,
+    parse_package_json,
+    parse_requirements_txt,
+)
 
 # ============================================================================
 # Requirements.txt Parser Tests
@@ -176,14 +175,12 @@ def test_parse_package_json():
     Test parsing basic dependencies from package.json.
     Should extract package names from dependencies section.
     """
-    content = json.dumps({
-        "name": "my-app",
-        "dependencies": {
-            "express": "^4.17.1",
-            "lodash": "~4.17.21",
-            "axios": "0.21.1"
+    content = json.dumps(
+        {
+            "name": "my-app",
+            "dependencies": {"express": "^4.17.1", "lodash": "~4.17.21", "axios": "0.21.1"},
         }
-    })
+    )
 
     packages = parse_package_json(content)
 
@@ -202,13 +199,9 @@ def test_parse_package_json_scoped():
     Test handling of scoped packages (@org/package).
     Should preserve scope in package name.
     """
-    content = json.dumps({
-        "dependencies": {
-            "@types/node": "^16.0.0",
-            "@babel/core": "^7.15.0",
-            "express": "^4.17.1"
-        }
-    })
+    content = json.dumps(
+        {"dependencies": {"@types/node": "^16.0.0", "@babel/core": "^7.15.0", "express": "^4.17.1"}}
+    )
 
     packages = parse_package_json(content)
 
@@ -226,15 +219,12 @@ def test_parse_package_json_dev_deps():
     Test inclusion of devDependencies.
     Should extract from both dependencies and devDependencies.
     """
-    content = json.dumps({
-        "dependencies": {
-            "express": "^4.17.1"
-        },
-        "devDependencies": {
-            "jest": "^27.0.0",
-            "eslint": "^7.32.0"
+    content = json.dumps(
+        {
+            "dependencies": {"express": "^4.17.1"},
+            "devDependencies": {"jest": "^27.0.0", "eslint": "^7.32.0"},
         }
-    })
+    )
 
     packages = parse_package_json(content)
 
@@ -390,12 +380,7 @@ def test_auto_detect_package_json(tmp_path: Path):
     Should detect format by filename and parse correctly.
     """
     file_path = tmp_path / "package.json"
-    content = json.dumps({
-        "dependencies": {
-            "express": "^4.17.1",
-            "lodash": "^4.17.21"
-        }
-    })
+    content = json.dumps({"dependencies": {"express": "^4.17.1", "lodash": "^4.17.21"}})
     file_path.write_text(content)
 
     packages = detect_and_parse(file_path)
@@ -440,11 +425,7 @@ def test_auto_detect_by_content(tmp_path: Path):
     """
     # JSON content with .txt extension
     file_path = tmp_path / "deps.txt"
-    content = json.dumps({
-        "dependencies": {
-            "express": "^4.17.1"
-        }
-    })
+    content = json.dumps({"dependencies": {"express": "^4.17.1"}})
     file_path.write_text(content)
 
     packages = detect_and_parse(file_path)

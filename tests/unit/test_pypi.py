@@ -11,17 +11,17 @@ EDGE_CASES: EC020-EC034
 
 from __future__ import annotations
 
+import httpx
 import pytest
 import respx
-import httpx
 
-from phantom_guard.registry.pypi import PyPIClient
 from phantom_guard.registry.exceptions import (
-    RegistryTimeoutError,
-    RegistryRateLimitError,
-    RegistryUnavailableError,
     RegistryParseError,
+    RegistryRateLimitError,
+    RegistryTimeoutError,
+    RegistryUnavailableError,
 )
+from phantom_guard.registry.pypi import PyPIClient
 
 
 class TestPyPIClient:

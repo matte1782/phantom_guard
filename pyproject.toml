@@ -91,8 +91,8 @@ ignore = []
 known-first-party = ["phantom_guard"]
 
 [tool.ruff.lint.per-file-ignores]
-# Tests: allow asserts and relax annotation requirements (stubs will be fixed when implemented)
-"tests/**/*.py" = ["S101", "ANN"]
+# Tests: allow asserts, relax annotations, and allow subprocess calls
+"tests/**/*.py" = ["S101", "ANN", "S603", "S607"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -106,6 +106,7 @@ markers = [
     "network: Tests requiring network access",
     "benchmark: Performance benchmarks",
     "slow: Slow tests (>1s)",
+    "e2e: End-to-end workflow tests",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

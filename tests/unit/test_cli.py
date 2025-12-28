@@ -224,6 +224,7 @@ class TestCheckCommand:
         Then: Exit code 0
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         # Create test requirements.txt
@@ -247,7 +248,8 @@ class TestCheckCommand:
         Then: Exit code 4 (EXIT_INPUT_ERROR), error message
         """
         from typer.testing import CliRunner
-        from phantom_guard.cli.main import app, EXIT_INPUT_ERROR
+
+        from phantom_guard.cli.main import EXIT_INPUT_ERROR, app
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", "nonexistent.txt"])
@@ -267,6 +269,7 @@ class TestCheckCommand:
         Then: Exit code 0, "No packages" message
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         # Create empty file
@@ -291,17 +294,18 @@ class TestCheckCommand:
         Then: Exit code 0, validates npm packages
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         # Create test package.json
         pkg_file = tmp_path / "package.json"
-        pkg_file.write_text('''{
+        pkg_file.write_text("""{
   "name": "test-project",
   "dependencies": {
     "express": "^4.17.0",
     "lodash": "^4.17.0"
   }
-}''')
+}""")
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", str(pkg_file)])
@@ -320,18 +324,19 @@ class TestCheckCommand:
         Then: Exit code 0, validates crates packages
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         # Create test Cargo.toml
         cargo_file = tmp_path / "Cargo.toml"
-        cargo_file.write_text('''[package]
+        cargo_file.write_text("""[package]
 name = "test-project"
 version = "0.1.0"
 
 [dependencies]
 serde = "1.0"
 tokio = { version = "1.0", features = ["full"] }
-''')
+""")
 
         runner = CliRunner()
         result = runner.invoke(app, ["check", str(cargo_file)])
@@ -350,6 +355,7 @@ tokio = { version = "1.0", features = ["full"] }
         Then: Ignores specified packages, validates others
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         # Create test requirements.txt
@@ -374,6 +380,7 @@ tokio = { version = "1.0", features = ["full"] }
         Then: Overrides registry detection, uses npm
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         # Create test file
@@ -398,7 +405,8 @@ tokio = { version = "1.0", features = ["full"] }
         Then: Exit code 4 (EXIT_INPUT_ERROR), parse error
         """
         from typer.testing import CliRunner
-        from phantom_guard.cli.main import app, EXIT_INPUT_ERROR
+
+        from phantom_guard.cli.main import EXIT_INPUT_ERROR, app
 
         # Create invalid JSON file
         pkg_file = tmp_path / "package.json"
@@ -480,6 +488,7 @@ class TestCacheCommand:
         Test cache path command shows location.
         """
         from typer.testing import CliRunner
+
         from phantom_guard.cli.main import app
 
         runner = CliRunner()
