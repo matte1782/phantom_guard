@@ -154,9 +154,7 @@ class TestCratesClient:
         Then: User-Agent header is present
         """
         route = respx.get("https://crates.io/api/v1/crates/serde").mock(
-            return_value=httpx.Response(
-                200, json={"crate": {"name": "serde"}, "versions": []}
-            )
+            return_value=httpx.Response(200, json={"crate": {"name": "serde"}, "versions": []})
         )
 
         async with CratesClient() as client:
@@ -221,9 +219,7 @@ class TestCratesClient:
         When: get_package is called
         Then: Raises RegistryUnavailableError
         """
-        respx.get("https://crates.io/api/v1/crates/serde").mock(
-            return_value=httpx.Response(500)
-        )
+        respx.get("https://crates.io/api/v1/crates/serde").mock(return_value=httpx.Response(500))
 
         async with CratesClient() as client:
             with pytest.raises(RegistryUnavailableError) as exc_info:
@@ -625,9 +621,7 @@ class TestCratesMetadataWithOwners:
         """
         custom_ua = "CustomApp/1.0.0"
         route = respx.get("https://crates.io/api/v1/crates/serde").mock(
-            return_value=httpx.Response(
-                200, json={"crate": {"name": "serde"}, "versions": []}
-            )
+            return_value=httpx.Response(200, json={"crate": {"name": "serde"}, "versions": []})
         )
 
         async with CratesClient(user_agent=custom_ua) as client:
@@ -652,9 +646,7 @@ class TestCratesRegistryField:
         Then: Returns metadata with registry="crates"
         """
         respx.get("https://crates.io/api/v1/crates/serde").mock(
-            return_value=httpx.Response(
-                200, json={"crate": {"name": "serde"}, "versions": []}
-            )
+            return_value=httpx.Response(200, json={"crate": {"name": "serde"}, "versions": []})
         )
 
         async with CratesClient() as client:

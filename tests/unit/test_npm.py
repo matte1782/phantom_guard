@@ -205,9 +205,7 @@ class TestNpmClient:
         When: get_package is called
         Then: Raises RegistryUnavailableError
         """
-        respx.get("https://registry.npmjs.org/express").mock(
-            return_value=httpx.Response(500)
-        )
+        respx.get("https://registry.npmjs.org/express").mock(return_value=httpx.Response(500))
 
         async with NpmClient() as client:
             with pytest.raises(RegistryUnavailableError) as exc_info:
@@ -418,9 +416,7 @@ class TestNpmDownloads:
         When: get_downloads is called
         Then: Returns downloads with proper URL encoding
         """
-        respx.get(
-            "https://api.npmjs.org/downloads/point/last-week/@types%2Fnode"
-        ).mock(
+        respx.get("https://api.npmjs.org/downloads/point/last-week/@types%2Fnode").mock(
             return_value=httpx.Response(
                 200,
                 json={"downloads": 500000, "package": "@types/node"},
@@ -500,9 +496,7 @@ class TestNpmMetadataWithDownloads:
             )
         )
         respx.get("https://api.npmjs.org/downloads/point/last-week/express").mock(
-            return_value=httpx.Response(
-                200, json={"downloads": 1000000, "package": "express"}
-            )
+            return_value=httpx.Response(200, json={"downloads": 1000000, "package": "express"})
         )
 
         async with NpmClient() as client:
@@ -528,9 +522,7 @@ class TestNpmMetadataWithDownloads:
         )
 
         async with NpmClient() as client:
-            metadata = await client.get_package_metadata_with_downloads(
-                "nonexistent-xyz"
-            )
+            metadata = await client.get_package_metadata_with_downloads("nonexistent-xyz")
 
         assert metadata.exists is False
         assert metadata.downloads_last_month is None
@@ -603,9 +595,7 @@ class TestNpmRegistryField:
         Then: Returns metadata with registry="npm"
         """
         respx.get("https://registry.npmjs.org/express").mock(
-            return_value=httpx.Response(
-                200, json={"name": "express", "versions": {}}
-            )
+            return_value=httpx.Response(200, json={"name": "express", "versions": {}})
         )
 
         async with NpmClient() as client:
@@ -624,9 +614,7 @@ class TestNpmRegistryField:
         When: get_package_metadata is called
         Then: Returns metadata with registry="npm"
         """
-        respx.get("https://registry.npmjs.org/nonexistent").mock(
-            return_value=httpx.Response(404)
-        )
+        respx.get("https://registry.npmjs.org/nonexistent").mock(return_value=httpx.Response(404))
 
         async with NpmClient() as client:
             metadata = await client.get_package_metadata("nonexistent")

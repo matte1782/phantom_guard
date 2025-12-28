@@ -176,9 +176,7 @@ class TestPyPIClient:
         When: get_package is called
         Then: Raises RegistryUnavailableError
         """
-        respx.get("https://pypi.org/pypi/flask/json").mock(
-            return_value=httpx.Response(500)
-        )
+        respx.get("https://pypi.org/pypi/flask/json").mock(return_value=httpx.Response(500))
 
         async with PyPIClient() as client:
             with pytest.raises(RegistryUnavailableError) as exc_info:
@@ -526,9 +524,7 @@ class TestPyPIMetadataWithDownloads:
         When: get_package_metadata_with_downloads is called
         Then: Returns metadata with exists=False, no downloads fetch
         """
-        respx.get("https://pypi.org/pypi/nonexistent/json").mock(
-            return_value=httpx.Response(404)
-        )
+        respx.get("https://pypi.org/pypi/nonexistent/json").mock(return_value=httpx.Response(404))
         # pypistats should NOT be called
 
         async with PyPIClient() as client:
@@ -626,9 +622,7 @@ class TestPyPIRegistryField:
         Then: Returns metadata with registry="pypi"
         """
         respx.get("https://pypi.org/pypi/flask/json").mock(
-            return_value=httpx.Response(
-                200, json={"info": {"name": "flask"}, "releases": {}}
-            )
+            return_value=httpx.Response(200, json={"info": {"name": "flask"}, "releases": {}})
         )
 
         async with PyPIClient() as client:
@@ -647,9 +641,7 @@ class TestPyPIRegistryField:
         When: get_package_metadata is called
         Then: Returns metadata with registry="pypi"
         """
-        respx.get("https://pypi.org/pypi/nonexistent/json").mock(
-            return_value=httpx.Response(404)
-        )
+        respx.get("https://pypi.org/pypi/nonexistent/json").mock(return_value=httpx.Response(404))
 
         async with PyPIClient() as client:
             metadata = await client.get_package_metadata("nonexistent")

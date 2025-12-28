@@ -235,9 +235,7 @@ class TestCacheCorruption:
             pass
 
     @pytest.mark.asyncio
-    async def test_invalid_json_in_cache_treated_as_miss(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_invalid_json_in_cache_treated_as_miss(self, tmp_path: Path) -> None:
         """
         EC: EC064
 
@@ -483,9 +481,7 @@ class TestCacheEdgeCases:
 
         # Phase 2: Go "offline" - client raises for all requests
         offline_client = MockRegistryClient()
-        offline_client.get_package_metadata.side_effect = RegistryUnavailableError(
-            "pypi", None
-        )
+        offline_client.get_package_metadata.side_effect = RegistryUnavailableError("pypi", None)
 
         cache2 = Cache(sqlite_path=db_path)
         async with cache2:
@@ -500,9 +496,7 @@ class TestCacheEdgeCases:
                     await cached.get_package_metadata("uncached-pkg")
 
     @pytest.mark.asyncio
-    async def test_memory_fallback_when_sqlite_unavailable(
-        self, tmp_path: Path
-    ) -> None:
+    async def test_memory_fallback_when_sqlite_unavailable(self, tmp_path: Path) -> None:
         """
         EC: EC068, EC070
 
