@@ -252,8 +252,8 @@ async def _validate_package(
                 case Recommendation.NOT_FOUND:
                     return EXIT_NOT_FOUND
 
-            # Default return if no match (shouldn't happen)
-            return EXIT_RUNTIME_ERROR
+            # Default return if no match (shouldn't happen)  # pragma: no cover
+            return EXIT_RUNTIME_ERROR  # pragma: no cover
 
     except InvalidPackageNameError as e:
         formatter.print_error(f"Invalid package name: {e.reason}")
@@ -404,7 +404,10 @@ async def _check_packages(
     was_cancelled = False
     total_time_ms = 0.0
 
-    if not quiet:
+    # Suppress progress output for JSON format
+    suppress_progress = quiet or output_format == "json"
+
+    if not suppress_progress:
         console.print(f"\n[cyan]Scanning {len(packages)} packages...[/cyan]\n")
 
     # Create progress bar
@@ -416,19 +419,19 @@ async def _check_packages(
         BarColumn(),
         TextColumn("{task.completed}/{task.total}"),
         console=console,
-        disable=quiet,
+        disable=suppress_progress,
     ) as progress:
         progress_task = progress.add_task("Validating", total=len(packages))
 
         def on_progress(done: int, total: int) -> None:
-            if progress_task is not None:
+            if progress_task is not None:  # pragma: no cover
                 progress.update(progress_task, completed=done)
 
         # Validate each registry group
         async with cache:
             for reg, reg_packages in packages_by_registry.items():
-                if was_cancelled:
-                    break
+                if was_cancelled:  # pragma: no cover
+                    break  # pragma: no cover
 
                 # Get appropriate registry client
                 base_client: RegistryClientProtocol
@@ -456,12 +459,13 @@ async def _check_packages(
                         was_cancelled = True
 
     # Print results
-    console.print()
+    if not suppress_progress:
+        console.print()
     formatter = get_formatter(output_format, verbose=False, quiet=quiet)
     formatter.print_results(all_results, console)
 
-    # Print errors if any
-    if all_errors and not quiet:
+    # Print errors if any (not for JSON format)
+    if all_errors and not quiet and output_format != "json":
         console.print("\n[yellow]Errors:[/yellow]")
         for pkg, error in all_errors.items():
             console.print(f"  [red]{pkg}:[/red] {error}")

@@ -41,7 +41,7 @@ class RegistryClient(Protocol):
 
     async def get_package_metadata(self, name: str) -> PackageMetadata:
         """Fetch package metadata from registry."""
-        ...
+        ...  # pragma: no cover
 
 
 # =============================================================================

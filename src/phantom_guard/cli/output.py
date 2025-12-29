@@ -19,10 +19,11 @@ COLORS = {
     Recommendation.NOT_FOUND: "dim",
 }
 
+# Use ASCII-compatible icons for cross-platform support
 ICONS = {
-    Recommendation.SAFE: "✓",
-    Recommendation.SUSPICIOUS: "⚠",
-    Recommendation.HIGH_RISK: "✗",
+    Recommendation.SAFE: "+",
+    Recommendation.SUSPICIOUS: "!",
+    Recommendation.HIGH_RISK: "x",
     Recommendation.NOT_FOUND: "?",
 }
 
@@ -71,7 +72,7 @@ class OutputFormatter:
         # Standard output
         text = Text()
         text.append(f"  {icon} ", style=color)
-        text.append(f"{risk.name:<20}", style="bold")
+        text.append(f"{risk.name:<30} ", style="bold")
         text.append(f"{risk.recommendation.value:<12}", style=color)
         text.append(f"[{risk.risk_score:.2f}]", style="dim")
 
@@ -80,7 +81,7 @@ class OutputFormatter:
         # Verbose: show signals
         if self.verbose and risk.signals:
             for signal in risk.signals:
-                self.console.print(f"      └─ {signal.type.value}", style="dim")
+                self.console.print(f"      `-- {signal.type.value}", style="dim")
 
     def print_scanning(self, package: str) -> Progress:
         """

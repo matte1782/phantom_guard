@@ -220,11 +220,10 @@ class TestCacheCorruption:
         cache = Cache(sqlite_path=db_path)
 
         try:
-            async with cache:
-                async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                    # Should work despite corruption
-                    result = await cached.get_package_metadata("flask")
-                    assert result.name == "flask"
+            async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+                # Should work despite corruption
+                result = await cached.get_package_metadata("flask")
+                assert result.name == "flask"
         except Exception:
             # If it raises, that's also acceptable behavior
             # (fails fast on corruption)
@@ -386,11 +385,10 @@ class TestCacheEdgeCases:
         cache = Cache(sqlite_path=db_path)
 
         try:
-            async with cache:
-                async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
-                    # Even if SQLite is locked, memory cache should work
-                    result = await cached.get_package_metadata("flask")
-                    assert result.name == "flask"
+            async with cache, CachedRegistryClient(mock_client, cache, "pypi") as cached:
+                # Even if SQLite is locked, memory cache should work
+                result = await cached.get_package_metadata("flask")
+                assert result.name == "flask"
         except Exception as e:
             # Acceptable: raise an error indicating lock
             assert "lock" in str(e).lower() or "database" in str(e).lower()
@@ -430,11 +428,10 @@ class TestCacheEdgeCases:
 
         try:
             cache2 = Cache(sqlite_path=db_path)
-            async with cache2:
-                async with CachedRegistryClient(mock_client, cache2, "pypi") as cached:
-                    # Should still work via memory cache even if SQLite write fails
-                    result = await cached.get_package_metadata("newpkg")
-                    assert result.name == "newpkg"
+            async with cache2, CachedRegistryClient(mock_client, cache2, "pypi") as cached:
+                # Should still work via memory cache even if SQLite write fails
+                result = await cached.get_package_metadata("newpkg")
+                assert result.name == "newpkg"
         except Exception:
             # If it raises, that's also acceptable behavior
             pass

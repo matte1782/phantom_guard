@@ -612,7 +612,214 @@ class TestBatchPerformance:
         validator = BatchValidator(config=config)
         result = await validator.validate_batch(packages, "pypi", mock_client)
 
-        # With 10 concurrent, 50 packages × 20ms = ~100ms theoretical minimum
+        # With 10 concurrent, 50 packages x 20ms = ~100ms theoretical minimum
         # Allow generous margin for test environment
         assert result.total_time_ms < 5000  # Under 5 seconds
         assert result.total_count == 50
+
+
+class TestBatchValidatorEdgeCases:
+    """Edge case tests for BatchValidator."""
+
+    @pytest.fixture
+    def mock_client(self) -> MagicMock:
+        """Create a mock registry client."""
+        client = MagicMock()
+        client.__aenter__ = AsyncMock(return_value=client)
+        client.__aexit__ = AsyncMock(return_value=None)
+        return client
+
+    @pytest.mark.asyncio
+    async def test_cancel_before_start(
+        self, mock_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        TEST_ID: T002.09
+
+        Test cancellation before validation starts.
+        """
+        packages = ["pkg1", "pkg2", "pkg3"]
+
+        async def mock_validate(name: str, registry: str, client: MagicMock) -> PackageRisk:
+            await asyncio.sleep(0.5)  # Long delay
+            return PackageRisk(
+                name=name,
+                registry="pypi",
+                exists=True,
+                risk_score=0.1,
+                signals=(),
+                recommendation=Recommendation.SAFE,
+            )
+
+        import phantom_guard.core.detector as detector_module
+
+        monkeypatch.setattr(detector_module, "validate_package", mock_validate)
+
+        config = BatchConfig(max_concurrent=1)
+        validator = BatchValidator(config=config)
+
+        # Cancel immediately after starting
+        async def cancel_quickly() -> None:
+            await asyncio.sleep(0.01)
+            validator.cancel()
+
+        cancel_task = asyncio.create_task(cancel_quickly())
+        result = await validator.validate_batch(packages, "pypi", mock_client)
+        await cancel_task
+
+        # Some packages should be skipped due to early cancel
+        assert result.total_count < len(packages)
+
+    @pytest.mark.asyncio
+    async def test_progress_callback_on_timeout(
+        self, mock_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        TEST_ID: T002.10
+
+        Progress callback is called even when packages timeout.
+        """
+        packages = ["slow_pkg"]
+        progress_calls: list[tuple[int, int]] = []
+
+        def on_progress(done: int, total: int) -> None:
+            progress_calls.append((done, total))
+
+        async def mock_validate(name: str, registry: str, client: MagicMock) -> PackageRisk:
+            await asyncio.sleep(10)  # Longer than timeout
+            return PackageRisk(
+                name=name,
+                registry="pypi",
+                exists=True,
+                risk_score=0.1,
+                signals=(),
+                recommendation=Recommendation.SAFE,
+            )
+
+        import phantom_guard.core.detector as detector_module
+
+        monkeypatch.setattr(detector_module, "validate_package", mock_validate)
+
+        config = BatchConfig(timeout_per_package=0.1)
+        validator = BatchValidator(config=config)
+        result = await validator.validate_batch(
+            packages,
+            "pypi",
+            mock_client,
+            on_progress=on_progress,
+        )
+
+        # Progress should be called for timeout
+        assert len(progress_calls) == 1
+        assert progress_calls[0] == (1, 1)
+        # Package should be in errors
+        assert "slow_pkg" in result.errors
+
+    @pytest.mark.asyncio
+    async def test_progress_callback_on_error(
+        self, mock_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        TEST_ID: T002.11
+
+        Progress callback is called even when packages error.
+        """
+        packages = ["error_pkg"]
+        progress_calls: list[tuple[int, int]] = []
+
+        def on_progress(done: int, total: int) -> None:
+            progress_calls.append((done, total))
+
+        async def mock_validate(name: str, registry: str, client: MagicMock) -> PackageRisk:
+            raise RuntimeError("Simulated error")
+
+        import phantom_guard.core.detector as detector_module
+
+        monkeypatch.setattr(detector_module, "validate_package", mock_validate)
+
+        validator = BatchValidator()
+        result = await validator.validate_batch(
+            packages,
+            "pypi",
+            mock_client,
+            on_progress=on_progress,
+        )
+
+        # Progress should be called for error
+        assert len(progress_calls) == 1
+        assert progress_calls[0] == (1, 1)
+        # Package should be in errors
+        assert "error_pkg" in result.errors
+
+    @pytest.mark.asyncio
+    async def test_sync_result_callback(
+        self, mock_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        TEST_ID: T002.12
+
+        Sync result callback is handled correctly.
+        """
+        packages = ["pkg1"]
+        results_received: list[PackageRisk] = []
+
+        def on_result(risk: PackageRisk) -> None:
+            results_received.append(risk)
+
+        async def mock_validate(name: str, registry: str, client: MagicMock) -> PackageRisk:
+            return PackageRisk(
+                name=name,
+                registry="pypi",
+                exists=True,
+                risk_score=0.1,
+                signals=(),
+                recommendation=Recommendation.SAFE,
+            )
+
+        import phantom_guard.core.detector as detector_module
+
+        monkeypatch.setattr(detector_module, "validate_package", mock_validate)
+
+        validator = BatchValidator()
+        await validator.validate_batch(
+            packages,
+            "pypi",
+            mock_client,
+            on_result=on_result,
+        )
+
+        assert len(results_received) == 1
+
+    @pytest.mark.asyncio
+    async def test_cancel_method_before_validation(
+        self, mock_client: MagicMock, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """
+        TEST_ID: T002.13
+
+        Cancel method before validation starts does nothing.
+        """
+        validator = BatchValidator()
+
+        # Cancel before any validation - should not raise
+        validator.cancel()
+
+        # Should still work after that
+        packages = ["pkg1"]
+
+        async def mock_validate(name: str, registry: str, client: MagicMock) -> PackageRisk:
+            return PackageRisk(
+                name=name,
+                registry="pypi",
+                exists=True,
+                risk_score=0.1,
+                signals=(),
+                recommendation=Recommendation.SAFE,
+            )
+
+        import phantom_guard.core.detector as detector_module
+
+        monkeypatch.setattr(detector_module, "validate_package", mock_validate)
+
+        result = await validator.validate_batch(packages, "pypi", mock_client)
+        assert result.total_count == 1

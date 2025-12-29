@@ -607,6 +607,335 @@ class TestPyPIMetadataWithDownloads:
         assert downloads is None
 
 
+class TestPyPIContextManager:
+    """Tests for context manager edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_client_provided_not_closed_on_exit(self):
+        """
+        TEST_ID: T020.26
+        SPEC: S020
+
+        Given: PyPIClient initialized with external httpx client
+        When: Context manager exits
+        Then: External client is NOT closed (_owns_client=False)
+        """
+        external_client = httpx.AsyncClient(timeout=10.0)
+        try:
+            respx.get("https://pypi.org/pypi/flask/json").mock(
+                return_value=httpx.Response(200, json={"info": {"name": "flask"}, "releases": {}})
+            )
+
+            async with PyPIClient(client=external_client) as client:
+                metadata = await client.get_package_metadata("flask")
+                assert metadata.exists is True
+
+            # External client should still be usable (not closed)
+            assert not external_client.is_closed
+        finally:
+            await external_client.aclose()
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_client_provided_uses_existing_client(self):
+        """
+        TEST_ID: T020.27
+        SPEC: S020
+
+        Given: PyPIClient initialized with external httpx client
+        When: Entering context manager
+        Then: Uses the provided client, doesn't create new one
+        """
+        external_client = httpx.AsyncClient(timeout=10.0)
+        try:
+            respx.get("https://pypi.org/pypi/requests/json").mock(
+                return_value=httpx.Response(
+                    200, json={"info": {"name": "requests"}, "releases": {}}
+                )
+            )
+
+            pypi_client = PyPIClient(client=external_client)
+            # Before entering, _client should be the external client
+            assert pypi_client._client is external_client
+            assert pypi_client._owns_client is False
+
+            async with pypi_client as client:
+                # Inside context, _client should still be the external client
+                assert client._client is external_client
+                await client.get_package_metadata("requests")
+        finally:
+            await external_client.aclose()
+
+
+class TestPyPIRateLimitEdgeCases:
+    """Tests for rate limit header parsing edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_invalid_retry_after_header(self):
+        """
+        TEST_ID: T020.28
+        SPEC: S020
+        EC: EC025
+
+        Given: PyPI returns 429 with invalid Retry-After header
+        When: get_package_metadata is called
+        Then: Raises RegistryRateLimitError with retry_after=None
+        """
+        respx.get("https://pypi.org/pypi/flask/json").mock(
+            return_value=httpx.Response(429, headers={"Retry-After": "not-a-number"})
+        )
+
+        async with PyPIClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("flask")
+
+        assert exc_info.value.registry == "pypi"
+        assert exc_info.value.retry_after is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_no_retry_after_header(self):
+        """
+        TEST_ID: T020.29
+        SPEC: S020
+        EC: EC025
+
+        Given: PyPI returns 429 without Retry-After header
+        When: get_package_metadata is called
+        Then: Raises RegistryRateLimitError with retry_after=None
+        """
+        respx.get("https://pypi.org/pypi/flask/json").mock(return_value=httpx.Response(429))
+
+        async with PyPIClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("flask")
+
+        assert exc_info.value.registry == "pypi"
+        assert exc_info.value.retry_after is None
+
+
+class TestPyPIDatetimeParsingEdgeCases:
+    """Tests for datetime parsing edge cases in releases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_invalid_upload_time_format_ignored(self):
+        """
+        TEST_ID: T020.30
+        SPEC: S022
+
+        Given: PyPI returns release with invalid upload_time format
+        When: get_package_metadata is called
+        Then: Invalid datetime is ignored, created_at uses valid timestamps
+        """
+        respx.get("https://pypi.org/pypi/pkg-bad-time/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "pkg-bad-time", "version": "1.0.0"},
+                    "releases": {
+                        "1.0.0": [{"upload_time": "not-a-valid-datetime"}],
+                        "0.9.0": [{"upload_time": "2023-01-01T00:00:00"}],
+                    },
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("pkg-bad-time")
+
+        assert metadata.exists is True
+        # Should still get created_at from valid timestamp
+        assert metadata.created_at is not None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_all_invalid_upload_times_returns_none(self):
+        """
+        TEST_ID: T020.31
+        SPEC: S022
+
+        Given: PyPI returns all releases with invalid upload_time formats
+        When: get_package_metadata is called
+        Then: created_at is None
+        """
+        respx.get("https://pypi.org/pypi/pkg-all-bad-time/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "pkg-all-bad-time", "version": "1.0.0"},
+                    "releases": {
+                        "1.0.0": [{"upload_time": "invalid1"}],
+                        "0.9.0": [{"upload_time": "invalid2"}],
+                    },
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("pkg-all-bad-time")
+
+        assert metadata.exists is True
+        assert metadata.created_at is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_missing_upload_time_field_ignored(self):
+        """
+        TEST_ID: T020.33
+        SPEC: S022
+
+        Given: PyPI returns release files without upload_time field
+        When: get_package_metadata is called
+        Then: Files without upload_time are skipped gracefully
+        """
+        respx.get("https://pypi.org/pypi/pkg-no-time/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "pkg-no-time", "version": "1.0.0"},
+                    "releases": {
+                        "1.0.0": [{"filename": "pkg-1.0.0.tar.gz"}],  # No upload_time
+                        "0.9.0": [{"upload_time": "2023-01-01T00:00:00"}],
+                    },
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("pkg-no-time")
+
+        assert metadata.exists is True
+        # Should still get created_at from the valid timestamp
+        assert metadata.created_at is not None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_empty_upload_time_field_ignored(self):
+        """
+        TEST_ID: T020.34
+        SPEC: S022
+
+        Given: PyPI returns release files with empty upload_time
+        When: get_package_metadata is called
+        Then: Empty upload_time values are skipped
+        """
+        respx.get("https://pypi.org/pypi/pkg-empty-time/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {"name": "pkg-empty-time", "version": "1.0.0"},
+                    "releases": {
+                        "1.0.0": [{"upload_time": ""}],  # Empty string
+                        "0.9.0": [{"upload_time": None}],  # None value
+                    },
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("pkg-empty-time")
+
+        assert metadata.exists is True
+        assert metadata.created_at is None
+
+
+class TestPyPIRepositoryUrlFallback:
+    """Tests for repository URL resolution priority."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_project_url_takes_priority(self):
+        """
+        TEST_ID: T020.35
+        SPEC: S022
+
+        Given: PyPI returns project_url in info
+        When: get_package_metadata is called
+        Then: project_url is used, project_urls fallback not consulted
+        """
+        respx.get("https://pypi.org/pypi/pkg-project-url/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {
+                        "name": "pkg-project-url",
+                        "version": "1.0.0",
+                        "project_url": "https://primary-url.example.com",
+                        "project_urls": {
+                            "Source": "https://fallback-url.example.com",
+                        },
+                    },
+                    "releases": {},
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("pkg-project-url")
+
+        assert metadata.repository_url == "https://primary-url.example.com"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_home_page_takes_priority(self):
+        """
+        TEST_ID: T020.36
+        SPEC: S022
+
+        Given: PyPI returns home_page in info (but no project_url)
+        When: get_package_metadata is called
+        Then: home_page is used, project_urls fallback not consulted
+        """
+        respx.get("https://pypi.org/pypi/pkg-home-page/json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "info": {
+                        "name": "pkg-home-page",
+                        "version": "1.0.0",
+                        "home_page": "https://home-page-url.example.com",
+                        "project_urls": {
+                            "Source": "https://fallback-url.example.com",
+                        },
+                    },
+                    "releases": {},
+                },
+            )
+        )
+
+        async with PyPIClient() as client:
+            metadata = await client.get_package_metadata("pkg-home-page")
+
+        assert metadata.repository_url == "https://home-page-url.example.com"
+
+
+class TestPyPIInvalidDataTypes:
+    """Tests for invalid data type handling."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_downloads_network_error_returns_none(self):
+        """
+        TEST_ID: T020.32
+        SPEC: S023
+
+        Given: pypistats API has network error
+        When: get_downloads is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://pypistats.org/api/packages/flask/recent").mock(
+            side_effect=httpx.ConnectError("Connection refused")
+        )
+
+        async with PyPIClient() as client:
+            downloads = await client.get_downloads("flask")
+
+        assert downloads is None
+
+
 class TestPyPIRegistryField:
     """Tests to verify registry field is correctly set."""
 

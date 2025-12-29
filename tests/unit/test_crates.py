@@ -631,6 +631,210 @@ class TestCratesMetadataWithOwners:
         assert request.headers["User-Agent"] == custom_ua
 
 
+class TestCratesContextManager:
+    """Tests for context manager edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_client_provided_not_closed_on_exit(self) -> None:
+        """
+        TEST_ID: T033.27
+        SPEC: S033
+
+        Given: CratesClient initialized with external httpx client
+        When: Context manager exits
+        Then: External client is NOT closed (_owns_client=False)
+        """
+        external_client = httpx.AsyncClient(timeout=10.0)
+        try:
+            respx.get("https://crates.io/api/v1/crates/serde").mock(
+                return_value=httpx.Response(200, json={"crate": {"name": "serde"}, "versions": []})
+            )
+
+            async with CratesClient(client=external_client) as client:
+                metadata = await client.get_package_metadata("serde")
+                assert metadata.exists is True
+
+            # External client should still be usable (not closed)
+            assert not external_client.is_closed
+        finally:
+            await external_client.aclose()
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_client_provided_uses_existing_client(self) -> None:
+        """
+        TEST_ID: T033.28
+        SPEC: S033
+
+        Given: CratesClient initialized with external httpx client
+        When: Entering context manager
+        Then: Uses the provided client, doesn't create new one
+        """
+        external_client = httpx.AsyncClient(timeout=10.0)
+        try:
+            respx.get("https://crates.io/api/v1/crates/tokio").mock(
+                return_value=httpx.Response(200, json={"crate": {"name": "tokio"}, "versions": []})
+            )
+
+            crates_client = CratesClient(client=external_client)
+            # Before entering, _client should be the external client
+            assert crates_client._client is external_client
+            assert crates_client._owns_client is False
+
+            async with crates_client as client:
+                # Inside context, _client should still be the external client
+                assert client._client is external_client
+                await client.get_package_metadata("tokio")
+        finally:
+            await external_client.aclose()
+
+
+class TestCratesRateLimitEdgeCases:
+    """Tests for rate limit header parsing edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_invalid_retry_after_header(self) -> None:
+        """
+        TEST_ID: T033.29
+        SPEC: S033
+        EC: EC025
+
+        Given: crates.io returns 429 with invalid Retry-After header
+        When: get_package_metadata is called
+        Then: Raises RegistryRateLimitError with retry_after=None
+        """
+        respx.get("https://crates.io/api/v1/crates/serde").mock(
+            return_value=httpx.Response(429, headers={"Retry-After": "not-a-number"})
+        )
+
+        async with CratesClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("serde")
+
+        assert exc_info.value.registry == "crates.io"
+        assert exc_info.value.retry_after is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_no_retry_after_header(self) -> None:
+        """
+        TEST_ID: T033.30
+        SPEC: S033
+        EC: EC025
+
+        Given: crates.io returns 429 without Retry-After header
+        When: get_package_metadata is called
+        Then: Raises RegistryRateLimitError with retry_after=None
+        """
+        respx.get("https://crates.io/api/v1/crates/serde").mock(return_value=httpx.Response(429))
+
+        async with CratesClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("serde")
+
+        assert exc_info.value.registry == "crates.io"
+        assert exc_info.value.retry_after is None
+
+
+class TestCratesInvalidDataTypes:
+    """Tests for invalid data type handling."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_downloads_non_integer_returns_none(self) -> None:
+        """
+        TEST_ID: T033.31
+        SPEC: S034
+
+        Given: crates.io returns non-integer recent_downloads field
+        When: get_package_metadata is called
+        Then: Returns metadata with downloads_last_month=None
+        """
+        respx.get("https://crates.io/api/v1/crates/bad-downloads").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "crate": {
+                        "name": "bad-downloads",
+                        "recent_downloads": "not-a-number",
+                    },
+                    "versions": [],
+                },
+            )
+        )
+
+        async with CratesClient() as client:
+            metadata = await client.get_package_metadata("bad-downloads")
+
+        assert metadata.exists is True
+        assert metadata.downloads_last_month is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_owners_users_not_list_returns_none(self) -> None:
+        """
+        TEST_ID: T033.32
+        SPEC: S035
+
+        Given: Owners API returns users as non-list
+        When: get_owners is called
+        Then: Returns None
+        """
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            return_value=httpx.Response(
+                200,
+                json={"users": "not-a-list"},
+            )
+        )
+
+        async with CratesClient() as client:
+            owner_count = await client.get_owners("serde")
+
+        assert owner_count is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_owners_invalid_json_returns_none(self) -> None:
+        """
+        TEST_ID: T033.33
+        SPEC: S035
+
+        Given: Owners API returns invalid JSON
+        When: get_owners is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            return_value=httpx.Response(200, content=b"not valid json")
+        )
+
+        async with CratesClient() as client:
+            owner_count = await client.get_owners("serde")
+
+        assert owner_count is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_owners_network_error_returns_none(self) -> None:
+        """
+        TEST_ID: T033.34
+        SPEC: S035
+
+        Given: Owners API has network error
+        When: get_owners is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://crates.io/api/v1/crates/serde/owners").mock(
+            side_effect=httpx.ConnectError("Connection refused")
+        )
+
+        async with CratesClient() as client:
+            owner_count = await client.get_owners("serde")
+
+        assert owner_count is None
+
+
 class TestCratesRegistryField:
     """Tests to verify registry field is correctly set."""
 

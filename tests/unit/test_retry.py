@@ -278,9 +278,11 @@ class TestRetryAsync:
         async def always_fails() -> str:
             raise RegistryUnavailableError("pypi", 503)
 
-        with patch("phantom_guard.registry.retry.asyncio.sleep", AsyncMock()):
-            with pytest.raises(RegistryUnavailableError):
-                await retry_async(always_fails, max_retries=2, base_delay=0.01)
+        with (
+            patch("phantom_guard.registry.retry.asyncio.sleep", AsyncMock()),
+            pytest.raises(RegistryUnavailableError),
+        ):
+            await retry_async(always_fails, max_retries=2, base_delay=0.01)
 
     @pytest.mark.asyncio
     async def test_exhausted_rate_limit_raises(self) -> None:
@@ -289,9 +291,11 @@ class TestRetryAsync:
         async def always_rate_limited() -> str:
             raise RegistryRateLimitError("pypi", retry_after=1)
 
-        with patch("phantom_guard.registry.retry.asyncio.sleep", AsyncMock()):
-            with pytest.raises(RegistryRateLimitError):
-                await retry_async(always_rate_limited, max_retries=2, base_delay=0.01)
+        with (
+            patch("phantom_guard.registry.retry.asyncio.sleep", AsyncMock()),
+            pytest.raises(RegistryRateLimitError),
+        ):
+            await retry_async(always_rate_limited, max_retries=2, base_delay=0.01)
 
 
 class TestRetryConfig:
@@ -368,9 +372,11 @@ class TestExponentialBackoffTiming:
         async def mock_sleep(delay: float) -> None:
             sleep_times.append(delay)
 
-        with patch("phantom_guard.registry.retry.asyncio.sleep", mock_sleep):
-            with pytest.raises(RegistryTimeoutError):
-                await always_fails()
+        with (
+            patch("phantom_guard.registry.retry.asyncio.sleep", mock_sleep),
+            pytest.raises(RegistryTimeoutError),
+        ):
+            await always_fails()
 
         # Should have 4 sleep calls (before retries 1, 2, 3, 4)
         assert len(sleep_times) == 4

@@ -401,3 +401,70 @@ class TestCachedRegistryClientMemoryOnly:
             # Second call - cache hit
             await cached.get_package_metadata("flask")
             assert mock_client.get_package_metadata.call_count == 1
+
+
+class SimpleClient:
+    """Client without context manager methods."""
+
+    def __init__(self) -> None:
+        self.get_package_metadata = AsyncMock()
+
+
+class TestCachedRegistryClientWithSimpleClient:
+    """Tests for CachedRegistryClient with clients lacking context manager."""
+
+    @pytest.mark.asyncio
+    async def test_works_with_client_without_context_manager(self, tmp_path: Path) -> None:
+        """
+        TEST_ID: T040.15
+
+        CachedRegistryClient works with clients that don't have __aenter__/__aexit__.
+        """
+        simple_client = SimpleClient()
+        simple_client.get_package_metadata.return_value = PackageMetadata(
+            name="flask",
+            exists=True,
+            registry="pypi",
+        )
+
+        cache = Cache(sqlite_path=tmp_path / "test.db")
+
+        # Using CachedRegistryClient with simple client
+        async with cache, CachedRegistryClient(simple_client, cache, "pypi") as cached:
+            result = await cached.get_package_metadata("flask")
+
+        assert result.name == "flask"
+        simple_client.get_package_metadata.assert_called_once_with("flask")
+
+
+class TestCachedRegistryClientInvalidCache:
+    """Tests for CachedRegistryClient handling invalid cache data."""
+
+    @pytest.mark.asyncio
+    async def test_refetches_on_invalid_cache_data(self, tmp_path: Path) -> None:
+        """
+        TEST_ID: T040.16
+
+        When cached data is corrupted/invalid, refetches from client.
+        """
+        mock_client = MockRegistryClient()
+        mock_client.get_package_metadata.return_value = PackageMetadata(
+            name="flask",
+            exists=True,
+            registry="pypi",
+        )
+
+        cache = Cache(sqlite_path=tmp_path / "test.db")
+
+        async with cache:
+            # Manually store invalid data in cache
+            await cache.set("pypi", "flask", {"invalid": "data"})
+
+            async with CachedRegistryClient(mock_client, cache, "pypi") as cached:
+                # Should detect invalid cache and refetch
+                result = await cached.get_package_metadata("flask")
+
+        assert result.name == "flask"
+        assert result.exists is True
+        # Client should have been called since cached data was invalid
+        mock_client.get_package_metadata.assert_called_once_with("flask")

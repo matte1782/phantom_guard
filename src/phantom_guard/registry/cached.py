@@ -30,7 +30,7 @@ class RegistryClientProtocol(Protocol):
 
     async def get_package_metadata(self, name: str) -> PackageMetadata:
         """Fetch package metadata from registry."""
-        ...
+        ...  # pragma: no cover
 
 
 def _metadata_to_dict(metadata: PackageMetadata) -> dict[str, Any]:

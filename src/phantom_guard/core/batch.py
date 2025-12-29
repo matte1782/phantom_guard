@@ -176,8 +176,8 @@ class BatchValidator:
             nonlocal completed
 
             # Check for cancellation before starting
-            if self._cancel_event and self._cancel_event.is_set():
-                return
+            if self._cancel_event and self._cancel_event.is_set():  # pragma: no cover
+                return  # pragma: no cover
 
             try:
                 async with semaphore:

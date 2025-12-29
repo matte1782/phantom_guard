@@ -73,6 +73,8 @@ def run_cli(*args: str, timeout: int = 60) -> subprocess.CompletedProcess[str]:
         capture_output=True,
         text=True,
         timeout=timeout,
+        encoding="utf-8",
+        errors="replace",
     )
 
 
@@ -104,7 +106,7 @@ class TestValidateWorkflow:
         result = run_cli("validate", "nonexistent-xyz-abc-123-pkg", "--no-banner")
 
         assert result.returncode == 3
-        assert "NOT_FOUND" in result.stdout or "not found" in result.stdout.lower()
+        assert "not_found" in result.stdout.lower()
 
     @pytest.mark.network
     def test_validate_with_verbose_flag(self) -> None:

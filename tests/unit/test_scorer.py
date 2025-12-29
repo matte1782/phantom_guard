@@ -487,6 +487,51 @@ class TestResultAggregation:
         assert agg.not_found_count == 2
 
     @pytest.mark.unit
+    def test_aggregate_not_found_with_safe(self) -> None:
+        """
+        TEST_ID: T009.07
+        SPEC: S009
+
+        Given: List with NOT_FOUND and SAFE packages
+        When: aggregate_results is called
+        Then: overall_risk is NOT_FOUND (higher priority than SAFE)
+
+        This test covers the NOT_FOUND branch at line 282->274 in scorer.py.
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("pkg2", "pypi", False, 1.0, (), Recommendation.NOT_FOUND),
+        ]
+        agg = aggregate_results(results)
+        assert agg.safe_count == 1
+        assert agg.not_found_count == 1
+        assert agg.overall_risk == Recommendation.NOT_FOUND
+
+    @pytest.mark.unit
+    def test_aggregate_not_found_first_then_continue(self) -> None:
+        """
+        TEST_ID: T009.08
+        SPEC: S009
+
+        Given: List with NOT_FOUND package followed by another package
+        When: aggregate_results is called
+        Then: Loop continues from NOT_FOUND case to next iteration
+
+        This test specifically ensures the loop continuation branch
+        from NOT_FOUND case (line 282->274) is exercised.
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", False, 1.0, (), Recommendation.NOT_FOUND),
+            PackageRisk("pkg2", "pypi", True, 0.5, (), Recommendation.SUSPICIOUS),
+            PackageRisk("pkg3", "pypi", True, 0.1, (), Recommendation.SAFE),
+        ]
+        agg = aggregate_results(results)
+        assert agg.not_found_count == 1
+        assert agg.suspicious_count == 1
+        assert agg.safe_count == 1
+        assert agg.overall_risk == Recommendation.SUSPICIOUS
+
+    @pytest.mark.unit
     def test_aggregate_to_dict(self) -> None:
         """
         TEST_ID: T009.05

@@ -26,12 +26,12 @@ class OutputFormatter(ABC):
     @abstractmethod
     def format_results(self, results: list[PackageRisk]) -> str:
         """Format results for output."""
-        ...
+        ...  # pragma: no cover
 
     @abstractmethod
     def print_results(self, results: list[PackageRisk], console: Console) -> None:
         """Print results to console."""
-        ...
+        ...  # pragma: no cover
 
 
 class TextFormatter(OutputFormatter):
@@ -49,10 +49,11 @@ class TextFormatter(OutputFormatter):
         "NOT_FOUND": "dim",
     }
 
+    # Use ASCII-compatible icons for cross-platform support
     ICONS: ClassVar[dict[str, str]] = {
-        "SAFE": "✓",
-        "SUSPICIOUS": "⚠",
-        "HIGH_RISK": "✗",
+        "SAFE": "+",
+        "SUSPICIOUS": "!",
+        "HIGH_RISK": "x",
         "NOT_FOUND": "?",
     }
 
@@ -73,7 +74,7 @@ class TextFormatter(OutputFormatter):
         for risk in results:
             rec = risk.recommendation.value
             icon = self.ICONS.get(rec, " ")
-            line = f"  {icon} {risk.name:<20} {rec:<12} [{risk.risk_score:.2f}]"
+            line = f"  {icon} {risk.name:<30} {rec:<12} [{risk.risk_score:.2f}]"
             lines.append(line)
         return "\n".join(lines)
 
@@ -86,7 +87,7 @@ class TextFormatter(OutputFormatter):
 
             text = Text()
             text.append(f"  {icon} ", style=color)
-            text.append(f"{risk.name:<20}", style="bold")
+            text.append(f"{risk.name:<30} ", style="bold")
             text.append(f"{rec:<12}", style=color)
             text.append(f"[{risk.risk_score:.2f}]", style="dim")
 
@@ -94,7 +95,7 @@ class TextFormatter(OutputFormatter):
 
             if self.verbose and risk.signals:
                 for signal in risk.signals:
-                    console.print(f"      └─ {signal.type.value}", style="dim")
+                    console.print(f"      `-- {signal.type.value}", style="dim")
 
 
 class JSONFormatter(OutputFormatter):
@@ -185,7 +186,7 @@ def get_formatter(output_format: str, **kwargs: bool | int) -> OutputFormatter:
         valid_kwargs = {k: v for k, v in kwargs.items() if k in ("verbose", "quiet")}
     elif formatter_cls == JSONFormatter:
         valid_kwargs = {k: v for k, v in kwargs.items() if k in ("indent",)}
-    else:
+    else:  # pragma: no cover
         valid_kwargs = {}
 
     return formatter_cls(**valid_kwargs)

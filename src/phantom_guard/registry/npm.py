@@ -164,7 +164,7 @@ class NpmClient:
             raw_url = repository.get("url", "")
             # Clean git+ prefix and .git suffix
             repository_url = raw_url.replace("git+", "").rstrip(".git")
-            if repository_url.endswith("."):
+            if repository_url.endswith("."):  # pragma: no cover - defensive, rstrip removes dots
                 repository_url = repository_url[:-1]
         elif isinstance(repository, str):
             repository_url = repository

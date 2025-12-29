@@ -8,12 +8,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-# ASCII art ghost logo
+# ASCII art ghost logo (using ASCII-compatible characters)
 PHANTOM_LOGO = r"""
-   ▄▀▀▀▀▀▄
-  █  ◉ ◉  █
-  █   ▽   █
-   ▀█▀▀▀█▀
+   .------.
+  |  o  o  |
+  |    v    |
+   '--^--'
 """
 
 VERSION = "0.1.0"
@@ -28,7 +28,7 @@ def print_banner(console: Console) -> None:
     """
     title = Text()
     title.append("PHANTOM GUARD", style="bold cyan")
-    title.append(" — Supply Chain Security", style="dim")
+    title.append(" - Supply Chain Security", style="dim")
 
     panel = Panel(
         f"{PHANTOM_LOGO}\n{title}\nv{VERSION}",

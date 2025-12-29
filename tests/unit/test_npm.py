@@ -579,6 +579,277 @@ class TestNpmMetadataWithDownloads:
         assert metadata.name == "empty-pkg"
 
 
+class TestNpmContextManager:
+    """Tests for context manager edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_client_provided_not_closed_on_exit(self) -> None:
+        """
+        TEST_ID: T027.26
+        SPEC: S027
+
+        Given: NpmClient initialized with external httpx client
+        When: Context manager exits
+        Then: External client is NOT closed (_owns_client=False)
+        """
+        external_client = httpx.AsyncClient(timeout=10.0)
+        try:
+            respx.get("https://registry.npmjs.org/express").mock(
+                return_value=httpx.Response(200, json={"name": "express", "versions": {}})
+            )
+
+            async with NpmClient(client=external_client) as client:
+                metadata = await client.get_package_metadata("express")
+                assert metadata.exists is True
+
+            # External client should still be usable (not closed)
+            assert not external_client.is_closed
+        finally:
+            await external_client.aclose()
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_client_provided_uses_existing_client(self) -> None:
+        """
+        TEST_ID: T027.27
+        SPEC: S027
+
+        Given: NpmClient initialized with external httpx client
+        When: Entering context manager
+        Then: Uses the provided client, doesn't create new one
+        """
+        external_client = httpx.AsyncClient(timeout=10.0)
+        try:
+            respx.get("https://registry.npmjs.org/lodash").mock(
+                return_value=httpx.Response(200, json={"name": "lodash", "versions": {}})
+            )
+
+            npm_client = NpmClient(client=external_client)
+            # Before entering, _client should be the external client
+            assert npm_client._client is external_client
+            assert npm_client._owns_client is False
+
+            async with npm_client as client:
+                # Inside context, _client should still be the external client
+                assert client._client is external_client
+                await client.get_package_metadata("lodash")
+        finally:
+            await external_client.aclose()
+
+
+class TestNpmRateLimitEdgeCases:
+    """Tests for rate limit header parsing edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_invalid_retry_after_header(self) -> None:
+        """
+        TEST_ID: T027.28
+        SPEC: S027
+        EC: EC025
+
+        Given: npm returns 429 with invalid Retry-After header
+        When: get_package_metadata is called
+        Then: Raises RegistryRateLimitError with retry_after=None
+        """
+        respx.get("https://registry.npmjs.org/express").mock(
+            return_value=httpx.Response(429, headers={"Retry-After": "not-a-number"})
+        )
+
+        async with NpmClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("express")
+
+        assert exc_info.value.registry == "npm"
+        assert exc_info.value.retry_after is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_rate_limit_no_retry_after_header(self) -> None:
+        """
+        TEST_ID: T027.29
+        SPEC: S027
+        EC: EC025
+
+        Given: npm returns 429 without Retry-After header
+        When: get_package_metadata is called
+        Then: Raises RegistryRateLimitError with retry_after=None
+        """
+        respx.get("https://registry.npmjs.org/express").mock(return_value=httpx.Response(429))
+
+        async with NpmClient() as client:
+            with pytest.raises(RegistryRateLimitError) as exc_info:
+                await client.get_package_metadata("express")
+
+        assert exc_info.value.registry == "npm"
+        assert exc_info.value.retry_after is None
+
+
+class TestNpmRepositoryUrlEdgeCases:
+    """Tests for repository URL parsing edge cases."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_repository_url_ends_with_dot(self) -> None:
+        """
+        TEST_ID: T027.30
+        SPEC: S028
+
+        Given: npm returns repository URL ending with dot after git suffix removal
+        When: get_package_metadata is called
+        Then: Trailing dot is removed from repository URL
+        """
+        respx.get("https://registry.npmjs.org/pkg-with-dot").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "name": "pkg-with-dot",
+                    "versions": {"1.0.0": {}},
+                    "repository": {
+                        "type": "git",
+                        "url": "git+https://github.com/user/repo.git.",
+                    },
+                },
+            )
+        )
+
+        async with NpmClient() as client:
+            metadata = await client.get_package_metadata("pkg-with-dot")
+
+        # URL should have trailing dot removed
+        assert metadata.repository_url == "https://github.com/user/repo"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_repository_url_ends_with_trailing_dot_after_strip(self) -> None:
+        """
+        TEST_ID: T027.35
+        SPEC: S028
+
+        Given: npm returns repository URL that ends with just "." after rstrip(".git")
+        When: get_package_metadata is called
+        Then: The trailing dot is removed
+        """
+        # After rstrip(".git"), URL like "https://example.com/." becomes "https://example.com/."
+        # (since rstrip removes trailing .git chars, not just ".git" suffix)
+        # We need a URL that after replace("git+", "").rstrip(".git") ends with "."
+        respx.get("https://registry.npmjs.org/pkg-trailing-dot").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "name": "pkg-trailing-dot",
+                    "versions": {"1.0.0": {}},
+                    "repository": {
+                        "type": "git",
+                        # After rstrip(".git"), this becomes "https://example.com/repo."
+                        "url": "https://example.com/repo.git.",
+                    },
+                },
+            )
+        )
+
+        async with NpmClient() as client:
+            metadata = await client.get_package_metadata("pkg-trailing-dot")
+
+        # URL should have trailing dot removed
+        assert metadata.repository_url == "https://example.com/repo"
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_repository_as_string(self) -> None:
+        """
+        TEST_ID: T027.31
+        SPEC: S028
+
+        Given: npm returns repository as string (not dict)
+        When: get_package_metadata is called
+        Then: Uses string as repository URL
+        """
+        respx.get("https://registry.npmjs.org/string-repo").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "name": "string-repo",
+                    "versions": {"1.0.0": {}},
+                    "repository": "https://github.com/user/repo",
+                },
+            )
+        )
+
+        async with NpmClient() as client:
+            metadata = await client.get_package_metadata("string-repo")
+
+        assert metadata.repository_url == "https://github.com/user/repo"
+
+
+class TestNpmInvalidDataTypes:
+    """Tests for invalid data type handling."""
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_downloads_non_integer_returns_none(self) -> None:
+        """
+        TEST_ID: T027.32
+        SPEC: S029
+
+        Given: npm downloads API returns non-integer downloads field
+        When: get_downloads is called
+        Then: Returns None
+        """
+        respx.get("https://api.npmjs.org/downloads/point/last-week/express").mock(
+            return_value=httpx.Response(
+                200,
+                json={"downloads": "not-a-number", "package": "express"},
+            )
+        )
+
+        async with NpmClient() as client:
+            downloads = await client.get_downloads("express")
+
+        assert downloads is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_downloads_invalid_json_returns_none(self) -> None:
+        """
+        TEST_ID: T027.33
+        SPEC: S029
+
+        Given: npm downloads API returns invalid JSON
+        When: get_downloads is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://api.npmjs.org/downloads/point/last-week/express").mock(
+            return_value=httpx.Response(200, content=b"not valid json")
+        )
+
+        async with NpmClient() as client:
+            downloads = await client.get_downloads("express")
+
+        assert downloads is None
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_downloads_network_error_returns_none(self) -> None:
+        """
+        TEST_ID: T027.34
+        SPEC: S029
+
+        Given: npm downloads API has network error
+        When: get_downloads is called
+        Then: Returns None (graceful degradation)
+        """
+        respx.get("https://api.npmjs.org/downloads/point/last-week/express").mock(
+            side_effect=httpx.ConnectError("Connection refused")
+        )
+
+        async with NpmClient() as client:
+            downloads = await client.get_downloads("express")
+
+        assert downloads is None
+
+
 class TestNpmRegistryField:
     """Tests to verify registry field is correctly set."""
 

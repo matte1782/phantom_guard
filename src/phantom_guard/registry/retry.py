@@ -132,11 +132,11 @@ async def _execute_with_retry(
             else:
                 raise
 
-    # Should not reach here, but for type checker
-    if last_exception:
-        raise last_exception
-    msg = "Unexpected retry loop exit"
-    raise RuntimeError(msg)
+    # Should not reach here, but for type checker  # pragma: no cover
+    if last_exception:  # pragma: no cover
+        raise last_exception  # pragma: no cover
+    msg = "Unexpected retry loop exit"  # pragma: no cover
+    raise RuntimeError(msg)  # pragma: no cover
 
 
 def with_retry(

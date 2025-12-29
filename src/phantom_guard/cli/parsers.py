@@ -15,8 +15,8 @@ from pathlib import Path
 
 try:
     import tomllib  # Python 3.11+
-except ImportError:
-    import tomli as tomllib  # type: ignore
+except ImportError:  # pragma: no cover
+    import tomli as tomllib  # type: ignore  # pragma: no cover
 
 
 @dataclass
@@ -278,8 +278,8 @@ def detect_and_parse(file_path: Path) -> list[ParsedPackage]:
     # Fall back to requirements.txt (most lenient)
     try:
         return parse_requirements_txt(content)
-    except Exception as e:
-        raise ParserError(
+    except Exception as e:  # pragma: no cover
+        raise ParserError(  # pragma: no cover
             f"Could not detect file format for {file_path.name}. "
             f"Expected requirements.txt, package.json, or Cargo.toml"
         ) from e

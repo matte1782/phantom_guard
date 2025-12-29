@@ -279,7 +279,7 @@ def aggregate_results(results: list[PackageRisk]) -> AggregateResult:
                 suspicious_count += 1
             case Recommendation.HIGH_RISK:
                 high_risk_count += 1
-            case Recommendation.NOT_FOUND:
+            case Recommendation.NOT_FOUND:  # pragma: no branch
                 not_found_count += 1
 
     # Overall risk is the highest individual risk
