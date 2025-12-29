@@ -2,9 +2,9 @@
 
 > **Version**: 0.1.0
 > **Created**: 2025-12-24
-> **Last Updated**: 2025-12-28 (W3.6 Complete)
+> **Last Updated**: 2025-12-29 (Week 4 Planned)
 > **Status**: ACTIVE
-> **Gate**: 4 of 6 (Implementation Phase - Week 3 Complete)
+> **Gate**: 4 of 6 (Implementation Phase - Week 4 Ready)
 
 ---
 
@@ -160,31 +160,59 @@
 
 ## Phase 4: Polish & Release (Week 4)
 
+> **Status**: PLANNED
+> **Day-by-day tasks**: See `docs/planning/week_4/`
+> **Prerequisites**: Weeks 1-3 complete, 100% test coverage achieved
+
 ### Goals
-- Performance optimization
-- Documentation
-- Package for PyPI release
+- Performance benchmarking and optimization
+- Popular packages database for false positive prevention
+- Complete packaging for PyPI
+- Comprehensive documentation
+- Final hostile review and release
 
 ### Tasks
 
-| Task | SPEC | Description | Hours | Status |
-|:-----|:-----|:------------|:------|:-------|
-| W4.1 | - | Performance benchmarks | 4 | PENDING |
-| W4.2 | - | Performance optimization | 6 | PENDING |
-| W4.3 | - | Popular packages list (top 1000) | 4 | PENDING |
-| W4.4 | - | pyproject.toml + packaging | 4 | PENDING |
-| W4.5 | - | README + usage docs | 4 | PENDING |
-| W4.6 | - | Final hostile review | 6 | PENDING |
-| W4.7 | - | Release to PyPI | 4 | PENDING |
-| **Buffer** | - | Contingency (20%) | 8 | - |
-| **Total** | - | Week 4 | **40** | - |
+| Task | SPEC | Description | Hours | Day | Status |
+|:-----|:-----|:------------|:------|:----|:-------|
+| W4.1 | PERF | Performance benchmarks | 6 | Day 1 | PENDING |
+| W4.2 | PERF | Performance optimization | 6 | Day 2 | PENDING |
+| W4.3 | S006 | Popular packages list (top 1000) | 6 | Day 3 | PENDING |
+| W4.4 | - | pyproject.toml + packaging | 6 | Day 4 | PENDING |
+| W4.5 | - | README + usage docs | 6 | Day 5 | PENDING |
+| W4.6 | All | Final hostile review | 4 | Day 6 | PENDING |
+| W4.7 | - | Release to PyPI | 4 | Day 6 | PENDING |
+| **Buffer** | - | Contingency (20%) | 2 | - | - |
+| **Total** | - | Week 4 | **40** | - | - |
+
+### Day-by-Day Files
+
+| Day | Focus | File |
+|:----|:------|:-----|
+| Day 1 | Performance Benchmarks | `docs/planning/week_4/DAY_1.md` |
+| Day 2 | Performance Optimization | `docs/planning/week_4/DAY_2.md` |
+| Day 3 | Popular Packages Database | `docs/planning/week_4/DAY_3.md` |
+| Day 4 | Packaging | `docs/planning/week_4/DAY_4.md` |
+| Day 5 | Documentation | `docs/planning/week_4/DAY_5.md` |
+| Day 6 | Hostile Review + Release | `docs/planning/week_4/DAY_6.md` |
+
+### Performance Budgets to Validate
+
+| Operation | Budget | Constraint |
+|:----------|:-------|:-----------|
+| Single package (cached) | <10ms | P99 |
+| Single package (uncached) | <200ms | P99 |
+| 50 packages (concurrent) | <5s | P99 |
+| Pattern matching | <1ms | P99 |
 
 ### Exit Criteria
 - [ ] All benchmarks pass performance budget
+- [ ] Popular packages integrated (top 1000 per registry)
+- [ ] False positive rate <5%
 - [ ] pip install phantom-guard works
 - [ ] README complete with examples
 - [ ] Hostile review GO verdict
-- [ ] Version 0.1.0 released
+- [ ] Version 0.1.0 released to PyPI
 
 ---
 
@@ -639,15 +667,22 @@ W1.1 → W1.5 → W1.6 → W2.1 → W2.4 → W3.1 → W3.6 → W4.6 → W4.7 →
 | `pyproject.toml` - S603/S607 ignores | ✅ Added |
 
 #### Required Actions for Week 4
-| Priority | Action | Deadline |
-|:---------|:-------|:---------|
-| P1 | Improve CLI coverage to 85%+ | W4.2 |
-| P2 | Clean up minor lint warnings | W4.6 |
+| Priority | Action | Deadline | Status |
+|:---------|:-------|:---------|:-------|
+| ~~P1~~ | ~~Improve CLI coverage to 85%+~~ | ~~W4.2~~ | DONE (100% achieved) |
+| P2 | Clean up minor lint warnings | W4.6 | PENDING |
+
+> **Note**: Coverage was improved to 100% on 2025-12-29 (post-W3.6 optimization).
 
 ### Week 4
-- [ ] W4.1-W4.7 Complete
-- [ ] Final hostile review
-- [ ] Release 0.1.0
+- [ ] W4.1 Complete (Performance Benchmarks - Day 1)
+- [ ] W4.2 Complete (Performance Optimization - Day 2)
+- [ ] W4.3 Complete (Popular Packages Database - Day 3)
+- [ ] W4.4 Complete (Packaging - Day 4)
+- [ ] W4.5 Complete (Documentation - Day 5)
+- [ ] W4.6 Complete (Final Hostile Review - Day 6)
+- [ ] W4.7 Complete (PyPI Release - Day 6)
+- [ ] Version 0.1.0 released
 
 ### Week 5
 - [ ] W5.1 Complete (Scaffold)
