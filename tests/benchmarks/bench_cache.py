@@ -27,7 +27,6 @@ from httpx import Response
 from phantom_guard.cache import AsyncSQLiteCache, MemoryCache
 from phantom_guard.registry import CratesClient, NpmClient, PyPIClient
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================
@@ -148,6 +147,7 @@ class TestCacheBenchmarks:
         Measures: SQLite cache lookup time
         Expected: < 5ms
         """
+
         # Pre-populate the cache
         async def setup() -> None:
             async with AsyncSQLiteCache(db_path=temp_db_path) as cache:
@@ -262,9 +262,7 @@ class TestRegistryClientBenchmarks:
         # Real-world budget: < 500ms, mocked includes event loop creation overhead
         assert benchmark.stats.stats.mean < 0.300  # 300ms (mocked with asyncio overhead)
 
-    def test_npm_client_latency(
-        self, benchmark: Any, npm_success_response: dict[str, Any]
-    ) -> None:
+    def test_npm_client_latency(self, benchmark: Any, npm_success_response: dict[str, Any]) -> None:
         """
         TEST_ID: T027.B01
         SPEC: S027

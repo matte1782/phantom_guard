@@ -95,7 +95,7 @@ class TestPatternMatchBenchmarks:
 
         # Verify performance budget (1ms = 0.001s)
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"
 
     def test_match_patterns_no_match(self, benchmark):
         """
@@ -116,7 +116,7 @@ class TestPatternMatchBenchmarks:
 
         # Verify performance budget
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"
 
     def test_match_patterns_multiple_matches(self, benchmark):
         """
@@ -137,7 +137,7 @@ class TestPatternMatchBenchmarks:
 
         # Verify performance budget
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"
 
     def test_all_patterns_compilation(self, benchmark):
         """
@@ -196,9 +196,7 @@ class TestPatternMatchBenchmarks:
         throughput = 1000 / total_time if total_time > 0 else float("inf")
 
         # Verify throughput target (> 1000 packages/second)
-        assert throughput > 1000, (
-            f"Throughput {throughput:.0f} pkg/s below 1000 pkg/s target"
-        )
+        assert throughput > 1000, f"Throughput {throughput:.0f} pkg/s below 1000 pkg/s target"
 
 
 @pytest.mark.benchmark
@@ -223,7 +221,7 @@ class TestPatternHelperBenchmarks:
 
         # Verify performance budget
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"
 
     def test_get_highest_weight_pattern_no_match(self, benchmark):
         """
@@ -242,7 +240,7 @@ class TestPatternHelperBenchmarks:
 
         # Verify performance budget
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"
 
     def test_count_pattern_matches_latency(self, benchmark):
         """
@@ -261,7 +259,7 @@ class TestPatternHelperBenchmarks:
 
         # Verify performance budget
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"
 
     def test_count_pattern_matches_no_match(self, benchmark):
         """
@@ -280,4 +278,4 @@ class TestPatternHelperBenchmarks:
 
         # Verify performance budget
         mean_time = benchmark.stats.stats.mean
-        assert mean_time < 0.001, f"Mean latency {mean_time*1000:.3f}ms exceeds 1ms budget"
+        assert mean_time < 0.001, f"Mean latency {mean_time * 1000:.3f}ms exceeds 1ms budget"

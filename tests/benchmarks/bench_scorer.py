@@ -16,8 +16,8 @@ from __future__ import annotations
 import pytest
 
 from phantom_guard.core.scorer import calculate_risk_score, determine_recommendation
-from phantom_guard.core.typosquat import check_typosquat, levenshtein_distance
 from phantom_guard.core.types import Recommendation, Signal, SignalType
+from phantom_guard.core.typosquat import check_typosquat, levenshtein_distance
 
 
 @pytest.mark.benchmark
@@ -217,5 +217,6 @@ class TestLevenshteinBenchmarks:
         assert result >= 1  # At least one difference
         # Still should be fast
         assert benchmark.stats.stats.mean < 0.0001, (
-            f"Levenshtein longer strings too slow: {benchmark.stats.stats.mean * 1000:.3f}ms > 0.1ms"
+            f"Levenshtein longer strings too slow: "
+            f"{benchmark.stats.stats.mean * 1000:.3f}ms > 0.1ms"
         )

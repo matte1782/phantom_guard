@@ -14,15 +14,14 @@ from __future__ import annotations
 
 import asyncio
 import gc
-import sys
 import tracemalloc
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 
 from phantom_guard.cache.memory import MemoryCache
-from phantom_guard.cache.types import CacheEntry, make_cache_key
-from phantom_guard.core.detector import validate_package, validate_package_sync
+from phantom_guard.cache.types import make_cache_key
+from phantom_guard.core.detector import validate_package_sync
 from phantom_guard.core.typosquat import POPULAR_PACKAGES
 
 if TYPE_CHECKING:
@@ -566,7 +565,7 @@ class TestPopularPackagesMemory:
 
         # Access all popular packages to ensure they're loaded
         all_packages: set[str] = set()
-        for registry, packages in POPULAR_PACKAGES.items():
+        for _registry, packages in POPULAR_PACKAGES.items():
             all_packages.update(packages)
 
         # Force materialization
@@ -674,9 +673,7 @@ class TestMemoryLeaks:
             f"possible memory leak"
         )
 
-    def test_no_leak_repeated_validations_different_names(
-        self, memory_tracker: None
-    ) -> None:
+    def test_no_leak_repeated_validations_different_names(self, memory_tracker: None) -> None:
         """
         TEST_ID: T000.M02
         SPEC: S001

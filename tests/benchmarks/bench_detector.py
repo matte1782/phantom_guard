@@ -141,11 +141,11 @@ class TestPatternMatchBenchmarks:
 
     def test_pattern_match_latency(self, benchmark):
         """
-        TEST_ID: T005.B01
+        TEST_ID: T005.D01
         SPEC: S005
         BUDGET: < 1ms P99
 
-        Measures: Single pattern match operation
+        Measures: Single pattern match operation (detector context)
         """
 
         def match_single():
@@ -164,10 +164,10 @@ class TestPatternMatchBenchmarks:
 
     def test_pattern_match_batch(self, benchmark):
         """
-        TEST_ID: T005.B02
+        TEST_ID: T005.D02
         SPEC: S005
 
-        Measures: Pattern matching 100 names in batch
+        Measures: Pattern matching 100 names in batch (detector context)
         """
         # Mix of suspicious and normal names
         package_names = [
@@ -200,15 +200,16 @@ class TestPatternMatchBenchmarks:
         # Budget: 100 matches should complete in reasonable time
         # If single match is < 1ms, 100 should be < 100ms
         assert benchmark.stats.stats.mean < 0.1, (
-            f"Mean latency {benchmark.stats.stats.mean * 1000:.2f}ms exceeds 100ms budget for 100 matches"
+            f"Mean latency {benchmark.stats.stats.mean * 1000:.2f}ms "
+            "exceeds 100ms budget for 100 matches"
         )
 
     def test_pattern_registry_access(self, benchmark):
         """
-        TEST_ID: T005.B03
+        TEST_ID: T005.D03
         SPEC: S005
 
-        Measures: Pattern registry access overhead
+        Measures: Pattern registry access overhead (detector context)
         Validates that pattern lookup is efficient.
         """
 
@@ -232,7 +233,7 @@ class TestPatternMatchBenchmarks:
 
     def test_pattern_match_no_match(self, benchmark):
         """
-        TEST_ID: T005.B04
+        TEST_ID: T005.D04
         SPEC: S005
 
         Measures: Pattern matching for names that don't match any pattern
