@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Detect AI-hallucinated package attacks (slopsquatting)"
 readme = "README.md"
 requires-python = ">=3.11"
-license = "MIT"
+license = {file = "LICENSE"}
 authors = [{ name = "Matteo" }]
 keywords = ["security", "supply-chain", "slopsquatting", "ai-security", "package-validation"]
 classifiers = [
@@ -48,13 +48,24 @@ dev = [
 phantom-guard = "phantom_guard.cli.main:app"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/phantom-guard"
-Documentation = "https://github.com/yourusername/phantom-guard#readme"
-Repository = "https://github.com/yourusername/phantom-guard"
-Issues = "https://github.com/yourusername/phantom-guard/issues"
+Homepage = "https://github.com/phantom-guard/phantom-guard"
+Documentation = "https://github.com/phantom-guard/phantom-guard#readme"
+Repository = "https://github.com/phantom-guard/phantom-guard"
+Changelog = "https://github.com/phantom-guard/phantom-guard/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/phantom-guard/phantom-guard/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/phantom_guard"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "tests/",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "pyproject.toml",
+]
 
 [tool.mypy]
 python_version = "3.11"
