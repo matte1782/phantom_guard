@@ -24,6 +24,7 @@ class MemoryCache:
     """
     IMPLEMENTS: S040
     INV: INV016, INV017
+    OPTIMIZED: Add __slots__ + OrderedDict for O(1) LRU.
 
     Thread-safe LRU memory cache.
 
@@ -36,6 +37,8 @@ class MemoryCache:
         max_size: Maximum number of entries before LRU eviction
         default_ttl: Default time-to-live in seconds
     """
+
+    __slots__ = ("_cache", "_hits", "_lock", "_misses", "default_ttl", "max_size")
 
     def __init__(
         self,
@@ -53,12 +56,15 @@ class MemoryCache:
         self.default_ttl = default_ttl
         self._cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._lock = Lock()
+        self._hits = 0
+        self._misses = 0
 
     def get(self, key: str) -> CacheValue | None:
         """
         IMPLEMENTS: S041
         INV: INV016 - Returns None if expired
         TEST: T040.01, T040.02, T040.04, T040.05
+        OPTIMIZED: O(1) cache lookup with LRU update.
 
         Get value from cache.
 
@@ -70,6 +76,7 @@ class MemoryCache:
         """
         with self._lock:
             if key not in self._cache:
+                self._misses += 1
                 return None
 
             entry = self._cache[key]
@@ -77,10 +84,12 @@ class MemoryCache:
             # INV016: Check TTL before returning
             if entry.is_expired():
                 del self._cache[key]
+                self._misses += 1
                 return None
 
             # Move to end (most recently used)
             self._cache.move_to_end(key)
+            self._hits += 1
             result: CacheValue = entry.value
             return result
 
@@ -94,6 +103,7 @@ class MemoryCache:
         IMPLEMENTS: S042
         INV: INV017 - Enforces size limit
         TEST: T040.03, T040.07, T040.08
+        OPTIMIZED: O(1) cache set with automatic eviction.
 
         Store value in cache with LRU eviction.
 

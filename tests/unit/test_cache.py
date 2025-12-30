@@ -107,7 +107,7 @@ class TestCacheEntry:
         CacheEntry.is_expired handles naive datetime (no timezone).
         """
         # Create entry with naive datetime (no tzinfo)
-        naive_created = datetime(2024, 1, 1, 12, 0, 0)  # noqa: DTZ001
+        naive_created = datetime(2024, 1, 1, 12, 0, 0)
         entry = CacheEntry(
             key="test",
             value={},
@@ -1410,16 +1410,17 @@ class TestTwoTierCache:
 
             # Create a mock that simulates the key being listed but
             # then delete returning False (as if removed by another thread)
-            original_delete = cache.memory.delete
+            original_delete = MemoryCache.delete
 
-            def mock_delete(key: str) -> bool:
+            def mock_delete(self: MemoryCache, key: str) -> bool:
                 # First call will get the keys list, then we return False
                 # to simulate race condition where key was removed
                 if key == "pypi:flask":
                     return False
-                return original_delete(key)
+                return original_delete(self, key)
 
-            with patch.object(cache.memory, "delete", side_effect=mock_delete):
+            # Patch at class level since MemoryCache uses __slots__
+            with patch.object(MemoryCache, "delete", mock_delete):
                 deleted = await cache.clear_registry("pypi")
 
             # The delete returned False, so deleted count should be 0

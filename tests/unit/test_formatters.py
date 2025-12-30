@@ -557,8 +557,8 @@ class TestTextFormatterVerboseSignals:
         # Verify both signal types are printed
         assert "recently_created" in result
         assert "no_repository" in result
-        # Verify the signal prefix format
-        assert "`--" in result
+        # Verify the signal prefix format (tree-drawing characters)
+        assert "\u251c\u2500" in result or "\u2514\u2500" in result
 
     def test_verbose_with_multiple_packages_and_signals(self) -> None:
         """
@@ -625,8 +625,9 @@ class TestTextFormatterVerboseSignals:
 
         result = output.getvalue()
         assert "pkg" in result
-        # Signal type should NOT appear without verbose
-        assert "`--" not in result
+        # Signal type should NOT appear without verbose (tree-drawing characters)
+        assert "\u251c\u2500" not in result
+        assert "\u2514\u2500" not in result
 
 
 class TestGetFormatterInvalidFormat:

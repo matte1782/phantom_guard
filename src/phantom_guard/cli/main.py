@@ -6,6 +6,7 @@ Command-line interface for Phantom Guard.
 from __future__ import annotations
 
 import asyncio
+import os
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -13,9 +14,11 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from phantom_guard import __version__
 from phantom_guard.cache import Cache, get_default_cache_path
-from phantom_guard.cli.branding import print_banner
+from phantom_guard.cli.branding import BannerType, get_banner_type, show_banner
 from phantom_guard.cli.output import OutputFormatter
+from phantom_guard.cli.theme import PHANTOM_THEME
 from phantom_guard.core import detector
 from phantom_guard.core.types import (
     InvalidPackageNameError,
@@ -28,6 +31,22 @@ from phantom_guard.registry import CachedRegistryClient, CratesClient, NpmClient
 from phantom_guard.registry.cached import RegistryClientProtocol
 from phantom_guard.registry.exceptions import RegistryError
 
+# Themed console - respects NO_COLOR environment variable
+console = Console(theme=PHANTOM_THEME, no_color=bool(os.environ.get("NO_COLOR")))
+
+
+def version_callback(value: bool) -> None:
+    """
+    Display version with full LARGE banner.
+
+    IMPLEMENTS: S010
+    """
+    if value:
+        # Show LARGE banner for version display
+        show_banner(console, BannerType.LARGE, __version__)
+        raise typer.Exit()
+
+
 # CLI app
 app = typer.Typer(
     name="phantom-guard",
@@ -35,7 +54,25 @@ app = typer.Typer(
     add_completion=False,
 )
 
-console = Console()
+
+@app.callback()
+def main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-V",
+            callback=version_callback,
+            is_eager=True,
+            help="Show version and exit",
+        ),
+    ] = False,
+) -> None:
+    """
+    Phantom Guard - Detect AI-hallucinated package attacks (slopsquatting).
+    """
+    pass
+
 
 # Cache subcommand group
 cache_app = typer.Typer(help="Manage the local cache")
@@ -179,6 +216,9 @@ def validate(
     verbose: Annotated[bool, typer.Option("-v", "--verbose", help="Show detailed signals")] = False,
     quiet: Annotated[bool, typer.Option("-q", "--quiet", help="Only show result")] = False,
     no_banner: Annotated[bool, typer.Option("--no-banner", help="Hide banner")] = False,
+    plain: Annotated[
+        bool, typer.Option("--plain", help="Disable colors (plain text output)")
+    ] = False,
 ) -> None:
     """
     IMPLEMENTS: S010, S011
@@ -187,11 +227,15 @@ def validate(
 
     Validate a single package for supply chain risks.
     """
-    if not quiet and not no_banner:
-        print_banner(console)
+    # Create console based on plain flag
+    cmd_console = Console(force_terminal=False) if plain else console
+
+    # Determine and show appropriate banner
+    banner_type = get_banner_type("validate", no_banner, quiet, "text")
+    show_banner(cmd_console, banner_type, __version__)
 
     # Run async validation
-    result = asyncio.run(_validate_package(package, registry, verbose, quiet))
+    result = asyncio.run(_validate_package(package, registry, verbose, quiet, cmd_console))
 
     # Exit with appropriate code
     raise typer.Exit(code=result)
@@ -202,6 +246,7 @@ async def _validate_package(
     registry: str,
     verbose: bool,
     quiet: bool,
+    cmd_console: Console | None = None,
 ) -> int:
     """
     Run the actual validation logic.
@@ -211,11 +256,13 @@ async def _validate_package(
         registry: Registry name (pypi, npm, crates)
         verbose: Show detailed signal information
         quiet: Show minimal output
+        cmd_console: Console to use for output (defaults to module-level console)
 
     Returns:
         Exit code based on validation result
     """
-    formatter = OutputFormatter(console, verbose=verbose, quiet=quiet)
+    output_console = cmd_console or console
+    formatter = OutputFormatter(output_console, verbose=verbose, quiet=quiet)
 
     try:
         # Validate registry
@@ -291,6 +338,9 @@ def check(
     ] = "text",
     quiet: Annotated[bool, typer.Option("-q", "--quiet", help="Minimal output")] = False,
     no_banner: Annotated[bool, typer.Option("--no-banner", help="Hide banner")] = False,
+    plain: Annotated[
+        bool, typer.Option("--plain", help="Disable colors (plain text output)")
+    ] = False,
 ) -> None:
     """
     IMPLEMENTS: S013-S015
@@ -306,23 +356,27 @@ def check(
     """
     from phantom_guard.cli.parsers import ParserError, detect_and_parse
 
-    if not quiet and not no_banner:
-        print_banner(console)
+    # Create console based on plain flag
+    cmd_console = Console(force_terminal=False) if plain else console
+
+    # Determine and show appropriate banner
+    banner_type = get_banner_type("check", no_banner, quiet, output_format)
+    show_banner(cmd_console, banner_type, __version__)
 
     # Validate file exists
     if not file.exists():
-        console.print(f"[red]Error:[/red] File not found: {file}")
+        cmd_console.print(f"[red]Error:[/red] File not found: {file}")
         raise typer.Exit(code=EXIT_INPUT_ERROR)
 
     # Parse file
     try:
         packages = detect_and_parse(file)
     except ParserError as e:
-        console.print(f"[red]Error:[/red] {e}")
+        cmd_console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=EXIT_INPUT_ERROR) from None
 
     if not packages:
-        console.print("[dim]No packages found in file[/dim]")
+        cmd_console.print("[dim]No packages found in file[/dim]")
         raise typer.Exit(code=EXIT_SAFE)
 
     # Filter ignored packages
@@ -336,12 +390,12 @@ def check(
             for p in packages:
                 p.registry = validated_registry
         except InvalidRegistryError as e:
-            console.print(f"[red]Error:[/red] {e}")
+            cmd_console.print(f"[red]Error:[/red] {e}")
             raise typer.Exit(code=EXIT_INPUT_ERROR) from None
 
     # Run validation
     exit_code = asyncio.run(
-        _check_packages(packages, parallel, fail_on, output_format, quiet, fail_fast)
+        _check_packages(packages, parallel, fail_on, output_format, quiet, fail_fast, cmd_console)
     )
     raise typer.Exit(code=exit_code)
 
@@ -353,6 +407,7 @@ async def _check_packages(
     output_format: str,
     quiet: bool,
     fail_fast: bool = False,
+    cmd_console: Console | None = None,
 ) -> int:
     """
     Validate all packages from file using BatchValidator.
@@ -367,6 +422,7 @@ async def _check_packages(
         output_format: Output format (text or json)
         quiet: Minimal output mode
         fail_fast: Stop on first HIGH_RISK package
+        cmd_console: Console to use for output (defaults to module-level console)
 
     Returns:
         Exit code based on validation results
@@ -379,6 +435,7 @@ async def _check_packages(
     from phantom_guard.cli.parsers import ParsedPackage
     from phantom_guard.core.batch import BatchConfig, BatchValidator
 
+    output_console = cmd_console or console
     RegistryLiteral: TypeAlias = Literal["pypi", "npm", "crates"]
 
     # Group packages by registry
@@ -408,7 +465,7 @@ async def _check_packages(
     suppress_progress = quiet or output_format == "json"
 
     if not suppress_progress:
-        console.print(f"\n[cyan]Scanning {len(packages)} packages...[/cyan]\n")
+        output_console.print(f"\n[cyan]Scanning {len(packages)} packages...[/cyan]\n")
 
     # Create progress bar
     progress_task: TaskID | None = None
@@ -418,7 +475,7 @@ async def _check_packages(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         TextColumn("{task.completed}/{task.total}"),
-        console=console,
+        console=output_console,
         disable=suppress_progress,
     ) as progress:
         progress_task = progress.add_task("Validating", total=len(packages))
@@ -460,19 +517,19 @@ async def _check_packages(
 
     # Print results
     if not suppress_progress:
-        console.print()
+        output_console.print()
     formatter = get_formatter(output_format, verbose=False, quiet=quiet)
-    formatter.print_results(all_results, console)
+    formatter.print_results(all_results, output_console)
 
     # Print errors if any (not for JSON format)
     if all_errors and not quiet and output_format != "json":
-        console.print("\n[yellow]Errors:[/yellow]")
+        output_console.print("\n[yellow]Errors:[/yellow]")
         for pkg, error in all_errors.items():
-            console.print(f"  [red]{pkg}:[/red] {error}")
+            output_console.print(f"  [red]{pkg}:[/red] {error}")
 
     # Print summary (only for text format)
     if output_format == "text" and not quiet:
-        _print_batch_summary(all_results, all_errors, was_cancelled, total_time_ms, console)
+        _print_batch_summary(all_results, all_errors, was_cancelled, total_time_ms, output_console)
 
     # Determine exit code
     return _determine_exit_code(all_results, fail_on)

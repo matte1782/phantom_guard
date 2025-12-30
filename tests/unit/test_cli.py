@@ -1579,7 +1579,7 @@ class TestValidateCommandBanner:
         with patch("phantom_guard.cli.main._validate_package", new_callable=AsyncMock) as mock_val:
             mock_val.return_value = 0
 
-            with patch("phantom_guard.cli.main.print_banner") as mock_banner:
+            with patch("phantom_guard.cli.main.show_banner") as mock_banner:
                 runner = CliRunner()
                 result = runner.invoke(app, ["validate", "flask"])
 
@@ -1810,7 +1810,7 @@ class TestCheckShowsBanner:
         req_file = tmp_path / "requirements.txt"
         req_file.write_text("flask\n")
 
-        with patch("phantom_guard.cli.main.print_banner") as mock_banner:
+        with patch("phantom_guard.cli.main.show_banner") as mock_banner:
             runner = CliRunner()
             runner.invoke(app, ["check", str(req_file)])
 

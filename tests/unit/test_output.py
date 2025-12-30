@@ -17,7 +17,13 @@ from rich.console import Console
 from phantom_guard.cli.output import (
     COLORS,
     ICONS,
+    STYLES,
     OutputFormatter,
+    create_scanner_progress,
+    show_danger_panel,
+    show_result_with_signals,
+    show_summary,
+    show_warning_panel,
 )
 from phantom_guard.core.types import PackageRisk, Recommendation, Signal, SignalType
 
@@ -148,48 +154,84 @@ class TestColorScheme:
             assert isinstance(ICONS[rec], str)
 
     @pytest.mark.unit
-    def test_safe_color_is_green(self) -> None:
+    def test_safe_color_is_phantom_green(self) -> None:
         """
         TEST_ID: T011.03
         SPEC: S011
 
         Given: SAFE recommendation
-        Then: Color is green
+        Then: Color is Phantom Green (#A6E3A1)
         """
-        assert COLORS[Recommendation.SAFE] == "green"
+        assert COLORS[Recommendation.SAFE] == "#A6E3A1"
 
     @pytest.mark.unit
-    def test_suspicious_color_is_yellow(self) -> None:
+    def test_suspicious_color_is_spectral_amber(self) -> None:
         """
         TEST_ID: T011.04
         SPEC: S011
 
         Given: SUSPICIOUS recommendation
-        Then: Color is yellow
+        Then: Color is Spectral Amber (#F9E2AF)
         """
-        assert COLORS[Recommendation.SUSPICIOUS] == "yellow"
+        assert COLORS[Recommendation.SUSPICIOUS] == "#F9E2AF"
 
     @pytest.mark.unit
-    def test_high_risk_color_is_red(self) -> None:
+    def test_high_risk_color_is_danger_rose(self) -> None:
         """
         TEST_ID: T011.05
         SPEC: S011
 
         Given: HIGH_RISK recommendation
-        Then: Color is red
+        Then: Color is Danger Rose (#F38BA8)
         """
-        assert COLORS[Recommendation.HIGH_RISK] == "red"
+        assert COLORS[Recommendation.HIGH_RISK] == "#F38BA8"
 
     @pytest.mark.unit
-    def test_not_found_color_is_dim(self) -> None:
+    def test_not_found_color_is_mist_blue(self) -> None:
         """
         TEST_ID: T011.06
         SPEC: S011
 
         Given: NOT_FOUND recommendation
-        Then: Color is dim
+        Then: Color is Mist Blue (#89B4FA)
         """
-        assert COLORS[Recommendation.NOT_FOUND] == "dim"
+        assert COLORS[Recommendation.NOT_FOUND] == "#89B4FA"
+
+    @pytest.mark.unit
+    def test_icons_are_unicode(self) -> None:
+        """
+        TEST_ID: T011.06b
+        SPEC: S011
+
+        Given: ICONS constant
+        When: Checking icon values
+        Then: Icons are Unicode symbols (not ASCII)
+        """
+        # Unicode icons from BRANDING_GUIDE.md
+        assert ICONS[Recommendation.SAFE] == "\u2713"  # checkmark
+        assert ICONS[Recommendation.SUSPICIOUS] == "\u26a0"  # warning
+        assert ICONS[Recommendation.HIGH_RISK] == "\u2717"  # x mark
+        assert ICONS[Recommendation.NOT_FOUND] == "\u2753"  # question mark
+
+    @pytest.mark.unit
+    def test_styles_defined_for_all_recommendations(self) -> None:
+        """
+        TEST_ID: T011.06c
+        SPEC: S011
+
+        Given: STYLES constant
+        When: Checking all Recommendation values
+        Then: Each has a defined theme style
+        """
+        for rec in Recommendation:
+            assert rec in STYLES, f"Missing style for {rec}"
+            assert isinstance(STYLES[rec], str)
+
+        # Verify specific style mappings
+        assert STYLES[Recommendation.SAFE] == "status.safe"
+        assert STYLES[Recommendation.SUSPICIOUS] == "status.suspicious"
+        assert STYLES[Recommendation.HIGH_RISK] == "status.high_risk"
+        assert STYLES[Recommendation.NOT_FOUND] == "status.not_found"
 
 
 # =============================================================================
@@ -791,3 +833,697 @@ class TestOutputFormatterIntegration:
 
         output = string_console.file.getvalue()  # type: ignore[union-attr]
         assert "serde" in output
+
+
+# =============================================================================
+# NEW FUNCTION TESTS - BRANDING_GUIDE.md UI/UX Features
+# =============================================================================
+
+
+class TestShowWarningPanel:
+    """Tests for show_warning_panel function."""
+
+    @pytest.mark.unit
+    def test_warning_panel_displays_package_name(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.34
+        SPEC: S011
+
+        Given: Package name and signals
+        When: show_warning_panel is called
+        Then: Output contains package name
+        """
+        show_warning_panel(string_console, "flask-utils", ["Low download count"])
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "flask-utils" in output
+
+    @pytest.mark.unit
+    def test_warning_panel_displays_signals(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.35
+        SPEC: S011
+
+        Given: Package name and multiple signals
+        When: show_warning_panel is called
+        Then: All signals are displayed
+        """
+        signals = ["Low download count", "Recently created"]
+        show_warning_panel(string_console, "test-pkg", signals)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "Low download count" in output
+        assert "Recently created" in output
+
+    @pytest.mark.unit
+    def test_warning_panel_has_warning_title(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.36
+        SPEC: S011
+
+        Given: show_warning_panel call
+        Then: Output contains WARNING title
+        """
+        show_warning_panel(string_console, "test-pkg", ["Signal"])
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "WARNING" in output
+
+
+class TestShowDangerPanel:
+    """Tests for show_danger_panel function."""
+
+    @pytest.mark.unit
+    def test_danger_panel_displays_package_name(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.37
+        SPEC: S011
+
+        Given: Package name and signals
+        When: show_danger_panel is called
+        Then: Output contains package name
+        """
+        show_danger_panel(string_console, "malicious-pkg", ["Critical signal"])
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "malicious-pkg" in output
+
+    @pytest.mark.unit
+    def test_danger_panel_shows_do_not_install(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.38
+        SPEC: S011
+
+        Given: show_danger_panel call
+        Then: Output contains "DO NOT INSTALL" recommendation
+        """
+        show_danger_panel(string_console, "bad-pkg", ["Malicious"])
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "DO NOT INSTALL" in output
+
+    @pytest.mark.unit
+    def test_danger_panel_has_high_risk_title(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.39
+        SPEC: S011
+
+        Given: show_danger_panel call
+        Then: Output contains HIGH RISK title
+        """
+        show_danger_panel(string_console, "test-pkg", ["Signal"])
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "HIGH RISK" in output
+
+
+class TestCreateScannerProgress:
+    """Tests for create_scanner_progress function."""
+
+    @pytest.mark.unit
+    def test_create_scanner_progress_returns_progress(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.40
+        SPEC: S011
+
+        Given: Console
+        When: create_scanner_progress is called
+        Then: Returns a Progress object
+        """
+        from rich.progress import Progress
+
+        progress = create_scanner_progress(string_console)
+
+        assert isinstance(progress, Progress)
+
+
+class TestShowResultWithSignals:
+    """Tests for show_result_with_signals function."""
+
+    @pytest.mark.unit
+    def test_show_result_with_signals_safe_no_verbose(
+        self,
+        string_console: Console,
+        safe_package_risk: PackageRisk,
+    ) -> None:
+        """
+        TEST_ID: T011.41
+        SPEC: S011
+
+        Given: SAFE package risk
+        When: show_result_with_signals is called with verbose=False
+        Then: Shows result without signal tree
+        """
+        show_result_with_signals(string_console, safe_package_risk, verbose=False)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "flask" in output
+
+    @pytest.mark.unit
+    def test_show_result_with_signals_high_risk_shows_signals(
+        self,
+        string_console: Console,
+        high_risk_package_risk: PackageRisk,
+    ) -> None:
+        """
+        TEST_ID: T011.42
+        SPEC: S011
+
+        Given: HIGH_RISK package risk with signals
+        When: show_result_with_signals is called (even without verbose)
+        Then: Shows signals for risky packages
+        """
+        show_result_with_signals(string_console, high_risk_package_risk, verbose=False)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "malicious-pkg" in output
+        # Should show signals even without verbose for HIGH_RISK
+        assert "known_malicious" in output.lower()
+
+    @pytest.mark.unit
+    def test_show_result_with_signals_verbose_safe(
+        self,
+        string_console: Console,
+    ) -> None:
+        """
+        TEST_ID: T011.43
+        SPEC: S011
+
+        Given: SAFE package with signals
+        When: show_result_with_signals is called with verbose=True
+        Then: Shows signals even for safe packages
+        """
+        safe_with_signals = PackageRisk(
+            name="popular-pkg",
+            registry="pypi",
+            exists=True,
+            risk_score=0.05,
+            signals=(
+                Signal(
+                    type=SignalType.POPULAR_PACKAGE,
+                    weight=-0.3,
+                    message="Package is popular",
+                ),
+            ),
+            recommendation=Recommendation.SAFE,
+        )
+        show_result_with_signals(string_console, safe_with_signals, verbose=True)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "popular-pkg" in output
+        assert "popular_package" in output.lower()
+
+    @pytest.mark.unit
+    def test_show_result_with_signals_tree_formatting(
+        self,
+        string_console: Console,
+        high_risk_package_risk: PackageRisk,
+    ) -> None:
+        """
+        TEST_ID: T011.44
+        SPEC: S011
+
+        Given: Package with multiple signals
+        When: show_result_with_signals is called
+        Then: Uses tree formatting with branch prefixes
+        """
+        show_result_with_signals(string_console, high_risk_package_risk, verbose=True)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        # Check for tree branch characters (unicode)
+        # Using unicode escape sequences for portability
+        assert "\u2514\u2500" in output or "\u251c\u2500" in output
+
+
+class TestShowSummary:
+    """Tests for show_summary function."""
+
+    @pytest.mark.unit
+    def test_show_summary_displays_counts(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.45
+        SPEC: S011
+
+        Given: List of package results
+        When: show_summary is called
+        Then: Shows correct counts for each status
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("pkg2", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("pkg3", "pypi", True, 0.5, (), Recommendation.SUSPICIOUS),
+            PackageRisk("pkg4", "pypi", True, 0.9, (), Recommendation.HIGH_RISK),
+        ]
+
+        show_summary(string_console, results, elapsed_ms=100.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "4 packages" in output
+        assert "2 safe" in output
+        assert "1 suspicious" in output
+        assert "1 high-risk" in output
+
+    @pytest.mark.unit
+    def test_show_summary_displays_elapsed_time(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.46
+        SPEC: S011
+
+        Given: Elapsed time
+        When: show_summary is called
+        Then: Shows elapsed time in milliseconds
+        """
+        results = [PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE)]
+
+        show_summary(string_console, results, elapsed_ms=234.5)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "235ms" in output or "234ms" in output  # Rounded
+
+    @pytest.mark.unit
+    def test_show_summary_contains_ghost_emoji(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.47
+        SPEC: S011
+
+        Given: show_summary call
+        Then: Output contains ghost emoji for branding
+        """
+        results = [PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE)]
+
+        show_summary(string_console, results, elapsed_ms=100.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        # Ghost emoji unicode
+        assert "\U0001f47b" in output
+
+    @pytest.mark.unit
+    def test_show_summary_empty_results(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.48
+        SPEC: S011
+
+        Given: Empty results list
+        When: show_summary is called
+        Then: Shows 0 packages, no crash
+        """
+        show_summary(string_console, [], elapsed_ms=50.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "0 packages" in output
+        assert "0 safe" in output
+        assert "0 suspicious" in output
+        assert "0 high-risk" in output
+
+
+class TestOutputFormatterNewMethods:
+    """Tests for new methods added to OutputFormatter class."""
+
+    @pytest.mark.unit
+    def test_print_result_with_signals_method(
+        self,
+        string_console: Console,
+        high_risk_package_risk: PackageRisk,
+    ) -> None:
+        """
+        TEST_ID: T011.49
+        SPEC: S011
+
+        Given: OutputFormatter
+        When: print_result_with_signals is called
+        Then: Delegates to show_result_with_signals correctly
+        """
+        formatter = OutputFormatter(string_console, verbose=True)
+        formatter.print_result_with_signals(high_risk_package_risk)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "malicious-pkg" in output
+
+    @pytest.mark.unit
+    def test_print_summary_method(self, string_console: Console) -> None:
+        """
+        TEST_ID: T011.50
+        SPEC: S011
+
+        Given: OutputFormatter
+        When: print_summary is called
+        Then: Delegates to show_summary correctly
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("pkg2", "pypi", True, 0.9, (), Recommendation.HIGH_RISK),
+        ]
+
+        formatter = OutputFormatter(string_console)
+        formatter.print_summary(results, elapsed_ms=150.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "2 packages" in output
+        assert "150ms" in output
+
+
+# =============================================================================
+# WEEK 4 DAY 2 - UI FEATURE TESTS (T_UI_* Pattern)
+# =============================================================================
+
+
+class TestUnicodeIconsW4D2:
+    """Tests for Unicode icon constants - Week 4 Day 2."""
+
+    @pytest.mark.unit
+    def test_safe_icon_is_checkmark(self) -> None:
+        """
+        TEST_ID: T_UI_037
+        SPEC: S011
+
+        Given: ICONS constant
+        When: Accessing SAFE icon
+        Then: Returns Unicode checkmark
+        """
+        assert ICONS[Recommendation.SAFE] == "\u2713"
+
+    @pytest.mark.unit
+    def test_suspicious_icon_is_warning(self) -> None:
+        """
+        TEST_ID: T_UI_038
+        SPEC: S011
+
+        Given: ICONS constant
+        When: Accessing SUSPICIOUS icon
+        Then: Returns Unicode warning sign
+        """
+        assert ICONS[Recommendation.SUSPICIOUS] == "\u26a0"
+
+    @pytest.mark.unit
+    def test_high_risk_icon_is_x_mark(self) -> None:
+        """
+        TEST_ID: T_UI_039
+        SPEC: S011
+
+        Given: ICONS constant
+        When: Accessing HIGH_RISK icon
+        Then: Returns Unicode x mark
+        """
+        assert ICONS[Recommendation.HIGH_RISK] == "\u2717"
+
+    @pytest.mark.unit
+    def test_not_found_icon_is_question_mark(self) -> None:
+        """
+        TEST_ID: T_UI_040
+        SPEC: S011
+
+        Given: ICONS constant
+        When: Accessing NOT_FOUND icon
+        Then: Returns Unicode question mark
+        """
+        assert ICONS[Recommendation.NOT_FOUND] == "\u2753"
+
+
+class TestShowWarningPanelW4D2:
+    """Tests for show_warning_panel function - Week 4 Day 2."""
+
+    @pytest.mark.unit
+    def test_show_warning_panel_produces_panel_output(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_041
+        SPEC: S011
+
+        Given: Package name and signals
+        When: show_warning_panel is called
+        Then: Output is produced containing Panel content
+        """
+        show_warning_panel(
+            string_console,
+            "suspicious-pkg",
+            ["Typosquat detected", "New package"],
+        )
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert len(output) > 0
+        assert "suspicious-pkg" in output
+        # Panel border characters should be present
+        assert any(c in output for c in ["\u2500", "\u2502", "\u250c", "\u2510"])
+
+    @pytest.mark.unit
+    def test_show_warning_panel_displays_all_signals(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_042
+        SPEC: S011
+
+        Given: Package with multiple signals
+        When: show_warning_panel is called
+        Then: All signals are displayed in the panel
+        """
+        signals = ["Typosquat: similar to 'requests'", "Low download count", "New maintainer"]
+        show_warning_panel(string_console, "reqeusts", signals)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        for signal in signals:
+            assert signal in output
+
+
+class TestShowDangerPanelW4D2:
+    """Tests for show_danger_panel function - Week 4 Day 2."""
+
+    @pytest.mark.unit
+    def test_show_danger_panel_produces_panel_output(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_043
+        SPEC: S011
+
+        Given: Package name and signals
+        When: show_danger_panel is called
+        Then: Output is produced containing Panel content
+        """
+        show_danger_panel(
+            string_console,
+            "malicious-pkg",
+            ["Known malware", "Contains backdoor"],
+        )
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert len(output) > 0
+        assert "malicious-pkg" in output
+        # Panel border characters should be present
+        assert any(c in output for c in ["\u2500", "\u2502", "\u250c", "\u2510"])
+
+    @pytest.mark.unit
+    def test_show_danger_panel_displays_all_signals(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_044
+        SPEC: S011
+
+        Given: Package with multiple critical signals
+        When: show_danger_panel is called
+        Then: All signals are displayed in the panel
+        """
+        signals = [
+            "Known malicious package",
+            "Contains obfuscated code",
+            "Suspicious network access",
+        ]
+        show_danger_panel(string_console, "evil-pkg", signals)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        for signal in signals:
+            assert signal in output
+
+
+class TestCreateScannerProgressW4D2:
+    """Tests for create_scanner_progress function - Week 4 Day 2."""
+
+    @pytest.mark.unit
+    def test_create_scanner_progress_returns_progress_object(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_045
+        SPEC: S011
+
+        Given: Console
+        When: create_scanner_progress is called
+        Then: Returns a Progress object
+        """
+        from rich.progress import Progress
+
+        progress = create_scanner_progress(string_console)
+        assert isinstance(progress, Progress)
+
+    @pytest.mark.unit
+    def test_create_scanner_progress_has_spinner_column(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_046
+        SPEC: S011
+
+        Given: Console
+        When: create_scanner_progress is called
+        Then: Progress has spinner column
+        """
+        from rich.progress import SpinnerColumn
+
+        progress = create_scanner_progress(string_console)
+
+        has_spinner = any(isinstance(col, SpinnerColumn) for col in progress.columns)
+        assert has_spinner
+
+    @pytest.mark.unit
+    def test_create_scanner_progress_has_bar_column(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_047
+        SPEC: S011
+
+        Given: Console
+        When: create_scanner_progress is called
+        Then: Progress has bar column
+        """
+        from rich.progress import BarColumn
+
+        progress = create_scanner_progress(string_console)
+
+        has_bar = any(isinstance(col, BarColumn) for col in progress.columns)
+        assert has_bar
+
+
+class TestShowResultWithSignalsW4D2:
+    """Tests for show_result_with_signals function - Week 4 Day 2."""
+
+    @pytest.mark.unit
+    def test_show_result_with_signals_verbose_true_shows_signals(
+        self, string_console: Console, suspicious_package_risk: PackageRisk
+    ) -> None:
+        """
+        TEST_ID: T_UI_048
+        SPEC: S011
+
+        Given: Package with signals
+        When: show_result_with_signals is called with verbose=True
+        Then: Signals are displayed
+        """
+        show_result_with_signals(string_console, suspicious_package_risk, verbose=True)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "typosquat" in output.lower()
+        # Signal message should also be shown
+        assert "flask" in output.lower()
+
+    @pytest.mark.unit
+    def test_show_result_with_signals_risky_shows_without_verbose(
+        self, string_console: Console, high_risk_package_risk: PackageRisk
+    ) -> None:
+        """
+        TEST_ID: T_UI_049
+        SPEC: S011
+
+        Given: HIGH_RISK package
+        When: show_result_with_signals is called with verbose=False
+        Then: Signals are still shown for risky packages
+        """
+        show_result_with_signals(string_console, high_risk_package_risk, verbose=False)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        # Should show signals for high risk even without verbose
+        assert "known_malicious" in output.lower()
+
+
+class TestShowSummaryW4D2:
+    """Tests for show_summary function - Week 4 Day 2."""
+
+    @pytest.mark.unit
+    def test_show_summary_shows_correct_safe_count(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_050
+        SPEC: S011
+
+        Given: List with multiple safe packages
+        When: show_summary is called
+        Then: Correct safe count is displayed
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("pkg2", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("pkg3", "pypi", True, 0.1, (), Recommendation.SAFE),
+        ]
+
+        show_summary(string_console, results, elapsed_ms=50.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "3 safe" in output
+
+    @pytest.mark.unit
+    def test_show_summary_shows_correct_suspicious_count(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_051
+        SPEC: S011
+
+        Given: List with suspicious packages
+        When: show_summary is called
+        Then: Correct suspicious count is displayed
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.5, (), Recommendation.SUSPICIOUS),
+            PackageRisk("pkg2", "pypi", True, 0.5, (), Recommendation.SUSPICIOUS),
+        ]
+
+        show_summary(string_console, results, elapsed_ms=75.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "2 suspicious" in output
+
+    @pytest.mark.unit
+    def test_show_summary_shows_correct_high_risk_count(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_052
+        SPEC: S011
+
+        Given: List with high risk packages
+        When: show_summary is called
+        Then: Correct high-risk count is displayed
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.9, (), Recommendation.HIGH_RISK),
+        ]
+
+        show_summary(string_console, results, elapsed_ms=30.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "1 high-risk" in output
+
+    @pytest.mark.unit
+    def test_show_summary_shows_elapsed_time(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_053
+        SPEC: S011
+
+        Given: Results and elapsed time
+        When: show_summary is called
+        Then: Elapsed time in ms is displayed
+        """
+        results = [
+            PackageRisk("pkg1", "pypi", True, 0.1, (), Recommendation.SAFE),
+        ]
+
+        show_summary(string_console, results, elapsed_ms=150.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "150ms" in output
+
+    @pytest.mark.unit
+    def test_show_summary_shows_total_packages(self, string_console: Console) -> None:
+        """
+        TEST_ID: T_UI_054
+        SPEC: S011
+
+        Given: Results list
+        When: show_summary is called
+        Then: Total package count is displayed
+        """
+        results = [
+            PackageRisk("s1", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("s2", "pypi", True, 0.1, (), Recommendation.SAFE),
+            PackageRisk("s3", "pypi", True, 0.5, (), Recommendation.SUSPICIOUS),
+            PackageRisk("h1", "pypi", True, 0.9, (), Recommendation.HIGH_RISK),
+            PackageRisk("h2", "pypi", True, 0.9, (), Recommendation.HIGH_RISK),
+        ]
+
+        show_summary(string_console, results, elapsed_ms=200.0)
+
+        output = string_console.file.getvalue()  # type: ignore[union-attr]
+        assert "5 packages" in output

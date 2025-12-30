@@ -54,7 +54,7 @@ class TestCalculateBackoff:
         assert all(1.0 <= d <= 3.0 for d in delays)
 
         # Should have some variation (not all the same)
-        unique_delays = set(round(d, 2) for d in delays)
+        unique_delays = {round(d, 2) for d in delays}
         assert len(unique_delays) > 1
 
     def test_custom_base_delay(self) -> None:

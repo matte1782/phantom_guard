@@ -160,12 +160,13 @@
 
 ## Phase 4: Polish & Release (Week 4)
 
-> **Status**: PLANNED
+> **Status**: IN PROGRESS (Day 1 Complete)
 > **Day-by-day tasks**: See `docs/planning/week_4/`
 > **Prerequisites**: Weeks 1-3 complete, 100% test coverage achieved
 
 ### Goals
 - Performance benchmarking and optimization
+- **UI/UX Implementation** (Full BRANDING_GUIDE.md compliance)
 - Popular packages database for false positive prevention
 - Complete packaging for PyPI
 - Comprehensive documentation
@@ -175,22 +176,38 @@
 
 | Task | SPEC | Description | Hours | Day | Status |
 |:-----|:-----|:------------|:------|:----|:-------|
-| W4.1 | PERF | Performance benchmarks | 6 | Day 1 | PENDING |
-| W4.2 | PERF | Performance optimization | 6 | Day 2 | PENDING |
-| W4.3 | S006 | Popular packages list (top 1000) | 6 | Day 3 | PENDING |
+| W4.1 | PERF | Performance benchmarks | 6 | Day 1 | ✅ COMPLETE |
+| W4.2a | UI | **UI/UX Implementation** (BRANDING_GUIDE.md) | 6 | Day 2 | PENDING |
+| W4.2b | PERF | Performance optimization | 4 | Day 2 | PENDING |
+| W4.3 | S006 | Popular packages list (top 3000) | 6 | Day 3 | PENDING |
 | W4.4 | - | pyproject.toml + packaging | 6 | Day 4 | PENDING |
 | W4.5 | - | README + usage docs | 6 | Day 5 | PENDING |
 | W4.6 | All | Final hostile review | 4 | Day 6 | PENDING |
 | W4.7 | - | Release to PyPI | 4 | Day 6 | PENDING |
-| **Buffer** | - | Contingency (20%) | 2 | - | - |
-| **Total** | - | Week 4 | **40** | - | - |
+| **Buffer** | - | Contingency (20%) | 6 | - | - |
+| **Total** | - | Week 4 | **48** | - | - |
+
+### W4.2a: UI/UX Implementation (NEW)
+
+> **Reference**: `docs/design/BRANDING_GUIDE.md`
+> **Theme**: Phantom Mocha (Catppuccin-inspired)
+
+| Priority | Feature | Description |
+|:---------|:--------|:------------|
+| P1 | Tiered Banners | Large (--version), Compact (daily), None (CI) |
+| P1 | PHANTOM_THEME | Rich theme with Catppuccin Mocha colors |
+| P1 | Unicode Icons | ✓ ⚠ ✗ ❓ replacing ASCII +!x? |
+| P2 | Ghost Spinner | 👻 animated spinner for scanning |
+| P2 | Alert Panels | Warning/Danger panels for risk packages |
+| P2 | Summary Table | Colored counts with tree formatting |
+| P3 | --plain flag | No colors for piping |
 
 ### Day-by-Day Files
 
 | Day | Focus | File |
 |:----|:------|:-----|
-| Day 1 | Performance Benchmarks | `docs/planning/week_4/DAY_1.md` |
-| Day 2 | Performance Optimization | `docs/planning/week_4/DAY_2.md` |
+| Day 1 | Performance Benchmarks | `docs/planning/week_4/DAY_1.md` ✅ |
+| Day 2 | **UI/UX + Performance Optimization** | `docs/planning/week_4/DAY_2.md` |
 | Day 3 | Popular Packages Database | `docs/planning/week_4/DAY_3.md` |
 | Day 4 | Packaging | `docs/planning/week_4/DAY_4.md` |
 | Day 5 | Documentation | `docs/planning/week_4/DAY_5.md` |
@@ -449,12 +466,13 @@ showcase/
 | W3.4 | S002 | INV004, INV005 | T002.01-T002.08 | 6 |
 | W3.5 | S018-S019 | - | T010.02-T010.03, EC089 | 4 |
 | W3.6 | All | All | Integration tests | 6 |
-| W4.1 | Perf | - | Benchmark tests | 4 |
-| W4.2 | Perf | - | - | 6 |
-| W4.3 | S006 | - | EC043, EC046 | 4 |
-| W4.4 | - | - | - | 4 |
-| W4.5 | - | - | - | 4 |
-| W4.6 | All | All | All | 6 |
+| W4.1 | Perf | - | Benchmark tests | 6 |
+| W4.2a | UI | - | UI/UX tests | 6 |
+| W4.2b | Perf | - | - | 4 |
+| W4.3 | S006 | - | EC043, EC046 | 6 |
+| W4.4 | - | - | - | 6 |
+| W4.5 | - | - | - | 6 |
+| W4.6 | All | All | All | 4 |
 | W4.7 | - | - | - | 4 |
 | W5.1 | SHOW001 | - | TW5.01 | 2 |
 | W5.2 | SHOW002 | - | TW5.02-04 | 4 |
@@ -675,8 +693,9 @@ W1.1 → W1.5 → W1.6 → W2.1 → W2.4 → W3.1 → W3.6 → W4.6 → W4.7 →
 > **Note**: Coverage was improved to 100% on 2025-12-29 (post-W3.6 optimization).
 
 ### Week 4
-- [ ] W4.1 Complete (Performance Benchmarks - Day 1)
-- [ ] W4.2 Complete (Performance Optimization - Day 2)
+- [x] W4.1 Complete (Performance Benchmarks - Day 1) ✅
+- [ ] W4.2a Complete (**UI/UX Implementation** - Day 2)
+- [ ] W4.2b Complete (Performance Optimization - Day 2)
 - [ ] W4.3 Complete (Popular Packages Database - Day 3)
 - [ ] W4.4 Complete (Packaging - Day 4)
 - [ ] W4.5 Complete (Documentation - Day 5)

@@ -28,39 +28,24 @@
 
 ## 2. Logo Concepts
 
-### Primary Logo: ASCII Art (Terminal)
+### Tiered Banner System (Recommended)
 
-**Style**: Filled block characters (like Claude Code / Gemini CLI)
+> **Design Philosophy**: Different contexts need different impact levels.
+> Large banners impress, compact banners stay out of the way.
+
+| Context | Banner Type | Lines | When to Use |
+|:--------|:------------|:------|:------------|
+| `--version` | **Large** | 12 | Special occasions, first impression |
+| `validate` / `check` | **Compact** | 1 | Daily use, minimal intrusion |
+| `--no-banner` | None | 0 | CI/CD, scripting, piped output |
+
+---
+
+### Banner Type A: Large Banner (Special Occasions)
+
+**Use for**: `phantom-guard --version`, first install, release announcements
 
 ```
-Option A: Minimal Ghost
-╔═══════════════════════════════════════╗
-║                                       ║
-║     ▄▀▀▀▀▀▀▀▄      PHANTOM            ║
-║    █  ●   ●  █      GUARD             ║
-║    █    ▽    █                        ║
-║    ▀▄▄█▄█▄▄▀       v0.1.0             ║
-║                                       ║
-╚═══════════════════════════════════════╝
-
-Option B: Ghost with Shield
-    ▄▄▄▄▄▄▄▄▄▄▄
-   ██▀▀▀▀▀▀▀▀▀██
-   ██  ◉   ◉  ██     ╔═══════════════════╗
-   ██    ▽    ██     ║  PHANTOM GUARD    ║
-   ██▄▄▄▄▄▄▄▄▄██     ║  ────────────────  ║
-   ▀██▀▀█▀▀█▀▀██▀    ║  Supply Chain     ║
-     ▀▀ ▀▀ ▀▀        ║  Security         ║
-                     ╚═══════════════════╝
-
-Option C: Compact Inline
-┌──────────────────────────────────────────────┐
-│  👻 PHANTOM GUARD                    v0.1.0  │
-│  ══════════════════════════════════════════  │
-│  Detecting AI-hallucinated packages...       │
-└──────────────────────────────────────────────┘
-
-Option D: Large Banner (Recommended)
     ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗████████╗ ██████╗ ███╗   ███╗
     ██╔══██╗██║  ██║██╔══██╗████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║
     ██████╔╝███████║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║
@@ -74,6 +59,68 @@ Option D: Large Banner (Recommended)
                     ╚██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝
                      ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
                             👻  Supply Chain Security
+```
+
+---
+
+### Banner Type B: Compact Banner (Daily Use - RECOMMENDED DEFAULT)
+
+**Use for**: `phantom-guard validate`, `phantom-guard check` — fast, professional
+
+```
+   👻 PHANTOM GUARD v0.1.0
+   ─────────────────────────
+```
+
+Or with subtle ghost:
+
+```
+   ▄▀▀▄  PHANTOM GUARD v0.1.0 — Supply Chain Security
+   ▀▄▄▀  ─────────────────────────────────────────────
+```
+
+---
+
+### Banner Type C: Ghost with Info Panel (Medium Impact)
+
+**Use for**: Help screens, verbose output
+
+```
+╔═══════════════════════════════════════╗
+║                                       ║
+║     ▄▀▀▀▀▀▀▀▄      PHANTOM            ║
+║    █  ●   ●  █      GUARD             ║
+║    █    ▽    █                        ║
+║    ▀▄▄█▄█▄▄▀       v0.1.0             ║
+║                                       ║
+╚═══════════════════════════════════════╝
+```
+
+---
+
+### Implementation Matrix
+
+```python
+# src/phantom_guard/cli/branding.py
+
+from enum import Enum
+
+class BannerType(Enum):
+    LARGE = "large"      # --version
+    COMPACT = "compact"  # validate, check (default)
+    MEDIUM = "medium"    # --help, verbose
+    NONE = "none"        # --no-banner, CI mode
+
+
+def get_banner_type(command: str, flags: dict) -> BannerType:
+    """Determine appropriate banner based on context."""
+    if flags.get("no_banner") or flags.get("quiet") or flags.get("json"):
+        return BannerType.NONE
+    if command == "version":
+        return BannerType.LARGE
+    if command == "help":
+        return BannerType.MEDIUM
+    return BannerType.COMPACT  # Default for validate, check
 ```
 
 ### Ghost Character Variations
@@ -724,24 +771,45 @@ done. 4 packages checked.
 
 ## 10. Implementation Checklist
 
-### Phase 3 (CLI Week)
+### Week 4 Day 2: UI/UX Implementation (NEW)
 
-- [ ] Implement Rich console wrapper
-- [ ] Create ASCII banner with ghost
-- [ ] Add ghost spinner animation
-- [ ] Implement colored status output
-- [ ] Add panel-based warnings
-- [ ] Create summary table
-- [ ] Add `--no-banner` flag for CI
-- [ ] Add `--plain` flag for no colors
+#### Core Branding (Priority 1)
+- [ ] Implement `BannerType` enum with LARGE/COMPACT/MEDIUM/NONE
+- [ ] Create large block-letter banner for `--version`
+- [ ] Create compact inline banner for daily commands
+- [ ] Create medium ghost panel for `--help`
+- [ ] Add banner selection logic based on context
 
-### Phase 5 (Showcase Week)
+#### Rich Theme Integration (Priority 1)
+- [ ] Create `PHANTOM_THEME` with Catppuccin Mocha colors
+- [ ] Implement themed Console wrapper
+- [ ] Replace ASCII icons (+, !, x, ?) with Unicode (✓, ⚠, ✗, ❓)
+- [ ] Apply status colors (#A6E3A1, #F9E2AF, #F38BA8, #89B4FA)
+
+#### Progress & Animation (Priority 2)
+- [ ] Add ghost spinner (👻) for scanning operations
+- [ ] Implement styled progress bar with Phantom colors
+- [ ] Add subtle animation frames for long operations
+
+#### Output Formatting (Priority 2)
+- [ ] Implement `show_result()` with colored status
+- [ ] Create `show_warning()` panel for suspicious packages
+- [ ] Create `show_danger()` panel for high-risk packages
+- [ ] Implement `show_summary()` with colored counts
+- [ ] Add signal detail lines with tree formatting (└─)
+
+#### Flags & Options (Priority 3)
+- [ ] `--no-banner` - Disable banner (CI/CD mode)
+- [ ] `--plain` - No colors (for piping)
+- [ ] `--quiet` - Minimal output
+
+### Week 5 (Showcase Week)
 
 - [ ] Animate ghost in hero section
-- [ ] Apply color palette to components
-- [ ] Use typography scale
+- [ ] Apply Phantom Mocha palette to components
+- [ ] Use typography scale (Inter + JetBrains Mono)
 - [ ] Add gradient accents
-- [ ] Implement dark theme
+- [ ] Implement dark/light theme toggle
 
 ---
 

@@ -40,21 +40,31 @@ class TextFormatter(OutputFormatter):
     TEST: T010.02
 
     Human-readable text output with colors and icons.
+    Uses Phantom Mocha theme colors (WCAG AAA compliant).
     """
 
+    # Phantom Mocha theme colors for consistency with CLI theme
     COLORS: ClassVar[dict[str, str]] = {
-        "SAFE": "green",
-        "SUSPICIOUS": "yellow",
-        "HIGH_RISK": "red",
-        "NOT_FOUND": "dim",
+        "SAFE": "#A6E3A1",  # Phantom Green
+        "SUSPICIOUS": "#F9E2AF",  # Spectral Amber
+        "HIGH_RISK": "#F38BA8",  # Danger Rose
+        "NOT_FOUND": "#89B4FA",  # Mist Blue
     }
 
-    # Use ASCII-compatible icons for cross-platform support
+    # Theme style names (for themed consoles)
+    STYLES: ClassVar[dict[str, str]] = {
+        "SAFE": "status.safe",
+        "SUSPICIOUS": "status.suspicious",
+        "HIGH_RISK": "status.high_risk",
+        "NOT_FOUND": "status.not_found",
+    }
+
+    # Unicode icons for enhanced visual feedback
     ICONS: ClassVar[dict[str, str]] = {
-        "SAFE": "+",
-        "SUSPICIOUS": "!",
-        "HIGH_RISK": "x",
-        "NOT_FOUND": "?",
+        "SAFE": "\u2713",  # checkmark
+        "SUSPICIOUS": "\u26a0",  # warning
+        "HIGH_RISK": "\u2717",  # x mark
+        "NOT_FOUND": "\u2753",  # question mark
     }
 
     def __init__(self, verbose: bool = False, quiet: bool = False) -> None:
@@ -79,23 +89,29 @@ class TextFormatter(OutputFormatter):
         return "\n".join(lines)
 
     def print_results(self, results: list[PackageRisk], console: Console) -> None:
-        """Print formatted results with Rich styling."""
+        """Print formatted results with Rich styling using Phantom Mocha theme."""
         for risk in results:
             rec = risk.recommendation.value
-            color = self.COLORS.get(rec, "white")
+            color = self.COLORS.get(rec, "#CDD6F4")  # Default to phantom.text
             icon = self.ICONS.get(rec, " ")
 
             text = Text()
             text.append(f"  {icon} ", style=color)
-            text.append(f"{risk.name:<30} ", style="bold")
+            text.append(f"{risk.name:<30} ", style=f"bold {color}")
             text.append(f"{rec:<12}", style=color)
-            text.append(f"[{risk.risk_score:.2f}]", style="dim")
+            text.append(f"[{risk.risk_score:.2f}]", style="#A6ADC8")  # phantom.dim
 
             console.print(text)
 
             if self.verbose and risk.signals:
-                for signal in risk.signals:
-                    console.print(f"      `-- {signal.type.value}", style="dim")
+                signals_list = list(risk.signals)
+                for i, signal in enumerate(signals_list):
+                    is_last = i == len(signals_list) - 1
+                    prefix = "\u2514\u2500" if is_last else "\u251c\u2500"
+                    console.print(
+                        f"      {prefix} {signal.type.value}",
+                        style="#A6ADC8",  # phantom.dim
+                    )
 
 
 class JSONFormatter(OutputFormatter):
