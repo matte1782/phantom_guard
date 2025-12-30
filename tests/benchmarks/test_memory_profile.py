@@ -22,7 +22,7 @@ import pytest
 from phantom_guard.cache.memory import MemoryCache
 from phantom_guard.cache.types import make_cache_key
 from phantom_guard.core.detector import validate_package_sync
-from phantom_guard.core.typosquat import POPULAR_PACKAGES
+from phantom_guard.data import POPULAR_BY_REGISTRY as POPULAR_PACKAGES
 
 if TYPE_CHECKING:
     from collections.abc import Generator

@@ -20,7 +20,8 @@ from httpx import Response
 from phantom_guard.cache.memory import MemoryCache
 from phantom_guard.cache.sqlite import AsyncSQLiteCache
 from phantom_guard.core.types import PackageMetadata, Signal, SignalType
-from phantom_guard.core.typosquat import POPULAR_PACKAGES, TyposquatDetector
+from phantom_guard.core.typosquat import TyposquatDetector
+from phantom_guard.data import POPULAR_BY_REGISTRY as POPULAR_PACKAGES
 
 if TYPE_CHECKING:
     from pathlib import Path

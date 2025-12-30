@@ -18,7 +18,6 @@ from phantom_guard.core.typosquat import (
     DEFAULT_SIMILARITY_THRESHOLD,
     MAX_EDIT_DISTANCE,
     MIN_NAME_LENGTH,
-    POPULAR_PACKAGES,
     TyposquatDetector,
     TyposquatMatch,
     check_typosquat,
@@ -30,6 +29,7 @@ from phantom_guard.core.typosquat import (
     normalized_distance,
     similarity,
 )
+from phantom_guard.data import POPULAR_BY_REGISTRY as POPULAR_PACKAGES
 
 
 class TestTyposquatDetection:
@@ -461,9 +461,11 @@ class TestPopularPackages:
         assert "reqwest" in crates
 
     @pytest.mark.unit
-    def test_unknown_registry_empty(self) -> None:
-        """Unknown registry returns empty set."""
-        assert get_popular_packages("unknown") == frozenset()
+    def test_unknown_registry_fallback_to_pypi(self) -> None:
+        """Unknown registry falls back to PyPI popular packages."""
+        unknown_packages = get_popular_packages("unknown")
+        pypi_packages = get_popular_packages("pypi")
+        assert unknown_packages == pypi_packages
 
     @pytest.mark.unit
     def test_is_popular_package(self) -> None:

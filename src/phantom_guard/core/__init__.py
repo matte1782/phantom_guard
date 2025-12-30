@@ -73,7 +73,6 @@ from phantom_guard.core.typosquat import (
     DEFAULT_SIMILARITY_THRESHOLD,
     MAX_EDIT_DISTANCE,
     MIN_NAME_LENGTH,
-    POPULAR_PACKAGES,
     TyposquatDetector,
     TyposquatMatch,
     check_typosquat,
@@ -85,6 +84,7 @@ from phantom_guard.core.typosquat import (
     normalized_distance,
     similarity,
 )
+from phantom_guard.data import POPULAR_BY_REGISTRY as POPULAR_PACKAGES
 
 __all__ = [
     "AGE_THRESHOLD_NEW_DAYS",

@@ -15,6 +15,12 @@ from functools import lru_cache
 from typing import Literal
 
 from phantom_guard.core.types import Signal, SignalType
+from phantom_guard.data.popular_packages import (
+    get_popular_packages as _get_popular_packages,
+)
+from phantom_guard.data.popular_packages import (
+    is_popular as _is_popular,
+)
 
 # =============================================================================
 # TYPE ALIASES
@@ -40,238 +46,16 @@ DEFAULT_SIMILARITY_THRESHOLD: float = 0.65
 # POPULAR PACKAGES DATABASE
 # =============================================================================
 
-# Top 100 most popular packages per registry
-# These are the most likely typosquat targets
-POPULAR_PACKAGES: dict[str, frozenset[str]] = {
-    "pypi": frozenset(
-        {
-            # Core/Essential
-            "requests",
-            "numpy",
-            "pandas",
-            "flask",
-            "django",
-            "scipy",
-            "matplotlib",
-            "pillow",
-            "sqlalchemy",
-            "pytest",
-            "boto3",
-            "pyyaml",
-            "cryptography",
-            "urllib3",
-            "certifi",
-            "setuptools",
-            "wheel",
-            "pip",
-            "packaging",
-            "six",
-            # Web frameworks
-            "jinja2",
-            "markupsafe",
-            "click",
-            "werkzeug",
-            "itsdangerous",
-            "fastapi",
-            "uvicorn",
-            "starlette",
-            "pydantic",
-            "httpx",
-            "aiohttp",
-            "tornado",
-            "gunicorn",
-            "gevent",
-            "eventlet",
-            # Data processing
-            "attrs",
-            "decorator",
-            "wrapt",
-            "typing-extensions",
-            "dataclasses",
-            "idna",
-            "chardet",
-            "charset-normalizer",
-            "beautifulsoup4",
-            "lxml",
-            # Database
-            "redis",
-            "celery",
-            "kombu",
-            "billiard",
-            "amqp",
-            "psycopg2",
-            "pymysql",
-            "pymongo",
-            "elasticsearch",
-            "alembic",
-            # ML/AI
-            "tensorflow",
-            "keras",
-            "torch",
-            "transformers",
-            "scikit-learn",
-            "xgboost",
-            "lightgbm",
-            "catboost",
-            "nltk",
-            "spacy",
-            # AWS
-            "botocore",
-            "s3transfer",
-            "awscli",
-            "boto",
-            "moto",
-            # Utilities
-            "tqdm",
-            "colorama",
-            "rich",
-            "python-dateutil",
-            "pytz",
-            "pathlib2",
-            "filelock",
-            "watchdog",
-            "schedule",
-            "apscheduler",
-            # CLI
-            "argparse",
-            "docopt",
-            "fire",
-            "typer",
-            "prompt-toolkit",
-            # Testing
-            "mock",
-            "nose",
-            "coverage",
-            "tox",
-            "hypothesis",
-            # Linting/Formatting
-            "black",
-            "ruff",
-            "mypy",
-            "flake8",
-            "pylint",
-            "isort",
-            "autopep8",
-            "yapf",
-            "bandit",
-            "safety",
-            # Other popular
-            "openai",
-            "anthropic",
-            "langchain",
-            "chromadb",
-            "pinecone",
-        }
-    ),
-    "npm": frozenset(
-        {
-            # Core
-            "react",
-            "lodash",
-            "axios",
-            "express",
-            "moment",
-            "typescript",
-            "webpack",
-            "babel-core",
-            "eslint",
-            "prettier",
-            # Frameworks
-            "next",
-            "vue",
-            "angular",
-            "jquery",
-            "underscore",
-            "svelte",
-            "nuxt",
-            "gatsby",
-            "remix",
-            "astro",
-            # Utilities
-            "uuid",
-            "chalk",
-            "debug",
-            "dotenv",
-            "commander",
-            "yargs",
-            "inquirer",
-            "ora",
-            "cross-env",
-            "rimraf",
-            # React ecosystem
-            "react-dom",
-            "react-router",
-            "redux",
-            "mobx",
-            "zustand",
-            "react-query",
-            "swr",
-            "formik",
-            "react-hook-form",
-            "styled-components",
-            # Node.js
-            "fs-extra",
-            "glob",
-            "chokidar",
-            "nodemon",
-            "pm2",
-            "cors",
-            "helmet",
-            "morgan",
-            "body-parser",
-            "cookie-parser",
-        }
-    ),
-    "crates": frozenset(
-        {
-            # Core
-            "serde",
-            "tokio",
-            "reqwest",
-            "clap",
-            "rand",
-            "log",
-            "regex",
-            "chrono",
-            "anyhow",
-            "thiserror",
-            # Async
-            "async-trait",
-            "futures",
-            "async-std",
-            "smol",
-            "actix",
-            # Web
-            "hyper",
-            "axum",
-            "warp",
-            "rocket",
-            "actix-web",
-            # Serialization
-            "serde-json",
-            "toml",
-            "yaml-rust",
-            "csv",
-            "bincode",
-            # Utilities
-            "lazy-static",
-            "once-cell",
-            "parking-lot",
-            "crossbeam",
-            "rayon",
-            "itertools",
-            "num",
-            "uuid",
-            "base64",
-            "sha2",
-        }
-    ),
-}
+# Popular packages are now loaded from phantom_guard.data.popular_packages
+# which contains 3000+ packages (1000 per registry) for better false positive
+# prevention. The data module is auto-generated by scripts/refresh_popular_packages.py
 
 
 def get_popular_packages(registry: str) -> frozenset[str]:
     """
     Get set of popular packages for a registry.
+
+    Uses the comprehensive 3000+ package database for accurate detection.
 
     Args:
         registry: Registry name (pypi, npm, crates)
@@ -279,7 +63,7 @@ def get_popular_packages(registry: str) -> frozenset[str]:
     Returns:
         Frozenset of popular package names
     """
-    return POPULAR_PACKAGES.get(registry.lower(), frozenset())
+    return _get_popular_packages(registry)
 
 
 def is_popular_package(name: str, registry: str) -> bool:
@@ -293,7 +77,7 @@ def is_popular_package(name: str, registry: str) -> bool:
     Returns:
         True if the package is popular, False otherwise
     """
-    return name.lower() in get_popular_packages(registry)
+    return _is_popular(name, registry)
 
 
 # =============================================================================
@@ -454,6 +238,12 @@ class TyposquatDetector:
             return []
 
         name_lower = name.lower()
+
+        # FAST PATH: Popular packages are not typosquats by definition
+        # This skips the O(n) loop through all 3000+ packages
+        if _is_popular(name_lower, registry):
+            return []
+
         popular = get_popular_packages(registry)
         matches: list[TyposquatMatch] = []
 
