@@ -1,123 +1,64 @@
-# Week 4 - Day 1: Performance Benchmarks & Baseline
+# Week 4 - Day 1: Performance Benchmarks (OPTIMIZED)
 
 > **Date**: Day 1 (Week 4)
-> **Focus**: Comprehensive performance benchmarking and baseline establishment
+> **Focus**: Implement existing benchmark stubs + add pattern matching benchmarks
 > **Tasks**: W4.1
 > **Hours**: 6 hours
-> **Dependencies**: Weeks 1-3 complete
-> **Exit Criteria**: All performance budgets documented with baseline measurements
+> **Status**: OPTIMIZED based on hostile review findings
 
 ---
 
-## Overview
+## Pre-Existing State Analysis
 
-Establish comprehensive performance benchmarks to validate the performance budget requirements. This ensures we have measurable baselines before optimization and release.
+### What Already Exists (396 lines of benchmark code)
 
-### Performance Budgets (from FORTRESS.md)
+| File | Tests | Status |
+|:-----|:------|:-------|
+| `test_cli_performance.py` | 5 tests | ✅ PASSING |
+| `bench_detector.py` | 4 tests | ⚠️ STUBS (skipped) |
+| `bench_scorer.py` | 3 tests | ⚠️ STUBS (skipped) |
+| `bench_cache.py` | 10 tests | ⚠️ STUBS (skipped) |
 
-| Operation | Budget | Constraint |
-|:----------|:-------|:-----------|
-| Single package (cached) | <10ms | P99 |
-| Single package (uncached) | <200ms | P99 |
-| 50 packages (concurrent) | <5s | P99 |
-| Pattern matching | <1ms | P99 |
+**Total**: 5 passing + 17 stubs to implement
 
-### Deliverables
-- [ ] Benchmark test suite with pytest-benchmark
-- [ ] Performance baseline measurements document
-- [ ] P99 latency validation tests
-- [ ] Memory usage profiling
-- [ ] CI/CD performance regression tests
+### What's Missing
+
+1. **Pattern matching benchmark** - No file exists, budget <1ms not tested
+2. **Memory profiling tests** - Not implemented
+3. **pytest-benchmark integration** - Stubs don't use benchmark library
+4. **CI performance workflow** - Not created
+5. **Baseline measurements document** - Not created
 
 ---
 
-## Morning Session (3h)
+## Revised Task Breakdown
 
-### Objective
-Set up comprehensive benchmarking infrastructure and measure baseline performance.
+### Morning Session (3h) - Implement Core Benchmark Stubs
 
-### Step 1: Install Benchmark Dependencies (15min)
+#### Step 1: Implement bench_detector.py Stubs (1.5h)
 
-```bash
-# Add to dev dependencies
-pip install pytest-benchmark memory-profiler
-
-# Update pyproject.toml
-[project.optional-dependencies]
-dev = [
-    # ... existing deps
-    "pytest-benchmark>=4.0.0",
-    "memory-profiler>=0.61.0",
-]
-```
-
-### Step 2: Create Benchmark Test Suite (1h)
+Convert 4 skipped stubs to real benchmarks:
 
 ```python
-# tests/benchmarks/test_performance_benchmarks.py
-"""
-Performance benchmarks for Phantom Guard.
+# tests/benchmarks/bench_detector.py - IMPLEMENT these stubs
 
-These tests validate the performance budget requirements:
-- Single package (cached): <10ms P99
-- Single package (uncached): <200ms P99
-- Batch 50 packages: <5s P99
-- Pattern matching: <1ms P99
-"""
+@pytest.mark.benchmark
+class TestDetectorBenchmarks:
+    """
+    IMPLEMENTS: W4.1
+    Convert existing stubs to real pytest-benchmark tests.
+    """
 
-import pytest
-from phantom_guard.core.detector import Detector
-from phantom_guard.core.patterns import check_pattern
-from phantom_guard.cache import Cache
-
-
-@pytest.fixture
-def detector():
-    """Create detector with fresh cache."""
-    return Detector()
-
-
-@pytest.fixture
-def warm_cache(detector, tmp_path):
-    """Pre-populate cache with test packages."""
-    cache = Cache(sqlite_path=tmp_path / "cache.db")
-    # Warm cache with known packages
-    packages = ["flask", "requests", "django", "numpy", "pandas"]
-    # ... warm cache logic
-    return cache
-
-
-class TestSinglePackagePerformance:
-    """Benchmark single package validation."""
-
-    @pytest.mark.benchmark(group="single-package")
-    def test_cached_package_under_10ms(self, benchmark, warm_cache):
+    def test_validate_package_uncached_latency(self, benchmark):
         """
-        PERF_ID: PERF001
-        BUDGET: <10ms P99
-
-        Cached package lookup should be nearly instant.
-        """
-        detector = Detector(cache=warm_cache)
-
-        result = benchmark(
-            detector.validate_sync,
-            "flask",
-            registry="pypi"
-        )
-
-        # Validate budget
-        assert benchmark.stats.stats.max < 0.010  # 10ms
-
-    @pytest.mark.benchmark(group="single-package")
-    @pytest.mark.network
-    def test_uncached_package_under_200ms(self, benchmark, detector):
-        """
-        PERF_ID: PERF002
+        TEST_ID: T001.B01
         BUDGET: <200ms P99
 
-        Uncached package should complete within 200ms.
+        CURRENT: @pytest.mark.skip - STUB
+        ACTION: Implement with benchmark.pedantic()
         """
+        detector = Detector()
+
         result = benchmark.pedantic(
             detector.validate_sync,
             args=("flask",),
@@ -126,27 +67,32 @@ class TestSinglePackagePerformance:
             rounds=3,
         )
 
-        # Validate budget (allowing some network variance)
         assert benchmark.stats.stats.max < 0.200  # 200ms
 
-
-class TestBatchPerformance:
-    """Benchmark batch validation."""
-
-    @pytest.mark.benchmark(group="batch")
-    @pytest.mark.network
-    def test_batch_50_packages_under_5s(self, benchmark, detector):
+    def test_validate_package_cached_latency(self, benchmark, warm_cache):
         """
-        PERF_ID: PERF003
+        TEST_ID: T001.B02
+        BUDGET: <10ms P99
+
+        CURRENT: @pytest.mark.skip - STUB
+        ACTION: Implement with pre-warmed cache
+        """
+        detector = Detector(cache=warm_cache)
+
+        result = benchmark(detector.validate_sync, "flask", registry="pypi")
+
+        assert benchmark.stats.stats.max < 0.010  # 10ms
+
+    def test_batch_validate_50_packages(self, benchmark):
+        """
+        TEST_ID: T002.B01
         BUDGET: <5s P99
 
-        50 packages should complete within 5 seconds.
+        CURRENT: @pytest.mark.skip - STUB
+        ACTION: Implement with 50 package batch
         """
-        packages = [
-            "flask", "requests", "django", "numpy", "pandas",
-            "scipy", "matplotlib", "pytest", "click", "typer",
-            # ... 40 more packages
-        ] * 5  # 50 total
+        detector = Detector()
+        packages = ["flask", "django", "requests", "numpy", "pandas"] * 10
 
         result = benchmark.pedantic(
             detector.validate_batch_sync,
@@ -157,81 +103,137 @@ class TestBatchPerformance:
 
         assert benchmark.stats.stats.max < 5.0  # 5 seconds
 
+    def test_batch_validate_concurrent_speedup(self, benchmark):
+        """
+        TEST_ID: T002.B02
+        Concurrent should be faster than sequential.
 
-class TestPatternMatchingPerformance:
-    """Benchmark pattern matching speed."""
+        CURRENT: @pytest.mark.skip - STUB
+        ACTION: Compare concurrent vs sequential timing
+        """
+        # Implementation...
+```
 
-    @pytest.mark.benchmark(group="patterns")
-    def test_pattern_match_under_1ms(self, benchmark):
+#### Step 2: Implement bench_scorer.py Stubs (45min)
+
+Convert 3 skipped stubs:
+
+```python
+# tests/benchmarks/bench_scorer.py - IMPLEMENT these stubs
+
+def test_score_calculation_latency(self, benchmark):
+    """TEST_ID: T007.B01 - Budget: <0.1ms"""
+    # STUB exists - implement real benchmark
+
+def test_score_with_all_signals(self, benchmark):
+    """TEST_ID: T007.B02 - Max signals performance"""
+    # STUB exists - implement real benchmark
+
+def test_typosquat_check_latency(self, benchmark):
+    """TEST_ID: T006.B01 - Budget: <10ms against 1000 packages"""
+    # STUB exists - implement real benchmark
+```
+
+#### Step 3: Create Pattern Matching Benchmark (45min)
+
+**NEW FILE - Does not exist yet:**
+
+```python
+# tests/benchmarks/bench_patterns.py - CREATE NEW
+
+"""
+Pattern matching performance benchmarks.
+
+IMPLEMENTS: W4.1
+BUDGET: <1ms P99 per pattern check
+"""
+
+import pytest
+from phantom_guard.core.patterns import check_pattern, PATTERN_DATABASE
+
+
+@pytest.mark.benchmark
+class TestPatternMatchingBenchmarks:
+    """Pattern matching must be sub-millisecond."""
+
+    def test_pattern_match_single_under_1ms(self, benchmark):
         """
         PERF_ID: PERF004
         BUDGET: <1ms P99
-
-        Pattern matching should be sub-millisecond.
         """
-        test_names = [
-            "flask-gpt-helper",
-            "requests-ai-wrapper",
-            "django-chatgpt-utils",
-            "simple-numpy",
-            "auto-pandas",
-        ]
+        result = benchmark(check_pattern, "flask-gpt-helper")
+        assert benchmark.stats.stats.max < 0.001  # 1ms
+
+    def test_pattern_match_batch_100_names(self, benchmark):
+        """
+        Batch 100 pattern checks should complete quickly.
+        """
+        names = [
+            "flask-gpt-helper", "requests-ai-wrapper", "django-chatgpt",
+            "simple-numpy", "auto-pandas", "easy-scipy",
+        ] * 17  # ~100 names
 
         def match_all():
-            for name in test_names:
+            for name in names:
                 check_pattern(name)
 
         benchmark(match_all)
+        assert benchmark.stats.stats.max < 0.100  # 100ms for 100 names
 
-        # Each pattern match should be under 1ms
-        assert benchmark.stats.stats.max / len(test_names) < 0.001
+    def test_pattern_database_lookup_performance(self, benchmark):
+        """Pattern database should be efficiently accessible."""
+        def access_patterns():
+            return len(PATTERN_DATABASE)
 
-
-class TestCachePerformance:
-    """Benchmark cache operations."""
-
-    @pytest.mark.benchmark(group="cache")
-    def test_memory_cache_hit_under_1ms(self, benchmark, warm_cache):
-        """
-        PERF_ID: PERF005
-        BUDGET: <1ms
-
-        Memory cache hit should be nearly instant.
-        """
-        result = benchmark(
-            warm_cache.get,
-            "pypi",
-            "flask"
-        )
-
-        assert benchmark.stats.stats.max < 0.001  # 1ms
-
-    @pytest.mark.benchmark(group="cache")
-    def test_sqlite_cache_hit_under_5ms(self, benchmark, warm_cache):
-        """
-        PERF_ID: PERF006
-        BUDGET: <5ms
-
-        SQLite cache hit should be fast.
-        """
-        result = benchmark(
-            warm_cache.get_sqlite,
-            "pypi",
-            "flask"
-        )
-
-        assert benchmark.stats.stats.max < 0.005  # 5ms
+        benchmark(access_patterns)
 ```
 
-### Step 3: Create Memory Profiling Tests (45min)
+---
+
+### Afternoon Session (3h) - Cache Benchmarks + Infrastructure
+
+#### Step 4: Implement bench_cache.py Stubs (1.5h)
+
+Convert 10 skipped stubs for cache performance:
 
 ```python
-# tests/benchmarks/test_memory_profile.py
+# tests/benchmarks/bench_cache.py - IMPLEMENT these stubs
+
+def test_memory_cache_get_latency(self, benchmark):
+    """BUDGET: <1ms"""
+
+def test_memory_cache_set_latency(self, benchmark):
+    """BUDGET: <1ms"""
+
+def test_sqlite_cache_get_latency(self, benchmark):
+    """BUDGET: <5ms"""
+
+def test_sqlite_cache_set_latency(self, benchmark):
+    """BUDGET: <5ms"""
+
+def test_lru_eviction_overhead(self, benchmark):
+    """LRU eviction should not impact performance"""
+
+def test_pypi_client_latency(self, benchmark):
+    """Registry client performance"""
+
+def test_npm_client_latency(self, benchmark):
+    """Registry client performance"""
+
+def test_crates_client_latency(self, benchmark):
+    """Registry client performance"""
+```
+
+#### Step 5: Create Memory Profiling Tests (45min)
+
+**NEW FILE:**
+
+```python
+# tests/benchmarks/test_memory_profile.py - CREATE NEW
+
 """Memory usage profiling for Phantom Guard."""
 
-import pytest
 from memory_profiler import memory_usage
-
 from phantom_guard.core.detector import Detector
 from phantom_guard.core.patterns import PATTERN_DATABASE
 
@@ -240,78 +242,73 @@ class TestMemoryUsage:
     """Validate memory constraints."""
 
     def test_detector_memory_footprint(self):
-        """
-        PERF_ID: MEM001
-
-        Detector should not exceed 50MB memory.
-        """
+        """Detector should not exceed 50MB."""
         def create_detector():
-            detector = Detector()
-            return detector
+            return Detector()
 
-        mem_usage = memory_usage((create_detector,), max_iterations=1)
-        max_mem = max(mem_usage)
+        mem = memory_usage((create_detector,), max_iterations=1)
+        assert max(mem) < 50  # 50MB
 
-        # Should be under 50MB
-        assert max_mem < 50, f"Detector uses {max_mem}MB, expected <50MB"
-
-    def test_pattern_database_memory(self):
-        """
-        PERF_ID: MEM002
-
-        Pattern database should be lightweight.
-        """
+    def test_pattern_database_size(self):
+        """Pattern database should be under 100KB."""
         import sys
+        size_kb = sys.getsizeof(PATTERN_DATABASE) / 1024
+        assert size_kb < 100
 
-        size_bytes = sys.getsizeof(PATTERN_DATABASE)
-        size_kb = size_bytes / 1024
-
-        # Pattern database should be under 100KB
-        assert size_kb < 100, f"Pattern DB is {size_kb}KB, expected <100KB"
-
-    def test_batch_validation_memory_stable(self):
-        """
-        PERF_ID: MEM003
-
-        Batch validation should not leak memory.
-        """
+    def test_batch_memory_stability(self):
+        """Batch operations should not leak memory."""
         detector = Detector()
-        packages = ["flask"] * 100
+        initial = memory_usage()[0]
 
-        initial_mem = memory_usage()[0]
-
-        # Run multiple batches
         for _ in range(5):
-            results = detector.validate_batch_sync(packages)
+            detector.validate_batch_sync(["flask"] * 100)
 
-        final_mem = memory_usage()[0]
-
-        # Memory should not grow significantly
-        mem_growth = final_mem - initial_mem
-        assert mem_growth < 20, f"Memory grew by {mem_growth}MB"
+        final = memory_usage()[0]
+        assert (final - initial) < 20  # Max 20MB growth
 ```
 
-### Step 4: Run Initial Benchmarks (1h)
+#### Step 6: Create Benchmark Infrastructure (30min)
 
-```bash
-# Run all benchmarks
-pytest tests/benchmarks/ -v --benchmark-autosave --benchmark-compare
+```python
+# tests/benchmarks/conftest.py - CREATE/UPDATE
 
-# Run specific benchmark groups
-pytest tests/benchmarks/ -v -k "single-package" --benchmark-only
+"""Benchmark configuration and fixtures."""
 
-# Generate benchmark report
-pytest tests/benchmarks/ --benchmark-json=benchmark_results.json
+import pytest
+from phantom_guard.cache import Cache
+
+
+PERFORMANCE_BUDGETS = {
+    "single-cached": 0.010,      # 10ms
+    "single-uncached": 0.200,    # 200ms
+    "batch-50": 5.0,             # 5s
+    "pattern-match": 0.001,      # 1ms
+    "memory-cache": 0.001,       # 1ms
+    "sqlite-cache": 0.005,       # 5ms
+}
+
+
+@pytest.fixture
+def warm_cache(tmp_path):
+    """Pre-populated cache for cached benchmarks."""
+    cache = Cache(sqlite_path=tmp_path / "bench_cache.db")
+    # Pre-warm with known packages
+    return cache
+
+
+@pytest.fixture
+def budget_enforcer():
+    """Helper to enforce performance budgets."""
+    class Enforcer:
+        def check(self, metric: str, actual: float) -> bool:
+            budget = PERFORMANCE_BUDGETS.get(metric)
+            return actual <= budget if budget else True
+    return Enforcer()
 ```
 
----
+#### Step 7: Create Baseline Document (15min)
 
-## Afternoon Session (3h)
-
-### Objective
-Document baseline measurements and create CI/CD performance regression tests.
-
-### Step 5: Create Baseline Document (1h)
+After running all benchmarks, create:
 
 ```markdown
 # docs/performance/BASELINE_MEASUREMENTS.md
@@ -319,212 +316,72 @@ Document baseline measurements and create CI/CD performance regression tests.
 # Performance Baseline - v0.1.0
 
 > **Date**: YYYY-MM-DD
-> **Environment**: Python 3.11, macOS/Windows/Linux
-> **Commit**: [hash]
+> **Environment**: Python 3.11+
+> **Test Count**: 22 benchmarks (5 existing + 17 converted from stubs)
 
 ## Summary
 
-| Metric | Budget | Baseline | Status |
-|:-------|:-------|:---------|:-------|
-| Single (cached) | <10ms | Xms | PASS/FAIL |
-| Single (uncached) | <200ms | Xms | PASS/FAIL |
-| Batch 50 | <5s | Xs | PASS/FAIL |
-| Pattern match | <1ms | Xms | PASS/FAIL |
+| Operation | Budget | Baseline | P99 | Status |
+|:----------|:-------|:---------|:----|:-------|
+| Single (cached) | <10ms | Xms | Xms | PASS |
+| Single (uncached) | <200ms | Xms | Xms | PASS |
+| Batch 50 | <5s | Xs | Xs | PASS |
+| Pattern match | <1ms | Xms | Xms | PASS |
 
-## Detailed Results
-
-### Single Package (Cached)
-- Min: X.XXms
-- Max: X.XXms
-- Mean: X.XXms
-- P99: X.XXms
-
-### Single Package (Uncached)
-- Min: X.XXms
-- Max: X.XXms
-- Mean: X.XXms
-- P99: X.XXms
-
-### Batch 50 Packages
-- Min: X.XXs
-- Max: X.XXs
-- Mean: X.XXs
-- P99: X.XXs
-
-## Memory Usage
-
-| Component | Usage |
-|:----------|:------|
-| Detector init | XMB |
-| Pattern DB | XKB |
-| Cache (warm) | XMB |
-
-## Recommendations
-
-[Based on results, identify optimization opportunities]
+[Fill in after running benchmarks]
 ```
 
-### Step 6: Add CI Performance Tests (45min)
+---
 
-```yaml
-# .github/workflows/performance.yml
-name: Performance Tests
+## Verification Commands
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  benchmark:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install -e ".[dev]"
-
-      - name: Run benchmarks
-        run: |
-          pytest tests/benchmarks/ \
-            --benchmark-json=benchmark.json \
-            --benchmark-compare-fail=min:10%
-
-      - name: Store benchmark results
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: 'pytest'
-          output-file-path: benchmark.json
-          fail-on-alert: true
-          alert-threshold: '150%'
-```
-
-### Step 7: Create Performance Budget Enforcement (45min)
-
-```python
-# tests/benchmarks/conftest.py
-"""Benchmark configuration and budget enforcement."""
-
-import pytest
-
-
-# Performance budgets (in seconds)
-PERFORMANCE_BUDGETS = {
-    "single-cached": 0.010,      # 10ms
-    "single-uncached": 0.200,   # 200ms
-    "batch-50": 5.0,            # 5s
-    "pattern-match": 0.001,     # 1ms
-    "memory-cache": 0.001,      # 1ms
-    "sqlite-cache": 0.005,      # 5ms
-}
-
-
-def pytest_benchmark_compare_machine_info(config, benchmarksession):
-    """Record machine info for benchmark comparison."""
-    return {
-        "cpu": "benchmark-cpu",
-        "memory": "benchmark-memory",
-    }
-
-
-@pytest.fixture
-def budget_enforcer():
-    """Helper to enforce performance budgets."""
-    class BudgetEnforcer:
-        def check(self, metric: str, actual: float) -> bool:
-            budget = PERFORMANCE_BUDGETS.get(metric)
-            if budget is None:
-                return True
-            return actual <= budget
-
-    return BudgetEnforcer()
-```
-
-### Step 8: Document Profiling Commands (30min)
-
-```markdown
-# docs/performance/PROFILING_GUIDE.md
-
-# Performance Profiling Guide
-
-## Quick Commands
-
-### Run All Benchmarks
 ```bash
-pytest tests/benchmarks/ -v --benchmark-autosave
-```
+# Run all benchmarks (should be 22 tests now, not 5)
+pytest tests/benchmarks/ -v --benchmark-only
 
-### Compare Against Baseline
-```bash
+# Run with statistics
+pytest tests/benchmarks/ --benchmark-autosave
+
+# Compare against baseline
 pytest tests/benchmarks/ --benchmark-compare=0001
-```
 
-### Profile Memory
-```bash
+# Memory profiling
 python -m memory_profiler tests/benchmarks/test_memory_profile.py
-```
-
-### Profile CPU
-```bash
-python -m cProfile -o profile.stats -m pytest tests/unit/test_detector.py
-python -c "import pstats; p = pstats.Stats('profile.stats'); p.sort_stats('cumulative').print_stats(20)"
-```
-
-### Generate Flamegraph
-```bash
-pip install py-spy
-py-spy record -o profile.svg -- python -c "from phantom_guard import Detector; Detector().validate_sync('flask')"
-```
 ```
 
 ---
 
 ## End of Day Checklist
 
-### Code Quality
-- [ ] `ruff check tests/benchmarks/` - No lint errors
-- [ ] `ruff format tests/benchmarks/` - Code formatted
-- [ ] All benchmark tests discoverable by pytest
+### Stubs Implemented
+- [ ] bench_detector.py: 4 stubs → 4 real benchmarks
+- [ ] bench_scorer.py: 3 stubs → 3 real benchmarks
+- [ ] bench_cache.py: 10 stubs → 10 real benchmarks
+- [ ] **Total**: 17 stubs converted
 
-### Benchmarks Complete
-- [ ] Single package (cached) benchmark
-- [ ] Single package (uncached) benchmark
-- [ ] Batch 50 packages benchmark
-- [ ] Pattern matching benchmark
-- [ ] Memory profiling tests
-- [ ] Cache performance tests
+### New Files Created
+- [ ] `tests/benchmarks/bench_patterns.py` (pattern matching)
+- [ ] `tests/benchmarks/test_memory_profile.py` (memory profiling)
+- [ ] `tests/benchmarks/conftest.py` (fixtures + budgets)
+- [ ] `docs/performance/BASELINE_MEASUREMENTS.md`
 
-### Documentation
-- [ ] BASELINE_MEASUREMENTS.md created
-- [ ] PROFILING_GUIDE.md created
-- [ ] CI performance workflow added
+### Tests Passing
+- [ ] 22+ benchmark tests passing (5 existing + 17 converted)
+- [ ] All P99 budgets met
+- [ ] No memory leaks detected
 
 ### Git Commit
 
 ```bash
-git add tests/benchmarks/ docs/performance/ .github/workflows/performance.yml
-git commit -m "perf: Add comprehensive performance benchmarks
+git commit -m "perf(benchmarks): Implement 17 benchmark stubs + add pattern matching
 
-W4.1: Performance benchmarks complete
+W4.1: Performance benchmarks COMPLETE
 
-- Add pytest-benchmark test suite
+- Convert 17 skipped benchmark stubs to real tests
+- Add pattern matching benchmarks (budget <1ms)
 - Add memory profiling tests
 - Create baseline measurements document
-- Add CI performance regression tests
-- Establish P99 budget enforcement
-
-Performance budgets validated:
-- Single (cached): <10ms
-- Single (uncached): <200ms
-- Batch 50: <5s
-- Pattern match: <1ms"
+- All P99 budgets validated"
 ```
 
 ---
@@ -533,18 +390,8 @@ Performance budgets validated:
 
 | Metric | Target | Actual |
 |:-------|:-------|:-------|
-| Tasks Complete | W4.1 | |
-| Benchmark Tests | 6+ tests | |
-| Budget Violations | 0 | |
-| Baseline Document | Created | |
-| CI Workflow | Added | |
-
----
-
-## Tomorrow Preview
-
-**Day 2 Focus**: Performance Optimization (W4.2)
-- Analyze benchmark results
-- Identify hotspots with profiling
-- Optimize critical paths
-- Re-run benchmarks to verify improvements
+| Benchmark Tests | 22+ | |
+| Stubs Converted | 17 | |
+| New Benchmarks | 5+ | |
+| P99 Violations | 0 | |
+| Memory Leaks | 0 | |
