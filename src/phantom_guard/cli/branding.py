@@ -8,6 +8,7 @@ Provides context-aware banner display with Phantom Mocha theme.
 
 from __future__ import annotations
 
+import sys
 from enum import Enum
 
 from rich.console import Console
@@ -21,6 +22,12 @@ VERSION = "0.1.0"
 MAUVE = "#CBA6F7"
 DIM = "#A6ADC8"
 OVERLAY = "#6C7086"
+
+
+def _can_use_unicode() -> bool:
+    """Check if the console can handle Unicode output."""
+    encoding = getattr(sys.stdout, "encoding", "") or ""
+    return encoding.lower() in ("utf-8", "utf8", "utf-16", "utf-16-le", "utf-16-be")
 
 
 class BannerType(Enum):
@@ -43,8 +50,23 @@ class BannerType(Enum):
     NONE = "none"
 
 
-# Large block-letter banner for --version (12 lines, full ASCII art)
-LARGE_BANNER = r"""
+# Large block-letter banner for --version (ASCII-safe version)
+LARGE_BANNER_ASCII = r"""
+ ____  _   _    _    _   _ _____ ___  __  __
+|  _ \| | | |  / \  | \ | |_   _/ _ \|  \/  |
+| |_) | |_| | / _ \ |  \| | | || | | | |\/| |
+|  __/|  _  |/ ___ \| |\  | | || |_| | |  | |
+|_|   |_| |_/_/   \_\_| \_| |_| \___/|_|  |_|
+
+      ____ _   _    _    ____  ____
+     / ___| | | |  / \  |  _ \|  _ \
+    | |  _| | | | / _ \ | |_) | | | |
+    | |_| | |_| |/ ___ \|  _ <| |_| |
+     \____|\___//_/   \_\_| \_\____/
+"""
+
+# Large block-letter banner for --version (Unicode version)
+LARGE_BANNER_UNICODE = r"""
     ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗████████╗ ██████╗ ███╗   ███╗
     ██╔══██╗██║  ██║██╔══██╗████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║
     ██████╔╝███████║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║
@@ -60,15 +82,54 @@ LARGE_BANNER = r"""
 """
 
 # Compact banner for daily use (validate/check commands)
-COMPACT_BANNER = "👻 PHANTOM GUARD"
+COMPACT_BANNER_ASCII = "PHANTOM GUARD"
+COMPACT_BANNER_UNICODE = "\U0001f47b PHANTOM GUARD"  # 👻 PHANTOM GUARD
 
 # Medium ghost panel for --help screens
-MEDIUM_GHOST = r"""
+MEDIUM_GHOST_ASCII = r"""
+    .-----.      PHANTOM
+   ( o   o )      GUARD
+    \  ^  /
+     '---'
+"""
+
+MEDIUM_GHOST_UNICODE = r"""
      ▄▀▀▀▀▀▄      PHANTOM
     █  ◉ ◉  █      GUARD
     █   ▽   █
      ▀█▀▀▀█▀
 """
+
+
+def _get_large_banner() -> str:
+    """Get large banner based on terminal capabilities."""
+    return LARGE_BANNER_UNICODE if _can_use_unicode() else LARGE_BANNER_ASCII
+
+
+def _get_compact_banner() -> str:
+    """Get compact banner based on terminal capabilities."""
+    return COMPACT_BANNER_UNICODE if _can_use_unicode() else COMPACT_BANNER_ASCII
+
+
+def _get_medium_ghost() -> str:
+    """Get medium ghost based on terminal capabilities."""
+    return MEDIUM_GHOST_UNICODE if _can_use_unicode() else MEDIUM_GHOST_ASCII
+
+
+def _get_line_char() -> str:
+    """Get line character based on terminal capabilities."""
+    return "\u2500" if _can_use_unicode() else "-"
+
+
+def _get_ghost_emoji() -> str:
+    """Get ghost emoji or empty string based on terminal capabilities."""
+    return "\U0001f47b " if _can_use_unicode() else ""
+
+
+# Backward compatibility aliases
+LARGE_BANNER = LARGE_BANNER_UNICODE
+COMPACT_BANNER = COMPACT_BANNER_UNICODE
+MEDIUM_GHOST = MEDIUM_GHOST_UNICODE
 
 
 def get_banner_type(
@@ -169,9 +230,10 @@ def _show_large_banner(console: Console, version: str) -> None:
 
     Used for --version command to make a strong first impression.
     """
-    console.print(LARGE_BANNER, style=f"bold {MAUVE}")
+    console.print(_get_large_banner(), style=f"bold {MAUVE}")
+    ghost = _get_ghost_emoji()
     console.print(
-        "                            👻  Supply Chain Security",
+        f"                            {ghost} Supply Chain Security",
         style=DIM,
     )
     console.print(
@@ -186,8 +248,8 @@ def _show_compact_banner(console: Console, version: str) -> None:
 
     Used for daily commands (validate/check) to minimize visual noise.
     """
-    console.print(f"{COMPACT_BANNER} v{version}", style=f"bold {MAUVE}")
-    console.print("─" * 40, style=OVERLAY)
+    console.print(f"{_get_compact_banner()} v{version}", style=f"bold {MAUVE}")
+    console.print(_get_line_char() * 40, style=OVERLAY)
 
 
 def _show_medium_banner(console: Console, version: str) -> None:
@@ -197,7 +259,7 @@ def _show_medium_banner(console: Console, version: str) -> None:
     Used for --help screens to provide friendly branding.
     """
     text = Text()
-    for line in MEDIUM_GHOST.strip().split("\n"):
+    for line in _get_medium_ghost().strip().split("\n"):
         text.append(line + "\n", style=f"bold {MAUVE}")
     text.append(f"v{version}", style=OVERLAY)
 

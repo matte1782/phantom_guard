@@ -30,15 +30,51 @@ COLORS = {
 }
 
 # =============================================================================
-# UNICODE ICONS (Accessibility: Always pair with colors)
+# ICONS (Unicode with ASCII fallback for Windows legacy console)
 # =============================================================================
 
-ICONS = {
-    Recommendation.SAFE: "\u2713",  # checkmark
-    Recommendation.SUSPICIOUS: "\u26a0",  # warning
-    Recommendation.HIGH_RISK: "\u2717",  # x mark
-    Recommendation.NOT_FOUND: "\u2753",  # question mark
+# Unicode icons for modern terminals
+UNICODE_ICONS = {
+    Recommendation.SAFE: "\u2713",  # ✓ checkmark
+    Recommendation.SUSPICIOUS: "\u26a0",  # ⚠ warning
+    Recommendation.HIGH_RISK: "\u2717",  # ✗ x mark
+    Recommendation.NOT_FOUND: "\u2753",  # ❓ question mark
 }
+
+# ASCII fallback icons for Windows legacy console (cp1252)
+ASCII_ICONS = {
+    Recommendation.SAFE: "+",
+    Recommendation.SUSPICIOUS: "!",
+    Recommendation.HIGH_RISK: "X",
+    Recommendation.NOT_FOUND: "?",
+}
+
+
+def _can_use_unicode() -> bool:
+    """Check if the console can handle Unicode output."""
+    import sys
+
+    # Check if stdout encoding supports Unicode
+    encoding = getattr(sys.stdout, "encoding", "") or ""
+    return encoding.lower() in ("utf-8", "utf8", "utf-16", "utf-16-le", "utf-16-be")
+
+
+def get_icons() -> dict[Recommendation, str]:
+    """Get appropriate icons based on terminal capabilities."""
+    if _can_use_unicode():
+        return UNICODE_ICONS
+    return ASCII_ICONS
+
+
+# Default icons (computed at import time)
+ICONS = get_icons()
+
+# Tree formatting characters
+TREE_LAST = "\u2514\u2500" if _can_use_unicode() else "`-"  # └─ or `-
+TREE_MID = "\u251c\u2500" if _can_use_unicode() else "|-"  # ├─ or |-
+BULLET = "\u2022" if _can_use_unicode() else "*"  # • or *
+LINE_CHAR = "\u2500" if _can_use_unicode() else "-"  # ─ or -
+GHOST = "\U0001f47b " if _can_use_unicode() else ""  # 👻 or empty
 
 # =============================================================================
 # THEME STYLES - Rich Theme Integration
@@ -77,7 +113,7 @@ def show_warning_panel(
 
     content.append("Signals detected:\n", style="#A6ADC8")  # phantom.dim
     for signal in signals:
-        content.append(f"  \u2022 {signal}\n", style="#F9E2AF")
+        content.append(f"  {BULLET} {signal}\n", style="#F9E2AF")
 
     console.print(
         Panel(
@@ -109,7 +145,7 @@ def show_danger_panel(
 
     content.append("Critical signals:\n", style="#A6ADC8")  # phantom.dim
     for signal in signals:
-        content.append(f"  \u2022 {signal}\n", style="#F38BA8")
+        content.append(f"  {BULLET} {signal}\n", style="#F38BA8")
 
     content.append("\n")
     content.append("Recommendation: ", style="#CDD6F4")
@@ -140,9 +176,10 @@ def create_scanner_progress(console: Console) -> Progress:
     Returns:
         Configured Progress object with Phantom theme styling
     """
+    ghost_prefix = f"[#CBA6F7]{GHOST}[/#CBA6F7]" if GHOST else ""
     return Progress(
         SpinnerColumn(spinner_name="dots", style="#CBA6F7"),
-        TextColumn("[#CBA6F7]\U0001f47b[/#CBA6F7] {task.description}"),
+        TextColumn(f"{ghost_prefix} {{task.description}}"),
         BarColumn(
             complete_style="#CBA6F7",
             finished_style="#A6E3A1",
@@ -192,7 +229,7 @@ def show_result_with_signals(
         signals_list = list(result.signals)
         for i, signal in enumerate(signals_list):
             is_last = i == len(signals_list) - 1
-            prefix = "\u2514\u2500" if is_last else "\u251c\u2500"
+            prefix = TREE_LAST if is_last else TREE_MID
             console.print(
                 f"      {prefix} {signal.type.value}: {signal.message}",
                 style="#A6ADC8",
@@ -225,9 +262,9 @@ def show_summary(
 
     # Build summary line
     summary = Text()
-    summary.append("  \u2500" * 30 + "\n", style="#6C7086")  # phantom.overlay
+    summary.append(f"  {LINE_CHAR}" * 30 + "\n", style="#6C7086")  # phantom.overlay
     summary.append(
-        f"  \U0001f47b Complete in {elapsed_ms:.0f}ms | ",
+        f"  {GHOST}Complete in {elapsed_ms:.0f}ms | ",
         style="#A6ADC8",
     )  # ghost emoji + phantom.dim
     summary.append(f"{total} packages", style="#CDD6F4")  # phantom.text
@@ -307,7 +344,7 @@ class OutputFormatter:
             signals_list = list(risk.signals)
             for i, signal in enumerate(signals_list):
                 is_last = i == len(signals_list) - 1
-                prefix = "\u2514\u2500" if is_last else "\u251c\u2500"
+                prefix = TREE_LAST if is_last else TREE_MID
                 self.console.print(
                     f"      {prefix} {signal.type.value}",
                     style="#A6ADC8",
@@ -323,9 +360,10 @@ class OutputFormatter:
         Returns:
             Progress object for context manager usage
         """
+        ghost_text = f"{GHOST}Scanning {package}..." if GHOST else f"Scanning {package}..."
         return Progress(
             SpinnerColumn(spinner_name="dots", style="#CBA6F7"),
-            TextColumn(f"[#CBA6F7]\U0001f47b Scanning {package}...[/#CBA6F7]"),
+            TextColumn(f"[#CBA6F7]{ghost_text}[/#CBA6F7]"),
             console=self.console,
         )
 
