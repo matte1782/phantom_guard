@@ -9,7 +9,7 @@ description = "Detect AI-hallucinated package attacks (slopsquatting)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
-authors = [{ name = "Matteo" }]
+authors = [{ name = "Matteo Panzeri", email = "matteo1782@gmail.com" }]
 keywords = ["security", "supply-chain", "slopsquatting", "ai-security", "package-validation"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -137,4 +137,9 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
     "if __name__ == .__main__.:",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
 ]
