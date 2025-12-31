@@ -20,7 +20,7 @@ from phantom_guard.core import (
     validate_package_sync,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "PackageRisk",
     "Recommendation",

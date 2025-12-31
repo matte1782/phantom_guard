@@ -209,7 +209,9 @@ EXIT_RUNTIME_ERROR = 5
 
 @app.command()
 def validate(
-    package: Annotated[str, typer.Argument(help="Package name to validate")],
+    packages: Annotated[
+        list[str], typer.Argument(help="Package name(s) to validate")
+    ],
     registry: Annotated[
         str, typer.Option("-r", "--registry", help="Registry: pypi, npm, crates")
     ] = "pypi",
@@ -225,7 +227,12 @@ def validate(
     TEST: T010.01-T010.06
     EC: EC080-EC083
 
-    Validate a single package for supply chain risks.
+    Validate one or more packages for supply chain risks.
+
+    Examples:
+        phantom-guard validate requests
+        phantom-guard validate requests flask numpy
+        phantom-guard validate lodash -r npm
     """
     # Create console based on plain flag
     cmd_console = Console(force_terminal=False) if plain else console
@@ -234,42 +241,44 @@ def validate(
     banner_type = get_banner_type("validate", no_banner, quiet, "text")
     show_banner(cmd_console, banner_type, __version__)
 
-    # Run async validation
-    result = asyncio.run(_validate_package(package, registry, verbose, quiet, cmd_console))
+    # Run async validation for all packages
+    result = asyncio.run(
+        _validate_packages(packages, registry, verbose, quiet, cmd_console)
+    )
 
     # Exit with appropriate code
     raise typer.Exit(code=result)
 
 
-async def _validate_package(
-    package: str,
+async def _validate_packages(
+    packages: list[str],
     registry: str,
     verbose: bool,
     quiet: bool,
     cmd_console: Console | None = None,
 ) -> int:
     """
-    Run the actual validation logic.
+    Validate multiple packages and return worst exit code.
 
     Args:
-        package: Package name to validate
+        packages: List of package names to validate
         registry: Registry name (pypi, npm, crates)
         verbose: Show detailed signal information
         quiet: Show minimal output
-        cmd_console: Console to use for output (defaults to module-level console)
+        cmd_console: Console to use for output
 
     Returns:
-        Exit code based on validation result
+        Worst exit code from all validations (highest risk)
     """
     output_console = cmd_console or console
     formatter = OutputFormatter(output_console, verbose=verbose, quiet=quiet)
+    worst_exit = EXIT_SAFE
 
     try:
         # Validate registry
         validated_registry = validate_registry(registry)
 
-        # Create registry client based on registry type
-        # Use memory-only cache (no SQLite for CLI validation)
+        # Create registry client
         cache = Cache(sqlite_enabled=False)
 
         base_client: RegistryClientProtocol
@@ -282,29 +291,28 @@ async def _validate_package(
 
         # Wrap with caching
         async with cache, CachedRegistryClient(base_client, cache, validated_registry) as client:
-            # Run validation
-            risk = await detector.validate_package(package, validated_registry, client)
+            for package in packages:
+                try:
+                    # Run validation
+                    risk = await detector.validate_package(
+                        package, validated_registry, client
+                    )
 
-            # Display result
-            formatter.print_result(risk)
+                    # Display result
+                    formatter.print_result(risk)
 
-            # Return exit code based on recommendation
-            match risk.recommendation:
-                case Recommendation.SAFE:
-                    return EXIT_SAFE
-                case Recommendation.SUSPICIOUS:
-                    return EXIT_SUSPICIOUS
-                case Recommendation.HIGH_RISK:
-                    return EXIT_HIGH_RISK
-                case Recommendation.NOT_FOUND:
-                    return EXIT_NOT_FOUND
+                    # Track worst exit code
+                    exit_code = _get_exit_code(risk.recommendation)
+                    if exit_code > worst_exit:
+                        worst_exit = exit_code
 
-            # Default return if no match (shouldn't happen)  # pragma: no cover
-            return EXIT_RUNTIME_ERROR  # pragma: no cover
+                except InvalidPackageNameError as e:
+                    formatter.print_error(f"Invalid package name '{package}': {e.reason}")
+                    if worst_exit < EXIT_INPUT_ERROR:
+                        worst_exit = EXIT_INPUT_ERROR
 
-    except InvalidPackageNameError as e:
-        formatter.print_error(f"Invalid package name: {e.reason}")
-        return EXIT_INPUT_ERROR
+        return worst_exit
+
     except InvalidRegistryError as e:
         formatter.print_error(str(e))
         return EXIT_INPUT_ERROR
@@ -314,6 +322,43 @@ async def _validate_package(
     except Exception as e:
         formatter.print_error(f"Unexpected error: {e}")
         return EXIT_RUNTIME_ERROR
+
+
+def _get_exit_code(recommendation: Recommendation) -> int:
+    """Map recommendation to exit code."""
+    match recommendation:
+        case Recommendation.SAFE:
+            return EXIT_SAFE
+        case Recommendation.SUSPICIOUS:
+            return EXIT_SUSPICIOUS
+        case Recommendation.HIGH_RISK:
+            return EXIT_HIGH_RISK
+        case Recommendation.NOT_FOUND:
+            return EXIT_NOT_FOUND
+    return EXIT_RUNTIME_ERROR  # pragma: no cover
+
+
+async def _validate_package(
+    package: str,
+    registry: str,
+    verbose: bool,
+    quiet: bool,
+    cmd_console: Console | None = None,
+) -> int:
+    """
+    Run the actual validation logic for a single package.
+
+    Args:
+        package: Package name to validate
+        registry: Registry name (pypi, npm, crates)
+        verbose: Show detailed signal information
+        quiet: Show minimal output
+        cmd_console: Console to use for output (defaults to module-level console)
+
+    Returns:
+        Exit code based on validation result
+    """
+    return await _validate_packages([package], registry, verbose, quiet, cmd_console)
 
 
 @app.command()
