@@ -22,7 +22,7 @@ from phantom_guard.registry.exceptions import (
 
 # Constants
 CRATES_API_BASE = "https://crates.io/api/v1/crates"
-DEFAULT_TIMEOUT = 5.0
+DEFAULT_TIMEOUT = 10.0
 
 # INV015: User-Agent is REQUIRED by crates.io
 USER_AGENT = "PhantomGuard/0.1.0 (https://github.com/phantom-guard)"

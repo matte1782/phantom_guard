@@ -23,7 +23,7 @@ from phantom_guard.registry.exceptions import (
 # Constants
 PYPI_API_BASE = "https://pypi.org/pypi"
 PYPISTATS_API_BASE = "https://pypistats.org/api/packages"
-DEFAULT_TIMEOUT = 5.0
+DEFAULT_TIMEOUT = 10.0
 PYPISTATS_TIMEOUT = 2.0  # Shorter timeout for optional stats
 
 

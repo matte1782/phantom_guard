@@ -24,7 +24,7 @@ from phantom_guard.registry.exceptions import (
 # Constants
 NPM_REGISTRY_BASE = "https://registry.npmjs.org"
 NPM_DOWNLOADS_BASE = "https://api.npmjs.org/downloads/point/last-week"
-DEFAULT_TIMEOUT = 5.0
+DEFAULT_TIMEOUT = 10.0
 DOWNLOADS_TIMEOUT = 2.0  # Shorter timeout for optional downloads
 
 

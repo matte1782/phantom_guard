@@ -16,7 +16,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 # Version constant
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 # Phantom Mocha color constants
 MAUVE = "#CBA6F7"

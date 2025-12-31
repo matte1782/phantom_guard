@@ -29,7 +29,8 @@ from phantom_guard.core.types import (
 )
 from phantom_guard.registry import CachedRegistryClient, CratesClient, NpmClient, PyPIClient
 from phantom_guard.registry.cached import RegistryClientProtocol
-from phantom_guard.registry.exceptions import RegistryError
+from phantom_guard.registry.exceptions import RegistryError, RegistryTimeoutError
+from phantom_guard.registry.retry import retry_async
 
 # Themed console - respects NO_COLOR environment variable
 console = Console(theme=PHANTOM_THEME, no_color=bool(os.environ.get("NO_COLOR")))
@@ -293,10 +294,13 @@ async def _validate_packages(
         async with cache, CachedRegistryClient(base_client, cache, validated_registry) as client:
             for package in packages:
                 try:
-                    # Run validation
-                    risk = await detector.validate_package(
-                        package, validated_registry, client
-                    )
+                    # Run validation with retry (3 attempts with exponential backoff)
+                    async def _validate() -> PackageRisk:
+                        return await detector.validate_package(
+                            package, validated_registry, client
+                        )
+
+                    risk = await retry_async(_validate, max_retries=3)
 
                     # Display result
                     formatter.print_result(risk)
@@ -310,6 +314,10 @@ async def _validate_packages(
                     formatter.print_error(f"Invalid package name '{package}': {e.reason}")
                     if worst_exit < EXIT_INPUT_ERROR:
                         worst_exit = EXIT_INPUT_ERROR
+                except RegistryTimeoutError:
+                    formatter.print_error(f"Timeout validating '{package}' (retries exhausted)")
+                    if worst_exit < EXIT_RUNTIME_ERROR:
+                        worst_exit = EXIT_RUNTIME_ERROR
 
         return worst_exit
 
