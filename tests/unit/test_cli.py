@@ -1535,7 +1535,7 @@ class TestClearCacheAsync:
         ):
             from phantom_guard.cli.main import _clear_cache
 
-            result = asyncio.run(_clear_cache(Path("/tmp/cache.db"), "pypi"))
+            result = asyncio.run(_clear_cache(Path("/tmp/cache.db"), "pypi"))  # noqa: S108
             assert result == 7
             mock_cache.clear_registry.assert_called_once_with("pypi")
 
@@ -1560,7 +1560,7 @@ class TestGetCacheStatsAsync:
         ):
             from phantom_guard.cli.main import _get_cache_stats
 
-            result = asyncio.run(_get_cache_stats(Path("/tmp/cache.db")))
+            result = asyncio.run(_get_cache_stats(Path("/tmp/cache.db")))  # noqa: S108
             assert result == {"pypi": {"entries": 10}}
 
 

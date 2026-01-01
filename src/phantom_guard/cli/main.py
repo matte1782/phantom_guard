@@ -210,9 +210,7 @@ EXIT_RUNTIME_ERROR = 5
 
 @app.command()
 def validate(
-    packages: Annotated[
-        list[str], typer.Argument(help="Package name(s) to validate")
-    ],
+    packages: Annotated[list[str], typer.Argument(help="Package name(s) to validate")],
     registry: Annotated[
         str, typer.Option("-r", "--registry", help="Registry: pypi, npm, crates")
     ] = "pypi",
@@ -243,9 +241,7 @@ def validate(
     show_banner(cmd_console, banner_type, __version__)
 
     # Run async validation for all packages
-    result = asyncio.run(
-        _validate_packages(packages, registry, verbose, quiet, cmd_console)
-    )
+    result = asyncio.run(_validate_packages(packages, registry, verbose, quiet, cmd_console))
 
     # Exit with appropriate code
     raise typer.Exit(code=result)
@@ -295,10 +291,9 @@ async def _validate_packages(
             for package in packages:
                 try:
                     # Run validation with retry (3 attempts with exponential backoff)
-                    async def _validate() -> PackageRisk:
-                        return await detector.validate_package(
-                            package, validated_registry, client
-                        )
+                    # Capture loop variable with default argument to avoid B023
+                    async def _validate(pkg: str = package) -> PackageRisk:
+                        return await detector.validate_package(pkg, validated_registry, client)
 
                     risk = await retry_async(_validate, max_retries=3)
 

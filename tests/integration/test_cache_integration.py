@@ -224,7 +224,7 @@ class TestCacheCorruption:
                 # Should work despite corruption
                 result = await cached.get_package_metadata("flask")
                 assert result.name == "flask"
-        except Exception:
+        except Exception:  # noqa: S110
             # If it raises, that's also acceptable behavior
             # (fails fast on corruption)
             pass
@@ -432,7 +432,7 @@ class TestCacheEdgeCases:
                 # Should still work via memory cache even if SQLite write fails
                 result = await cached.get_package_metadata("newpkg")
                 assert result.name == "newpkg"
-        except Exception:
+        except Exception:  # noqa: S110
             # If it raises, that's also acceptable behavior
             pass
         finally:
