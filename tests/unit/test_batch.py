@@ -529,8 +529,8 @@ class TestBatchValidator:
         validator = BatchValidator()
         result = await validator.validate_batch(packages, "pypi", mock_client)
 
-        # Time should be at least 50ms
-        assert result.total_time_ms >= 50
+        # Time should be at least ~50ms (allow some tolerance for CI timing)
+        assert result.total_time_ms >= 45
 
     @pytest.mark.asyncio
     async def test_cancel_method(

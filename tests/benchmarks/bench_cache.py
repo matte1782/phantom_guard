@@ -189,9 +189,10 @@ class TestCacheBenchmarks:
 
         benchmark(lambda: asyncio.run(set_value()))
 
-        # Performance assertion: mean should be under 10ms
+        # Performance assertion: mean should be under 50ms
         # Note: includes connection overhead for each benchmark iteration
-        assert benchmark.stats.stats.mean < 0.020  # 20ms (connection included)
+        # CI environments (especially Windows) can be slower
+        assert benchmark.stats.stats.mean < 0.050  # 50ms (connection included, CI tolerance)
 
     def test_cache_lru_eviction_overhead(
         self, benchmark: Any, full_memory_cache: MemoryCache, sample_value: dict[str, Any]
