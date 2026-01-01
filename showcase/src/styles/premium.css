@@ -1,0 +1,385 @@
+/**
+ * Premium UI Effects - 2025 Design Trends
+ *
+ * Implements:
+ * - Glassmorphism with backdrop-filter
+ * - Neon glow effects
+ * - Animated gradients
+ * - Modern dark mode aesthetics
+ *
+ * Based on research from:
+ * - https://blog.thegencode.com/posts/web-design-trends-2025-the-rise-of-dark-mode-and-glassmorphism
+ * - https://devsync.tn/blog/top-gsap-animations-modern-websites/
+ */
+
+/* ============================================
+   GLASSMORPHISM UTILITIES
+   ============================================ */
+
+.glass {
+  background: rgba(49, 50, 68, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(203, 166, 247, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-subtle {
+  background: rgba(49, 50, 68, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   GLOW EFFECTS
+   ============================================ */
+
+.glow-mauve {
+  box-shadow:
+    0 0 20px rgba(203, 166, 247, 0.3),
+    0 0 40px rgba(203, 166, 247, 0.1);
+}
+
+.glow-text-mauve {
+  text-shadow:
+    0 0 10px rgba(203, 166, 247, 0.5),
+    0 0 20px rgba(203, 166, 247, 0.3),
+    0 0 40px rgba(203, 166, 247, 0.1);
+}
+
+.glow-border {
+  position: relative;
+}
+
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    135deg,
+    rgba(203, 166, 247, 0.4),
+    rgba(137, 180, 250, 0.2),
+    rgba(203, 166, 247, 0.4)
+  );
+  border-radius: inherit;
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0.6;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.02); }
+}
+
+/* ============================================
+   ANIMATED GRADIENT BACKGROUNDS
+   ============================================ */
+
+.gradient-animated {
+  background: linear-gradient(
+    -45deg,
+    rgba(203, 166, 247, 0.1),
+    rgba(137, 180, 250, 0.1),
+    rgba(166, 227, 161, 0.05),
+    rgba(203, 166, 247, 0.1)
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ============================================
+   PREMIUM HERO BADGE
+   ============================================ */
+
+.hero-badge {
+  /* Glassmorphism */
+  background: rgba(49, 50, 68, 0.7) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(203, 166, 247, 0.2) !important;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 30px rgba(203, 166, 247, 0.1);
+  padding: var(--space-2) var(--space-5) !important;
+  gap: var(--space-3) !important;
+}
+
+.hero-badge .ghost {
+  font-size: 1.5rem !important;
+  filter: drop-shadow(0 0 8px rgba(203, 166, 247, 0.6))
+          drop-shadow(0 0 16px rgba(203, 166, 247, 0.3));
+  animation: ghostFloat 3s ease-in-out infinite;
+}
+
+@keyframes ghostFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 8px rgba(203, 166, 247, 0.6))
+            drop-shadow(0 0 16px rgba(203, 166, 247, 0.3));
+  }
+  50% {
+    transform: translateY(-3px) scale(1.05);
+    filter: drop-shadow(0 0 12px rgba(203, 166, 247, 0.8))
+            drop-shadow(0 0 24px rgba(203, 166, 247, 0.4));
+  }
+}
+
+.hero-badge span:not(.ghost) {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+/* ============================================
+   PREMIUM HERO TITLE
+   ============================================ */
+
+.hero-title {
+  background: linear-gradient(
+    135deg,
+    var(--color-text) 0%,
+    var(--color-mauve) 50%,
+    var(--color-blue) 100%
+  ) !important;
+  background-size: 200% 200%;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: titleGradient 8s ease infinite;
+  text-shadow: none;
+}
+
+@keyframes titleGradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ============================================
+   PREMIUM BUTTONS
+   ============================================ */
+
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    var(--color-mauve) 0%,
+    #b4a0e5 100%
+  ) !important;
+  box-shadow:
+    0 4px 15px rgba(203, 166, 247, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 8px 25px rgba(203, 166, 247, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 0 40px rgba(203, 166, 247, 0.2) !important;
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
+}
+
+.btn-secondary {
+  background: rgba(49, 50, 68, 0.6) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(203, 166, 247, 0.2) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-secondary:hover {
+  background: rgba(69, 71, 90, 0.8) !important;
+  border-color: rgba(203, 166, 247, 0.4) !important;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(203, 166, 247, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   PREMIUM STATS
+   ============================================ */
+
+.stat-value {
+  background: linear-gradient(
+    135deg,
+    var(--color-mauve) 0%,
+    var(--color-blue) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(203, 166, 247, 0.3));
+}
+
+/* ============================================
+   PREMIUM TERMINAL
+   ============================================ */
+
+.hero-terminal {
+  position: relative;
+}
+
+.hero-terminal::before {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(203, 166, 247, 0.15) 0%,
+    rgba(137, 180, 250, 0.08) 30%,
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+  animation: terminalGlow 4s ease-in-out infinite;
+}
+
+@keyframes terminalGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.hero-terminal pg-terminal {
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(203, 166, 247, 0.1),
+    0 0 40px rgba(203, 166, 247, 0.1);
+}
+
+/* ============================================
+   ATTRIBUTION
+   ============================================ */
+
+.hero-attribution {
+  position: absolute;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--text-sm);
+  color: var(--color-subtext);
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  animation: fadeInUp var(--duration-normal) var(--ease-out) 1s both;
+}
+
+.hero-attribution a {
+  color: var(--color-mauve);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.hero-attribution a:hover {
+  color: var(--color-text);
+  text-shadow: 0 0 10px rgba(203, 166, 247, 0.5);
+}
+
+.hero-attribution .heart {
+  color: #f38ba8;
+  display: inline-block;
+  animation: heartBeat 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(243, 139, 168, 0.5));
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.15); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+
+/* ============================================
+   MESH GRADIENT BACKGROUND
+   ============================================ */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(203, 166, 247, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(137, 180, 250, 0.10) 0%, transparent 40%),
+    radial-gradient(ellipse at 60% 80%, rgba(166, 227, 161, 0.06) 0%, transparent 40%);
+  animation: meshMove 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Subtle noise texture overlay */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes meshMove {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(2%, -2%) rotate(1deg); }
+  50% { transform: translate(-1%, 2%) rotate(-1deg); }
+  75% { transform: translate(-2%, -1%) rotate(0.5deg); }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-badge .ghost,
+  .hero-title,
+  .hero::before,
+  .hero-terminal::before,
+  .glow-border::before {
+    animation: none !important;
+  }
+
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none !important;
+  }
+}

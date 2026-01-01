@@ -1,0 +1,57 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-base);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-mauve);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+a:hover {
+  color: var(--color-text);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Utility: Icon sizing */
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+}
+
+/* Ensure hidden attribute works */
+[hidden] {
+  display: none !important;
+}

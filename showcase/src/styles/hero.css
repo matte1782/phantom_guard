@@ -1,0 +1,550 @@
+/**
+ * Hero Section Styles - Premium Centered Layout
+ *
+ * Based on Linear/Vercel design patterns for maximum impact.
+ * Research: https://evilmartians.com/chronicles/we-studied-100-devtool-landing-pages-here-is-what-actually-works-in-2025
+ */
+
+/* ============================================
+   HERO CONTAINER - CENTERED LAYOUT
+   ============================================ */
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-container {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   FLOATING GHOST - PREMIUM HERO ICON
+   ============================================ */
+
+.hero-ghost-wrapper {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--space-6);
+  animation: ghostReveal 0.8s var(--ease-out) both;
+}
+
+.hero-ghost {
+  width: 64px;
+  height: 64px;
+  color: var(--color-mauve);
+  filter: drop-shadow(0 0 20px rgba(203, 166, 247, 0.6));
+  animation: ghostFloat 4s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-ghost-glow {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(203, 166, 247, 0.3) 0%,
+    rgba(137, 180, 250, 0.15) 40%,
+    transparent 70%
+  );
+  animation: ghostGlowPulse 4s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes ghostReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ghostFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(-2deg);
+  }
+}
+
+@keyframes ghostGlowPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* ============================================
+   HEADLINE - LARGE & IMPACTFUL
+   ============================================ */
+
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: var(--space-6);
+  color: var(--color-text);
+  animation: fadeInUp 0.6s var(--ease-out) 0.1s both;
+}
+
+.title-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-mauve) 0%,
+    var(--color-blue) 50%,
+    var(--color-mauve) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 6s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ============================================
+   SUBTITLE
+   ============================================ */
+
+.hero-subtitle {
+  font-size: var(--text-lg);
+  color: var(--color-subtext);
+  line-height: 1.7;
+  margin-bottom: var(--space-10);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  animation: fadeInUp 0.6s var(--ease-out) 0.2s both;
+}
+
+.hero-subtitle strong {
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+/* ============================================
+   CTA BUTTONS
+   ============================================ */
+
+.hero-ctas {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-12);
+  animation: fadeInUp 0.6s var(--ease-out) 0.3s both;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  font-size: var(--text-base);
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  will-change: transform;
+}
+
+.btn .icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s var(--ease-out);
+}
+
+/* Primary Button - Gradient with Glow */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-mauve) 0%, #b4a0e5 100%);
+  color: var(--color-base);
+  box-shadow:
+    0 4px 20px rgba(203, 166, 247, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 8px 30px rgba(203, 166, 247, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 0 60px rgba(203, 166, 247, 0.2);
+}
+
+.btn-primary:hover .icon {
+  transform: translateX(4px);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--color-mauve);
+  outline-offset: 2px;
+}
+
+/* Secondary Button - Glass Effect */
+.btn-secondary {
+  background: rgba(49, 50, 68, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--color-text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--space-3) var(--space-5);
+}
+
+.btn-secondary code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-subtext);
+}
+
+.btn-secondary:hover {
+  background: rgba(69, 71, 90, 0.8);
+  border-color: rgba(203, 166, 247, 0.3);
+}
+
+.btn-secondary.copied {
+  border-color: var(--color-green);
+}
+
+.btn-secondary.copied code {
+  color: var(--color-green);
+}
+
+.btn-secondary .icon-copy {
+  width: 14px;
+  height: 14px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.btn-secondary:hover .icon-copy {
+  opacity: 1;
+}
+
+/* ============================================
+   TERMINAL WRAPPER
+   ============================================ */
+
+.hero-terminal-wrapper {
+  max-width: 650px;
+  margin: 0 auto var(--space-12);
+  position: relative;
+  animation: fadeInUp 0.6s var(--ease-out) 0.4s both;
+}
+
+/* Glow behind terminal */
+.hero-terminal-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -40px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(203, 166, 247, 0.15) 0%,
+    rgba(137, 180, 250, 0.08) 40%,
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+  animation: terminalPulse 4s ease-in-out infinite;
+}
+
+@keyframes terminalPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.hero-terminal-wrapper pg-terminal {
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(203, 166, 247, 0.1);
+}
+
+/* ============================================
+   STATS WITH ICONS
+   ============================================ */
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
+  animation: fadeInUp 0.6s var(--ease-out) 0.5s both;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-1);
+}
+
+.stat-value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: linear-gradient(135deg, var(--color-mauve) 0%, var(--color-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--color-subtext);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-overlay),
+    transparent
+  );
+}
+
+/* ============================================
+   TRUST SIGNALS
+   ============================================ */
+
+.hero-trust {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-6);
+  animation: fadeInUp 0.6s var(--ease-out) 0.6s both;
+}
+
+.trust-label {
+  font-size: var(--text-xs);
+  color: var(--color-subtext);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.trust-logos {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.trust-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-subtext);
+  font-size: var(--text-sm);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.trust-logo:hover {
+  opacity: 1;
+}
+
+.trust-logo .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================
+   CURSOR GLOW EFFECT
+   ============================================ */
+
+.cursor-glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(203, 166, 247, 0.15) 0%,
+    rgba(137, 180, 250, 0.08) 30%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 0;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .hero {
+    padding: var(--space-12) var(--space-4);
+    min-height: auto;
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-16);
+  }
+
+  .hero-ghost-wrapper {
+    margin-bottom: var(--space-4);
+  }
+
+  .hero-ghost {
+    width: 48px;
+    height: 48px;
+  }
+
+  .hero-ghost-glow {
+    width: 90px;
+    height: 90px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-base);
+  }
+
+  .hero-ctas {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+
+  .hero-stats {
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+  }
+
+  .stat-divider {
+    display: none;
+  }
+
+  .stat-value {
+    font-size: var(--text-xl);
+  }
+
+  .hero-trust {
+    padding-top: var(--space-6);
+    border-top: 1px solid rgba(203, 166, 247, 0.1);
+  }
+
+  .trust-logos {
+    gap: var(--space-4);
+  }
+
+  .cursor-glow {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-6);
+  }
+
+  .stat {
+    min-width: 90px;
+    flex: 0 0 auto;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ghost-wrapper,
+  .hero-ghost,
+  .hero-ghost-glow,
+  .hero-title,
+  .hero-subtitle,
+  .hero-ctas,
+  .hero-terminal-wrapper,
+  .hero-stats,
+  .hero-trust {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .title-gradient {
+    animation: none;
+  }
+
+  .hero-terminal-wrapper::before {
+    animation: none;
+  }
+}

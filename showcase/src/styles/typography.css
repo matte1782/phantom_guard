@@ -1,0 +1,55 @@
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+h1 { font-size: var(--text-5xl); }
+h2 { font-size: var(--text-4xl); }
+h3 { font-size: var(--text-3xl); }
+h4 { font-size: var(--text-2xl); }
+
+/* Hero Typography */
+.hero-title {
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--color-text), var(--color-mauve));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--color-subtext);
+  max-width: 50ch;
+}
+
+/* Monospace Text */
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Terminal Text */
+.terminal-text {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-green);
+}
+
+/* Section titles */
+.section-title {
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.section-subtitle {
+  color: var(--color-subtext);
+  font-size: var(--text-lg);
+  max-width: 50ch;
+  margin: 0 auto;
+  text-align: center;
+}

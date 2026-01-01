@@ -97,6 +97,16 @@ cache.db
 *.db
 .phantom-guard/
 
+# Node.js (showcase)
+node_modules/
+showcase/node_modules/
+showcase/dist/
+showcase/.vite/
+.playwright-mcp/
+
+# Windows artifacts
+nul
+
 # Research artifacts (already in repo, don't duplicate)
 # research-output/
 
