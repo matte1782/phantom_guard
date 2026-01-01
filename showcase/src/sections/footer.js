@@ -14,7 +14,7 @@ export function createFooter() {
       </div>
 
       <div class="footer-links">
-        <a href="https://github.com/matteocpnz/phantom-guard" target="_blank" rel="noopener noreferrer" class="footer-link">
+        <a href="https://github.com/matte1782/phantom_guard" target="_blank" rel="noopener noreferrer" class="footer-link">
           <svg class="icon" aria-hidden="true"><use href="#github"/></svg>
           <span>GitHub</span>
           <span class="github-stars">
@@ -26,7 +26,7 @@ export function createFooter() {
           <svg class="icon" aria-hidden="true"><use href="#package"/></svg>
           <span>PyPI</span>
         </a>
-        <a href="https://github.com/matteocpnz/phantom-guard#readme" target="_blank" rel="noopener noreferrer" class="footer-link">
+        <a href="https://github.com/matte1782/phantom_guard#readme" target="_blank" rel="noopener noreferrer" class="footer-link">
           <svg class="icon" aria-hidden="true"><use href="#book"/></svg>
           <span>Docs</span>
         </a>
@@ -37,7 +37,7 @@ export function createFooter() {
         <span class="footer-separator">•</span>
         <span class="footer-author">
           Built with <span class="heart" aria-label="love">&#x2764;</span> by
-          <a href="https://github.com/matteocpnz" target="_blank" rel="noopener noreferrer">Matteo Panzeri</a>
+          <a href="https://github.com/matte1782" target="_blank" rel="noopener noreferrer">Matteo Panzeri</a>
         </span>
       </div>
     </div>
@@ -60,7 +60,7 @@ async function fetchGitHubStars() {
 
   try {
     // Try to fetch from GitHub API
-    const response = await fetch('https://api.github.com/repos/matteocpnz/phantom-guard');
+    const response = await fetch('https://api.github.com/repos/matte1782/phantom_guard');
     if (response.ok) {
       const data = await response.json();
       const stars = data.stargazers_count || 0;

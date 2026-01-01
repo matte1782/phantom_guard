@@ -216,7 +216,7 @@ export function createIntegrationSection() {
           <a href="https://pypi.org/project/phantom-guard/" class="cta-btn cta-btn--primary" target="_blank" rel="noopener">
             Install from PyPI
           </a>
-          <a href="https://github.com/matteocpnz/phantom-guard" class="cta-btn cta-btn--secondary" target="_blank" rel="noopener">
+          <a href="https://github.com/matte1782/phantom_guard" class="cta-btn cta-btn--secondary" target="_blank" rel="noopener">
             View on GitHub
           </a>
         </div>
