@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/phantom-guard/',  // For GitHub Pages
+  base: '/phantom_guard/',  // For GitHub Pages (must match repo name)
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
