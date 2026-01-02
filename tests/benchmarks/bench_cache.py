@@ -263,7 +263,9 @@ class TestRegistryClientBenchmarks:
         # With mocked HTTP, the main overhead is asyncio.run() creating new event loop
         # Real-world budget: < 500ms, mocked includes event loop creation overhead
         # CI environments (especially Windows) can have higher latency
-        assert benchmark.stats.stats.mean < 0.500  # 500ms (mocked with asyncio overhead, CI tolerance)
+        assert (
+            benchmark.stats.stats.mean < 0.500
+        )  # 500ms (mocked with asyncio overhead, CI tolerance)
 
     def test_npm_client_latency(self, benchmark: Any, npm_success_response: dict[str, Any]) -> None:
         """
@@ -294,7 +296,9 @@ class TestRegistryClientBenchmarks:
         # With mocked HTTP, the main overhead is asyncio.run() creating new event loop
         # Real-world budget: < 500ms, mocked includes event loop creation overhead
         # CI environments (especially Windows) can have higher latency
-        assert benchmark.stats.stats.mean < 0.500  # 500ms (mocked with asyncio overhead, CI tolerance)
+        assert (
+            benchmark.stats.stats.mean < 0.500
+        )  # 500ms (mocked with asyncio overhead, CI tolerance)
 
     def test_crates_client_latency(
         self, benchmark: Any, crates_success_response: dict[str, Any]
@@ -327,4 +331,6 @@ class TestRegistryClientBenchmarks:
         # With mocked HTTP, the main overhead is asyncio.run() creating new event loop
         # Real-world budget: < 500ms, mocked includes event loop creation overhead
         # CI environments (especially Windows) can have higher latency
-        assert benchmark.stats.stats.mean < 0.500  # 500ms (mocked with asyncio overhead, CI tolerance)
+        assert (
+            benchmark.stats.stats.mean < 0.500
+        )  # 500ms (mocked with asyncio overhead, CI tolerance)
