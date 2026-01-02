@@ -39,10 +39,16 @@ jobs:
         run: |
           mypy src/
 
-      - name: Run tests with coverage
+      - name: Run tests
         run: |
-          pytest --cov=phantom_guard --cov-report=xml --cov-report=term-missing -v -m "not slow and not network and not benchmark" --ignore=tests/benchmarks/ -p no:benchmark
-        timeout-minutes: 5
+          python -m pytest -v -m "not slow and not network and not benchmark" --ignore=tests/benchmarks/ -p no:benchmark -p no:cov
+        timeout-minutes: 3
+
+      - name: Generate coverage report
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: |
+          python -m pytest --cov=phantom_guard --cov-report=xml -q -m "not slow and not network and not benchmark" --ignore=tests/benchmarks/ -p no:benchmark
+        timeout-minutes: 3
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
