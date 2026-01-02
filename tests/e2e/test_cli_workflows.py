@@ -12,12 +12,19 @@ the complete user experience.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text."""
+    ansi_pattern = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_pattern.sub("", text)
 
 
 @pytest.fixture
@@ -336,10 +343,11 @@ class TestHelpAndVersion:
         Validate command has help.
         """
         result = run_cli("validate", "--help")
+        output = strip_ansi(result.stdout)
 
         assert result.returncode == 0
-        assert "package" in result.stdout.lower()
-        assert "--registry" in result.stdout
+        assert "package" in output.lower()
+        assert "--registry" in output
 
     def test_check_help(self) -> None:
         """
@@ -348,10 +356,11 @@ class TestHelpAndVersion:
         Check command has help.
         """
         result = run_cli("check", "--help")
+        output = strip_ansi(result.stdout)
 
         assert result.returncode == 0
-        assert "file" in result.stdout.lower()
-        assert "--fail-on" in result.stdout or "--fail-fast" in result.stdout
+        assert "file" in output.lower()
+        assert "--fail-on" in output or "--fail-fast" in output
 
     def test_cache_help(self) -> None:
         """
