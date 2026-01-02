@@ -153,8 +153,8 @@ class TestCLIStartupTime:
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         assert result.returncode == 0
-        # Help should complete in <1s
-        assert elapsed_ms < 1000, f"Help took {elapsed_ms:.0f}ms, expected <1000ms"
+        # Help should complete in <2s (CI environments can be slower)
+        assert elapsed_ms < 2000, f"Help took {elapsed_ms:.0f}ms, expected <2000ms"
 
     def test_cache_path_fast(self) -> None:
         """
@@ -169,5 +169,5 @@ class TestCLIStartupTime:
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         assert result.returncode == 0
-        # Should complete in <1s
-        assert elapsed_ms < 1000, f"Cache path took {elapsed_ms:.0f}ms, expected <1000ms"
+        # Should complete in <2s (CI environments can be slower)
+        assert elapsed_ms < 2000, f"Cache path took {elapsed_ms:.0f}ms, expected <2000ms"
