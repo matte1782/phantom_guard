@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="https://img.shields.io/pypi/v/phantom-guard?color=blue&label=PyPI" alt="PyPI Version">
-  <img src="https://img.shields.io/pypi/pyversions/phantom-guard?color=green" alt="Python Versions">
-  <img src="https://img.shields.io/github/license/matte1782/phantom_guard?color=yellow" alt="MIT License">
-  <img src="https://img.shields.io/github/actions/workflow/status/matte1782/phantom_guard/ci.yml?label=Tests" alt="Tests">
-  <img src="https://img.shields.io/codecov/c/github/matte1782/phantom_guard?color=brightgreen" alt="Coverage">
+  <a href="https://pypi.org/project/phantom-guard/"><img src="https://img.shields.io/pypi/v/phantom-guard?color=blue&label=PyPI" alt="PyPI Version"></a>
+  <a href="https://pypi.org/project/phantom-guard/"><img src="https://img.shields.io/pypi/pyversions/phantom-guard?color=green" alt="Python Versions"></a>
+  <a href="https://github.com/matte1782/phantom_guard/blob/main/LICENSE"><img src="https://img.shields.io/github/license/matte1782/phantom_guard?color=yellow" alt="MIT License"></a>
+  <a href="https://github.com/matte1782/phantom_guard/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/matte1782/phantom_guard/ci.yml?label=Tests" alt="Tests"></a>
+  <a href="https://codecov.io/gh/matte1782/phantom_guard"><img src="https://img.shields.io/codecov/c/github/matte1782/phantom_guard?color=brightgreen" alt="Coverage"></a>
 </p>
 
 <h1 align="center">Phantom Guard</h1>
