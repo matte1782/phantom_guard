@@ -18,6 +18,7 @@
     rgba(17, 17, 27, 0) 100%
   );
   position: relative;
+  overflow-x: clip;
 }
 
 #integration::before {

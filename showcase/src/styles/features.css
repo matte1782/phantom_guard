@@ -20,6 +20,8 @@
   );
   position: relative;
   overflow: hidden;
+  /* Ensure no horizontal overflow on mobile */
+  overflow-x: clip;
 }
 
 #how-it-works::before {
@@ -122,6 +124,8 @@
   transition: transform 0.3s var(--ease-out);
   cursor: default;
   overflow: hidden;
+  /* Ensure glow doesn't escape on mobile */
+  contain: paint;
 }
 
 /* Border glow effect */
@@ -297,6 +301,11 @@
 
   .feature-card {
     padding: var(--space-6);
+  }
+
+  /* Hide decorative glow on mobile to prevent overflow */
+  .feature-card__glow {
+    display: none;
   }
 
   .feature-card__icon {
