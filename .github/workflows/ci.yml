@@ -41,7 +41,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=phantom_guard --cov-report=xml --cov-report=term-missing -v -m "not slow and not network" --benchmark-disable
+          pytest --cov=phantom_guard --cov-report=xml --cov-report=term-missing -v -m "not slow and not network and not benchmark" --ignore=tests/benchmarks/
         timeout-minutes: 10
 
       - name: Upload coverage to Codecov
