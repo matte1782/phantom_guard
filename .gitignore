@@ -114,3 +114,10 @@ nul
 .claude/
 .fortress/
 CLAUDE.md
+
+# Social media posts (personal use)
+.social-posts/
+
+# Generated reports (not needed in repo)
+benchmark_results.json
+showcase/lighthouse-report.*

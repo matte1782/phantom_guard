@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="https://matte1782.github.io/phantom_guard/"><strong>Try the Interactive Demo</strong></a>
+</p>
+
+<p align="center">
   <a href="#the-problem">The Problem</a> •
   <a href="#the-solution">The Solution</a> •
   <a href="#quick-start">Quick Start</a> •

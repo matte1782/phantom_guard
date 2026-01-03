@@ -8,13 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- GitHub Actions integration
-- Pre-commit hook support
-- SBOM generation
-- Custom pattern configuration
+- PWA/offline support for showcase
 - VS Code extension
+- GitHub App integration
+- Enhanced hallucination patterns
+- Performance optimizations
 
-## [0.1.0] - 2024-12-30
+## [0.1.2] - 2026-01-02
+
+### Added
+- Interactive showcase landing page with live package validation
+- Real-time demo at https://matte1782.github.io/phantom_guard/
+- GitHub Pages deployment workflow
+
+### Fixed
+- CLI retry logic with exponential backoff for network failures
+- Increased default timeout for slow connections
+- Mobile horizontal overflow in showcase
+- Base path configuration for GitHub Pages
+
+### Changed
+- Improved CI stability with timeout handling
+- Updated GitHub URLs to matte1782/phantom_guard
+
+## [0.1.1] - 2026-01-01
+
+### Added
+- Support for validating multiple packages in a single command
+  ```bash
+  phantom-guard validate flask django requests
+  ```
+
+### Fixed
+- CLI argument parsing for multiple package names
+
+## [0.1.0] - 2025-12-31
 
 ### Added
 
