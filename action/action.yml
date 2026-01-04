@@ -1,0 +1,45 @@
+name: 'Phantom Guard'
+description: 'Detect AI-hallucinated package attacks (slopsquatting) in your dependencies'
+author: 'Phantom Guard Team'
+
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+inputs:
+  files:
+    description: 'File patterns to validate (comma-separated)'
+    required: false
+    default: 'requirements.txt,package.json,Cargo.toml,pyproject.toml,poetry.lock,package-lock.json'
+  fail-on:
+    description: 'When to fail the action: high-risk, suspicious, or none'
+    required: false
+    default: 'high-risk'
+  output:
+    description: 'Output format: github-comment, sarif, json, none'
+    required: false
+    default: 'github-comment'
+  github-token:
+    description: 'GitHub token for PR comments (defaults to GITHUB_TOKEN)'
+    required: false
+    default: ${{ github.token }}
+  comment-mode:
+    description: 'PR comment mode: create, update, or recreate'
+    required: false
+    default: 'update'
+
+outputs:
+  safe-count:
+    description: 'Number of packages deemed safe'
+  suspicious-count:
+    description: 'Number of suspicious packages'
+  high-risk-count:
+    description: 'Number of high-risk packages'
+  packages-checked:
+    description: 'Total number of packages validated'
+  exit-code:
+    description: 'Exit code (0=safe, 1=suspicious, 2=high-risk, 3=error, 4=no-packages, 5=config-error)'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
