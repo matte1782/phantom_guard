@@ -1,0 +1,88 @@
+{
+  "name": "phantom-guard-vscode",
+  "displayName": "Phantom Guard",
+  "description": "Detect AI-hallucinated package attacks in your dependencies",
+  "version": "0.1.0",
+  "publisher": "phantom-guard",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matte1782/phantom-guard"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Linters", "Other"],
+  "keywords": ["security", "dependencies", "slopsquatting", "supply-chain"],
+  "activationEvents": [
+    "workspaceContains:requirements.txt",
+    "workspaceContains:package.json",
+    "workspaceContains:Cargo.toml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Phantom Guard",
+      "properties": {
+        "phantomGuard.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Phantom Guard validation"
+        },
+        "phantomGuard.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Python executable (leave empty for auto-detect)"
+        },
+        "phantomGuard.threshold": {
+          "type": "number",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Risk score threshold for warnings (0.0-1.0)"
+        },
+        "phantomGuard.ignoredPackages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Packages to ignore during validation"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "phantom-guard.showSummary",
+        "title": "Phantom Guard: Show Validation Summary"
+      },
+      {
+        "command": "phantom-guard.ignorePackage",
+        "title": "Phantom Guard: Ignore Package"
+      },
+      {
+        "command": "phantom-guard.revalidate",
+        "title": "Phantom Guard: Revalidate Current File"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "node ./out/tests/integration/setup.js",
+    "pretest:integration": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "@vscode/test-electron": "^2.3.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  }
+}
