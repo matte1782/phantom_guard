@@ -12,5 +12,5 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Node16"
   },
-  "exclude": ["node_modules", ".vscode-test", "out", "tests"]
+  "exclude": ["node_modules", ".vscode-test", "out", "tests", "vitest.config.ts"]
 }
