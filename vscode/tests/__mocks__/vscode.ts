@@ -35,6 +35,36 @@ export class Position {
   constructor(public line: number, public character: number) {}
 }
 
+// Mock MarkdownString class
+export class MarkdownString {
+  value: string = '';
+  isTrusted: boolean = false;
+
+  appendMarkdown(value: string): MarkdownString {
+    this.value += value;
+    return this;
+  }
+
+  appendText(value: string): MarkdownString {
+    this.value += value;
+    return this;
+  }
+}
+
+// Mock Hover class
+export class Hover {
+  constructor(
+    public contents: MarkdownString | string,
+    public range?: Range
+  ) {}
+}
+
+// Mock CancellationToken
+export const CancellationToken = {
+  isCancellationRequested: false,
+  onCancellationRequested: vi.fn(),
+};
+
 // Mock Diagnostic class
 export class Diagnostic {
   source?: string;
@@ -116,6 +146,7 @@ export const workspace = {
 // Mock languages
 export const languages = {
   createDiagnosticCollection: vi.fn(() => new MockDiagnosticCollection()),
+  registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
 // Mock window
@@ -134,6 +165,9 @@ export default {
   DiagnosticSeverity,
   Range,
   Position,
+  MarkdownString,
+  Hover,
+  CancellationToken,
   Diagnostic,
   Uri,
   workspace,

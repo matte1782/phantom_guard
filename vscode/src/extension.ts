@@ -1,16 +1,18 @@
 /**
- * IMPLEMENTS: S120, S121
- * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared)
+ * IMPLEMENTS: S120, S121, S122
+ * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared), INV123 (hover null check)
  * TESTS: T120.01, T120.02, T120.03, T120.04
  */
 
 import * as vscode from 'vscode';
 import { PhantomGuardCore } from './core';
 import { DiagnosticProvider } from './diagnostics';
+import { PhantomGuardHoverProvider } from './hover';
 import { ActivationError, PythonNotFoundError } from './errors';
 
 let core: PhantomGuardCore | undefined;
 let diagnosticProvider: DiagnosticProvider | undefined;
+let hoverProvider: vscode.Disposable | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const startTime = Date.now();
@@ -44,6 +46,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 }
 
+// Document selectors for supported file types
+const DOCUMENT_SELECTORS: vscode.DocumentSelector = [
+  { scheme: 'file', pattern: '**/requirements*.txt' },
+  { scheme: 'file', pattern: '**/pyproject.toml' },
+  { scheme: 'file', pattern: '**/package.json' },
+  { scheme: 'file', pattern: '**/Cargo.toml' },
+];
+
 async function doActivation(context: vscode.ExtensionContext): Promise<void> {
   // INV120: All I/O is async
   core = new PhantomGuardCore();
@@ -57,12 +67,21 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
   // S121: Create diagnostic provider
   diagnosticProvider = new DiagnosticProvider(core);
 
+  // S122: Register hover provider
+  hoverProvider = vscode.languages.registerHoverProvider(
+    DOCUMENT_SELECTORS,
+    new PhantomGuardHoverProvider(core)
+  );
+
   // Register disposables
   context.subscriptions.push(core);
   context.subscriptions.push(diagnosticProvider);
+  context.subscriptions.push(hoverProvider);
 }
 
 export function deactivate(): void {
+  hoverProvider?.dispose();
+  hoverProvider = undefined;
   diagnosticProvider?.dispose();
   diagnosticProvider = undefined;
   core?.dispose();

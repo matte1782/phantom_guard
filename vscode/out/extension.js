@@ -1,7 +1,7 @@
 "use strict";
 /**
- * IMPLEMENTS: S120, S121
- * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared)
+ * IMPLEMENTS: S120, S121, S122
+ * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared), INV123 (hover null check)
  * TESTS: T120.01, T120.02, T120.03, T120.04
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -45,9 +45,11 @@ exports.getDiagnosticProvider = getDiagnosticProvider;
 const vscode = __importStar(require("vscode"));
 const core_1 = require("./core");
 const diagnostics_1 = require("./diagnostics");
+const hover_1 = require("./hover");
 const errors_1 = require("./errors");
 let core;
 let diagnosticProvider;
+let hoverProvider;
 async function activate(context) {
     const startTime = Date.now();
     try {
@@ -74,6 +76,13 @@ async function activate(context) {
         // Don't throw - graceful degradation
     }
 }
+// Document selectors for supported file types
+const DOCUMENT_SELECTORS = [
+    { scheme: 'file', pattern: '**/requirements*.txt' },
+    { scheme: 'file', pattern: '**/pyproject.toml' },
+    { scheme: 'file', pattern: '**/package.json' },
+    { scheme: 'file', pattern: '**/Cargo.toml' },
+];
 async function doActivation(context) {
     // INV120: All I/O is async
     core = new core_1.PhantomGuardCore();
@@ -84,11 +93,16 @@ async function doActivation(context) {
     }
     // S121: Create diagnostic provider
     diagnosticProvider = new diagnostics_1.DiagnosticProvider(core);
+    // S122: Register hover provider
+    hoverProvider = vscode.languages.registerHoverProvider(DOCUMENT_SELECTORS, new hover_1.PhantomGuardHoverProvider(core));
     // Register disposables
     context.subscriptions.push(core);
     context.subscriptions.push(diagnosticProvider);
+    context.subscriptions.push(hoverProvider);
 }
 function deactivate() {
+    hoverProvider?.dispose();
+    hoverProvider = undefined;
     diagnosticProvider?.dispose();
     diagnosticProvider = undefined;
     core?.dispose();
