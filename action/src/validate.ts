@@ -2,11 +2,17 @@
  * IMPLEMENTS: S103
  * INVARIANTS: INV104
  * TESTS: T103.01-T103.03
+ * SECURITY: P0-SEC-001 (no shell execution - pattern-based validation)
  *
  * Package validation orchestrator for Phantom Guard GitHub Action.
  *
  * Uses built-in validation patterns - no shell execution required.
- * This avoids any command injection risks entirely.
+ * This avoids any command injection risks entirely by design.
+ *
+ * Security approach:
+ * - All validation is done in-process using TypeScript regex patterns
+ * - No subprocess calls, no shell execution, no command injection risk
+ * - Package names were already validated by isValidPackageName()
  */
 
 import * as core from '@actions/core';
