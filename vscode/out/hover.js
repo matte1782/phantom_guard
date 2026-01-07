@@ -214,16 +214,19 @@ class PhantomGuardHoverProvider {
         // Risk classification
         md.appendMarkdown(`**Status:** ${this.formatRiskLevel(risk.risk_level)}\n\n`);
         // Risk score (as percentage)
-        const scorePercent = Math.round(risk.risk_score * 100);
+        // SAFETY: Handle undefined risk_score
+        const scorePercent = typeof risk.risk_score === 'number' ? Math.round(risk.risk_score * 100) : 0;
         md.appendMarkdown(`**Risk Score:** ${scorePercent}%\n\n`);
         // Signals (if any)
-        if (risk.signals && risk.signals.length > 0) {
+        // SAFETY: Null-safe access to signals array
+        const signals = risk.signals || [];
+        if (signals.length > 0) {
             md.appendMarkdown(`**Signals:**\n`);
-            for (const signal of risk.signals.slice(0, 5)) {
+            for (const signal of signals.slice(0, 5)) {
                 md.appendMarkdown(`- ${signal}\n`);
             }
-            if (risk.signals.length > 5) {
-                md.appendMarkdown(`- _...and ${risk.signals.length - 5} more_\n`);
+            if (signals.length > 5) {
+                md.appendMarkdown(`- _...and ${signals.length - 5} more_\n`);
             }
             md.appendMarkdown('\n');
         }

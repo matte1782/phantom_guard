@@ -278,13 +278,17 @@ class DiagnosticProvider {
     }
     /**
      * Generate diagnostic message
+     * SAFETY: Null-safe access to optional fields
      */
     getMessage(risk) {
         switch (risk.risk_level) {
             case 'SUSPICIOUS':
-                return `Suspicious package: ${risk.name} (score: ${risk.risk_score.toFixed(2)})`;
+                // SAFETY: Handle undefined risk_score
+                const score = typeof risk.risk_score === 'number' ? risk.risk_score.toFixed(2) : '?';
+                return `Suspicious package: ${risk.name} (score: ${score})`;
             case 'HIGH_RISK':
-                const signals = risk.signals.slice(0, 3).join(', ');
+                // SAFETY: Handle undefined/empty signals array
+                const signals = (risk.signals || []).slice(0, 3).join(', ') || 'multiple risk factors';
                 return `High risk package: ${risk.name} - ${signals}`;
             case 'NOT_FOUND':
                 return `Package not found: ${risk.name} - may be hallucinated`;

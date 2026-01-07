@@ -193,15 +193,18 @@ export class PhantomGuardCodeActionProvider implements vscode.CodeActionProvider
 
   /**
    * Get registry URL for package
+   * SECURITY: URL-encode package name to prevent injection
    */
   private getRegistryUrl(packageName: string, registry: string): string {
+    // SECURITY: URL-encode the package name
+    const encodedName = encodeURIComponent(packageName);
     switch (registry) {
       case 'npm':
-        return `https://www.npmjs.com/package/${packageName}`;
+        return `https://www.npmjs.com/package/${encodedName}`;
       case 'crates.io':
-        return `https://crates.io/crates/${packageName}`;
+        return `https://crates.io/crates/${encodedName}`;
       default:
-        return `https://pypi.org/project/${packageName}/`;
+        return `https://pypi.org/project/${encodedName}/`;
     }
   }
 

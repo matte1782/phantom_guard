@@ -37,7 +37,8 @@ class CoreTimeoutError extends ExtensionError {
 exports.CoreTimeoutError = CoreTimeoutError;
 class CoreParseError extends ExtensionError {
     constructor(output) {
-        super(`Failed to parse core output: ${output.slice(0, 100)}...`, true);
+        const safeOutput = output ? String(output).slice(0, 100) : '(empty)';
+        super(`Failed to parse core output: ${safeOutput}...`, true);
         this.name = 'CoreParseError';
     }
 }
