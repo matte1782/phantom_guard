@@ -315,6 +315,18 @@ class DiagnosticProvider {
         return this.diagnosticCollection.get(uri) || [];
     }
     /**
+     * Re-validate all open documents
+     * INV126: Configuration changes trigger re-validation
+     */
+    revalidateAllDocuments() {
+        // Get all open text documents that are supported files
+        for (const document of vscode.workspace.textDocuments) {
+            if (this.isSupportedFile(document.uri)) {
+                this.validateDocument(document);
+            }
+        }
+    }
+    /**
      * Dispose resources
      */
     dispose() {

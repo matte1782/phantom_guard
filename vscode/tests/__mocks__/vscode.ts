@@ -203,12 +203,118 @@ export class MockDiagnosticCollection {
   }
 }
 
+// Mock ConfigurationTarget enum
+export enum ConfigurationTarget {
+  Global = 1,
+  Workspace = 2,
+  WorkspaceFolder = 3,
+}
+
+// Mock EventEmitter class
+export class EventEmitter<T> {
+  private listeners: Array<(e: T) => void> = [];
+
+  event = (listener: (e: T) => void) => {
+    this.listeners.push(listener);
+    return { dispose: () => this.listeners = this.listeners.filter(l => l !== listener) };
+  };
+
+  fire(data: T): void {
+    this.listeners.forEach(l => l(data));
+  }
+
+  dispose(): void {
+    this.listeners = [];
+  }
+}
+
+// Mock ConfigurationChangeEvent
+export interface ConfigurationChangeEvent {
+  affectsConfiguration(section: string): boolean;
+}
+
+// Storage for mock configuration values
+let mockConfigValues: Record<string, Record<string, any>> = {};
+
+// Function to set mock config values for testing
+export function setMockConfig(section: string, values: Record<string, any>): void {
+  mockConfigValues[section] = values;
+}
+
+// Function to clear mock config
+export function clearMockConfig(): void {
+  mockConfigValues = {};
+}
+
+// Configuration change listeners
+const configChangeListeners: Array<(e: ConfigurationChangeEvent) => void> = [];
+
+// Function to trigger config change for testing
+export function triggerConfigChange(section: string): void {
+  const event: ConfigurationChangeEvent = {
+    affectsConfiguration: (s: string) => s === section || section.startsWith(s + '.'),
+  };
+  configChangeListeners.forEach(l => l(event));
+}
+
+// Mock WorkspaceConfiguration
+export class MockWorkspaceConfiguration {
+  constructor(private section: string) {}
+
+  get<T>(key: string, defaultValue?: T): T {
+    const sectionConfig = mockConfigValues[this.section] || {};
+    if (key in sectionConfig) {
+      return sectionConfig[key] as T;
+    }
+    return defaultValue as T;
+  }
+
+  update = vi.fn().mockImplementation(async (key: string, value: any, _target?: ConfigurationTarget) => {
+    if (!mockConfigValues[this.section]) {
+      mockConfigValues[this.section] = {};
+    }
+    mockConfigValues[this.section][key] = value;
+    triggerConfigChange(this.section);
+  });
+
+  has(key: string): boolean {
+    const sectionConfig = mockConfigValues[this.section] || {};
+    return key in sectionConfig;
+  }
+
+  inspect<T>(_key: string): { defaultValue?: T; globalValue?: T; workspaceValue?: T } | undefined {
+    return undefined;
+  }
+}
+
+// Mock open text documents
+let mockTextDocuments: MockTextDocument[] = [];
+
+export function setMockTextDocuments(docs: MockTextDocument[]): void {
+  mockTextDocuments = docs;
+}
+
+export function clearMockTextDocuments(): void {
+  mockTextDocuments = [];
+}
+
 // Mock workspace
 export const workspace = {
   onDidCloseTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
   onDidSaveTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
   onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
   onDidOpenTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+  onDidChangeConfiguration: vi.fn((listener: (e: ConfigurationChangeEvent) => void) => {
+    configChangeListeners.push(listener);
+    return { dispose: () => {
+      const idx = configChangeListeners.indexOf(listener);
+      if (idx >= 0) configChangeListeners.splice(idx, 1);
+    }};
+  }),
+  getConfiguration: vi.fn((section: string) => new MockWorkspaceConfiguration(section)),
+  get textDocuments(): MockTextDocument[] {
+    return mockTextDocuments;
+  },
 };
 
 // Mock languages
@@ -245,6 +351,8 @@ export default {
   ThemeColor,
   Diagnostic,
   Uri,
+  ConfigurationTarget,
+  EventEmitter,
   workspace,
   languages,
   window,

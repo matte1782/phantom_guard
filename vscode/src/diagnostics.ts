@@ -328,6 +328,19 @@ export class DiagnosticProvider implements vscode.Disposable {
   }
 
   /**
+   * Re-validate all open documents
+   * INV126: Configuration changes trigger re-validation
+   */
+  revalidateAllDocuments(): void {
+    // Get all open text documents that are supported files
+    for (const document of vscode.workspace.textDocuments) {
+      if (this.isSupportedFile(document.uri)) {
+        this.validateDocument(document);
+      }
+    }
+  }
+
+  /**
    * Dispose resources
    */
   dispose(): void {

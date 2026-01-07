@@ -1,7 +1,7 @@
 /**
- * IMPLEMENTS: S120, S121, S122, S123, S124
- * INVARIANTS: INV120-INV125
- * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02
+ * IMPLEMENTS: S120, S121, S122, S123, S124, S125
+ * INVARIANTS: INV120-INV126
+ * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02, T125.01-T125.02
  */
 
 import * as vscode from 'vscode';
@@ -10,9 +10,11 @@ import { DiagnosticProvider } from './diagnostics';
 import { PhantomGuardHoverProvider } from './hover';
 import { PhantomGuardCodeActionProvider } from './actions';
 import { PhantomGuardStatusBar } from './statusbar';
+import { ConfigProvider } from './config';
 import { ActivationError, PythonNotFoundError } from './errors';
 
 let core: PhantomGuardCore | undefined;
+let configProvider: ConfigProvider | undefined;
 let diagnosticProvider: DiagnosticProvider | undefined;
 let hoverProvider: vscode.Disposable | undefined;
 let codeActionProvider: vscode.Disposable | undefined;
@@ -68,6 +70,9 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
     throw new ActivationError('phantom-guard CLI not found');
   }
 
+  // S125: Create configuration provider
+  configProvider = new ConfigProvider();
+
   // S121: Create diagnostic provider
   diagnosticProvider = new DiagnosticProvider(core);
 
@@ -87,12 +92,22 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
   // S124: Create status bar
   statusBar = new PhantomGuardStatusBar();
 
+  // INV126: Configuration changes trigger re-validation
+  const configChangeDisposable = configProvider.onConfigChange(() => {
+    // Re-validate all open documents when config changes
+    if (diagnosticProvider) {
+      diagnosticProvider.revalidateAllDocuments();
+    }
+  });
+
   // Register disposables
   context.subscriptions.push(core);
+  context.subscriptions.push(configProvider);
   context.subscriptions.push(diagnosticProvider);
   context.subscriptions.push(hoverProvider);
   context.subscriptions.push(codeActionProvider);
   context.subscriptions.push(statusBar);
+  context.subscriptions.push(configChangeDisposable);
 }
 
 export function deactivate(): void {
@@ -104,12 +119,18 @@ export function deactivate(): void {
   hoverProvider = undefined;
   diagnosticProvider?.dispose();
   diagnosticProvider = undefined;
+  configProvider?.dispose();
+  configProvider = undefined;
   core?.dispose();
   core = undefined;
 }
 
 export function getCore(): PhantomGuardCore | undefined {
   return core;
+}
+
+export function getConfigProvider(): ConfigProvider | undefined {
+  return configProvider;
 }
 
 export function getDiagnosticProvider(): DiagnosticProvider | undefined {

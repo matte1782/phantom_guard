@@ -1,8 +1,8 @@
 "use strict";
 /**
- * IMPLEMENTS: S120, S121, S122, S123, S124
- * INVARIANTS: INV120-INV125
- * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02
+ * IMPLEMENTS: S120, S121, S122, S123, S124, S125
+ * INVARIANTS: INV120-INV126
+ * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02, T125.01-T125.02
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -41,6 +41,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.getCore = getCore;
+exports.getConfigProvider = getConfigProvider;
 exports.getDiagnosticProvider = getDiagnosticProvider;
 exports.getStatusBar = getStatusBar;
 const vscode = __importStar(require("vscode"));
@@ -49,8 +50,10 @@ const diagnostics_1 = require("./diagnostics");
 const hover_1 = require("./hover");
 const actions_1 = require("./actions");
 const statusbar_1 = require("./statusbar");
+const config_1 = require("./config");
 const errors_1 = require("./errors");
 let core;
+let configProvider;
 let diagnosticProvider;
 let hoverProvider;
 let codeActionProvider;
@@ -96,6 +99,8 @@ async function doActivation(context) {
     if (!isAvailable) {
         throw new errors_1.ActivationError('phantom-guard CLI not found');
     }
+    // S125: Create configuration provider
+    configProvider = new config_1.ConfigProvider();
     // S121: Create diagnostic provider
     diagnosticProvider = new diagnostics_1.DiagnosticProvider(core);
     // S122: Register hover provider
@@ -104,12 +109,21 @@ async function doActivation(context) {
     codeActionProvider = vscode.languages.registerCodeActionsProvider(DOCUMENT_SELECTORS, new actions_1.PhantomGuardCodeActionProvider(), { providedCodeActionKinds: actions_1.PhantomGuardCodeActionProvider.providedCodeActionKinds });
     // S124: Create status bar
     statusBar = new statusbar_1.PhantomGuardStatusBar();
+    // INV126: Configuration changes trigger re-validation
+    const configChangeDisposable = configProvider.onConfigChange(() => {
+        // Re-validate all open documents when config changes
+        if (diagnosticProvider) {
+            diagnosticProvider.revalidateAllDocuments();
+        }
+    });
     // Register disposables
     context.subscriptions.push(core);
+    context.subscriptions.push(configProvider);
     context.subscriptions.push(diagnosticProvider);
     context.subscriptions.push(hoverProvider);
     context.subscriptions.push(codeActionProvider);
     context.subscriptions.push(statusBar);
+    context.subscriptions.push(configChangeDisposable);
 }
 function deactivate() {
     statusBar?.dispose();
@@ -120,11 +134,16 @@ function deactivate() {
     hoverProvider = undefined;
     diagnosticProvider?.dispose();
     diagnosticProvider = undefined;
+    configProvider?.dispose();
+    configProvider = undefined;
     core?.dispose();
     core = undefined;
 }
 function getCore() {
     return core;
+}
+function getConfigProvider() {
+    return configProvider;
 }
 function getDiagnosticProvider() {
     return diagnosticProvider;
