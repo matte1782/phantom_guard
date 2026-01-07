@@ -1,7 +1,7 @@
 "use strict";
 /**
- * IMPLEMENTS: S120
- * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout)
+ * IMPLEMENTS: S120, S121
+ * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared)
  * TESTS: T120.01, T120.02, T120.03, T120.04
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -41,10 +41,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.getCore = getCore;
+exports.getDiagnosticProvider = getDiagnosticProvider;
 const vscode = __importStar(require("vscode"));
 const core_1 = require("./core");
+const diagnostics_1 = require("./diagnostics");
 const errors_1 = require("./errors");
 let core;
+let diagnosticProvider;
 async function activate(context) {
     const startTime = Date.now();
     try {
@@ -79,14 +82,22 @@ async function doActivation(context) {
     if (!isAvailable) {
         throw new errors_1.ActivationError('phantom-guard CLI not found');
     }
+    // S121: Create diagnostic provider
+    diagnosticProvider = new diagnostics_1.DiagnosticProvider(core);
     // Register disposables
     context.subscriptions.push(core);
+    context.subscriptions.push(diagnosticProvider);
 }
 function deactivate() {
+    diagnosticProvider?.dispose();
+    diagnosticProvider = undefined;
     core?.dispose();
     core = undefined;
 }
 function getCore() {
     return core;
+}
+function getDiagnosticProvider() {
+    return diagnosticProvider;
 }
 //# sourceMappingURL=extension.js.map

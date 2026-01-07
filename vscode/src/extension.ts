@@ -1,14 +1,16 @@
 /**
- * IMPLEMENTS: S120
- * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout)
+ * IMPLEMENTS: S120, S121
+ * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared)
  * TESTS: T120.01, T120.02, T120.03, T120.04
  */
 
 import * as vscode from 'vscode';
 import { PhantomGuardCore } from './core';
+import { DiagnosticProvider } from './diagnostics';
 import { ActivationError, PythonNotFoundError } from './errors';
 
 let core: PhantomGuardCore | undefined;
+let diagnosticProvider: DiagnosticProvider | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const startTime = Date.now();
@@ -52,15 +54,25 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
     throw new ActivationError('phantom-guard CLI not found');
   }
 
+  // S121: Create diagnostic provider
+  diagnosticProvider = new DiagnosticProvider(core);
+
   // Register disposables
   context.subscriptions.push(core);
+  context.subscriptions.push(diagnosticProvider);
 }
 
 export function deactivate(): void {
+  diagnosticProvider?.dispose();
+  diagnosticProvider = undefined;
   core?.dispose();
   core = undefined;
 }
 
 export function getCore(): PhantomGuardCore | undefined {
   return core;
+}
+
+export function getDiagnosticProvider(): DiagnosticProvider | undefined {
+  return diagnosticProvider;
 }
