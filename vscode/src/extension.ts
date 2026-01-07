@@ -1,7 +1,7 @@
 /**
- * IMPLEMENTS: S120, S121, S122, S123, S124, S125
- * INVARIANTS: INV120-INV126
- * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02, T125.01-T125.02
+ * IMPLEMENTS: S120, S121, S122, S123, S124, S125, S127
+ * INVARIANTS: INV120-INV127
+ * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02, T125.01-T125.02, T127.01-T127.03
  */
 
 import * as vscode from 'vscode';
@@ -11,6 +11,7 @@ import { PhantomGuardHoverProvider } from './hover';
 import { PhantomGuardCodeActionProvider } from './actions';
 import { PhantomGuardStatusBar } from './statusbar';
 import { ConfigProvider } from './config';
+import { registerCommands } from './commands';
 import { ActivationError, PythonNotFoundError } from './errors';
 
 let core: PhantomGuardCore | undefined;
@@ -100,6 +101,9 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
     }
   });
 
+  // S127: Register command handlers
+  const commandDisposables = registerCommands(context, configProvider, diagnosticProvider);
+
   // Register disposables
   context.subscriptions.push(core);
   context.subscriptions.push(configProvider);
@@ -108,6 +112,7 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
   context.subscriptions.push(codeActionProvider);
   context.subscriptions.push(statusBar);
   context.subscriptions.push(configChangeDisposable);
+  context.subscriptions.push(...commandDisposables);
 }
 
 export function deactivate(): void {

@@ -324,12 +324,32 @@ export const languages = {
   registerCodeActionsProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
+// Mock ProgressLocation
+export enum ProgressLocation {
+  SourceControl = 1,
+  Window = 10,
+  Notification = 15,
+}
+
 // Mock window
 export const window = {
   showErrorMessage: vi.fn().mockResolvedValue(undefined),
   showWarningMessage: vi.fn().mockResolvedValue(undefined),
   showInformationMessage: vi.fn().mockResolvedValue(undefined),
   createStatusBarItem: vi.fn(() => new MockStatusBarItem()),
+  showInputBox: vi.fn().mockResolvedValue(undefined),
+  activeTextEditor: undefined as any,
+  withProgress: vi.fn().mockImplementation(async (_options: any, task: any) => {
+    return await task({ report: vi.fn() });
+  }),
+};
+
+// Mock commands
+export const commands = {
+  registerCommand: vi.fn((command: string, callback: (...args: any[]) => any) => {
+    return { dispose: vi.fn() };
+  }),
+  executeCommand: vi.fn().mockResolvedValue(undefined),
 };
 
 // Mock env
@@ -353,8 +373,10 @@ export default {
   Uri,
   ConfigurationTarget,
   EventEmitter,
+  ProgressLocation,
   workspace,
   languages,
   window,
+  commands,
   env,
 };
