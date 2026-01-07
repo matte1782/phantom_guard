@@ -12,7 +12,6 @@ import {
 } from '../src/commands';
 import {
   window,
-  workspace,
   Uri,
   Diagnostic,
   DiagnosticSeverity,
@@ -164,6 +163,30 @@ describe('Command Handlers (S127)', () => {
 
       expect(ignoreSpy).toHaveBeenCalledWith('trimmed-package');
     });
+
+    it('rejects invalid package name provided via argument', async () => {
+      const ignoreSpy = vi.spyOn(mockConfigProvider, 'ignorePackage');
+
+      // Invalid: starts with hyphen
+      await ignorePackageCommand(mockConfigProvider, '-invalid-name');
+
+      expect(window.showWarningMessage).toHaveBeenCalledWith(
+        "Invalid package name: '-invalid-name'"
+      );
+      expect(ignoreSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects package name with shell metacharacters via argument', async () => {
+      const ignoreSpy = vi.spyOn(mockConfigProvider, 'ignorePackage');
+
+      // Invalid: contains shell metacharacter
+      await ignorePackageCommand(mockConfigProvider, 'pkg;rm -rf /');
+
+      expect(window.showWarningMessage).toHaveBeenCalledWith(
+        "Invalid package name: 'pkg;rm -rf /'"
+      );
+      expect(ignoreSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('revalidateCommand (T127.03)', () => {
@@ -242,45 +265,25 @@ describe('Command Handlers (S127)', () => {
 });
 
 describe('Supported File Detection', () => {
-  it('recognizes requirements.txt', () => {
-    const doc = new MockTextDocument(
-      Uri.file('/project/requirements.txt'),
-      ''
-    );
-    setMockTextDocuments([doc]);
+  // Note: isSupportedFile is a private function in commands.ts
+  // These tests would require either:
+  // 1. Exporting isSupportedFile for testing
+  // 2. Testing indirectly via showSummaryCommand (requires complex vscode.workspace mocking)
+  // The function is tested indirectly through diagnostics.test.ts file detection tests
 
-    // The file should be counted as supported
-    const mockDiagnosticProvider = new DiagnosticProvider(new PhantomGuardCore());
-    // Would need to expose isSupportedFile or test via showSummaryCommand
+  it.skip('recognizes requirements.txt', () => {
+    // Skip: Requires exposing isSupportedFile or complex workspace mocking
   });
 
-  it('recognizes package.json', () => {
-    const doc = new MockTextDocument(
-      Uri.file('/project/package.json'),
-      '{}'
-    );
-    setMockTextDocuments([doc]);
-
-    // Would verify via showSummaryCommand counting files
+  it.skip('recognizes package.json', () => {
+    // Skip: Requires exposing isSupportedFile or complex workspace mocking
   });
 
-  it('recognizes pyproject.toml', () => {
-    const doc = new MockTextDocument(
-      Uri.file('/project/pyproject.toml'),
-      ''
-    );
-    setMockTextDocuments([doc]);
-
-    // Would verify via showSummaryCommand counting files
+  it.skip('recognizes pyproject.toml', () => {
+    // Skip: Requires exposing isSupportedFile or complex workspace mocking
   });
 
-  it('recognizes Cargo.toml', () => {
-    const doc = new MockTextDocument(
-      Uri.file('/project/Cargo.toml'),
-      ''
-    );
-    setMockTextDocuments([doc]);
-
-    // Would verify via showSummaryCommand counting files
+  it.skip('recognizes Cargo.toml', () => {
+    // Skip: Requires exposing isSupportedFile or complex workspace mocking
   });
 });

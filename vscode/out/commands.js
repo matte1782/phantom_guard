@@ -70,6 +70,17 @@ async function showSummaryCommand(diagnosticProvider) {
         vscode.window.showInformationMessage(message);
     }
 }
+// Package name validation regex
+// SECURITY: Must start with alphanumeric, then alphanumeric, hyphens, underscores, dots
+const PACKAGE_NAME_REGEX = /^[a-zA-Z0-9][\w\-._]*$/;
+/**
+ * Validate package name format
+ * SECURITY: Prevents invalid/malicious package names
+ */
+function isValidPackageName(name) {
+    const trimmed = name.trim();
+    return trimmed.length > 0 && PACKAGE_NAME_REGEX.test(trimmed);
+}
 /**
  * Command handler for phantom-guard.ignorePackage
  * T127.02: Adds package to ignored list
@@ -81,6 +92,11 @@ async function ignorePackageCommand(configProvider, packageName) {
     }
     // Get package name from argument or prompt user
     let name = packageName;
+    // SECURITY: Validate package name even when provided via argument
+    if (name && !isValidPackageName(name)) {
+        vscode.window.showWarningMessage(`Invalid package name: '${name}'`);
+        return;
+    }
     if (!name) {
         name = await vscode.window.showInputBox({
             prompt: 'Enter package name to ignore',
@@ -90,7 +106,7 @@ async function ignorePackageCommand(configProvider, packageName) {
                     return 'Package name is required';
                 }
                 // Basic validation: alphanumeric, hyphens, underscores, dots
-                if (!/^[a-zA-Z0-9][\w\-._]*$/.test(value.trim())) {
+                if (!isValidPackageName(value)) {
                     return 'Invalid package name format';
                 }
                 return null;
