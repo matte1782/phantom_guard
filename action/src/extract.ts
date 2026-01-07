@@ -2,6 +2,8 @@
  * IMPLEMENTS: S102
  * INVARIANTS: INV103
  * TESTS: T102.01-T102.05
+ * SECURITY: P1-SEC-002 (package validation)
+ * EDGE_CASES: EC220-EC235
  *
  * Package extraction for Phantom Guard GitHub Action.
  *
@@ -12,6 +14,7 @@ import * as core from '@actions/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getRegistryForFile } from './files';
+import { isValidPackageName, preprocessContent } from './validation';
 
 /**
  * Extracted package information.
@@ -55,9 +58,13 @@ export async function extractPackages(files: string[]): Promise<ExtractedPackage
 
 /**
  * Extract packages from a single file.
+ * EC212: UTF-8 BOM stripped
+ * EC213: CRLF line endings parsed correctly
  */
 async function extractFromFile(filePath: string): Promise<ExtractedPackage[]> {
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const rawContent = fs.readFileSync(filePath, 'utf-8');
+  // EC212, EC213: Preprocess content (BOM, CRLF)
+  const content = preprocessContent(rawContent);
   const basename = path.basename(filePath);
   const registry = getRegistryForFile(filePath);
 
@@ -82,6 +89,16 @@ async function extractFromFile(filePath: string): Promise<ExtractedPackage[]> {
 
 /**
  * Parse requirements.txt format.
+ * EC220: Simple `flask`
+ * EC221: `flask>=2.0`
+ * EC222: `# comment` - ignored
+ * EC223: `flask # web` - inline comment stripped
+ * EC224: `flask; python_version` - markers stripped
+ * EC225: `flask[async]` - extras stripped
+ * EC226: `git+https://...` - URLs skipped with warning
+ * EC227: `./local_package` - local paths skipped with warning
+ * EC233: Deduplication
+ * EC234: Case normalization
  */
 function parseRequirementsTxt(
   content: string,
@@ -89,32 +106,68 @@ function parseRequirementsTxt(
   registry: string
 ): ExtractedPackage[] {
   const packages: ExtractedPackage[] = [];
+  const seen = new Set<string>();
   const lines = content.split('\n');
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    let line = lines[i].trim();
 
-    // Skip comments and empty lines
-    if (!line || line.startsWith('#') || line.startsWith('-')) {
+    // EC222: Skip full-line comments and empty lines
+    if (!line || line.startsWith('#')) {
       continue;
+    }
+
+    // Skip pip options (EC226, EC227)
+    if (line.startsWith('-')) {
+      continue;
+    }
+
+    // EC226: Skip URLs
+    if (line.startsWith('git+') || line.startsWith('http://') || line.startsWith('https://')) {
+      core.debug(`Skipping URL at ${filePath}:${i + 1}: ${line.slice(0, 50)}`);
+      continue;
+    }
+
+    // EC227: Skip local paths
+    if (line.startsWith('./') || line.startsWith('../') || line.startsWith('/')) {
+      core.debug(`Skipping local path at ${filePath}:${i + 1}: ${line.slice(0, 50)}`);
+      continue;
+    }
+
+    // EC223: Remove inline comments
+    const commentIdx = line.indexOf('#');
+    if (commentIdx > 0) {
+      line = line.substring(0, commentIdx).trim();
+    }
+
+    // EC224: Remove environment markers (after ;)
+    const markerIdx = line.indexOf(';');
+    if (markerIdx > 0) {
+      line = line.substring(0, markerIdx).trim();
     }
 
     // Parse package name and version
     // Formats: package, package==1.0.0, package>=1.0.0, package[extra]
-    const match = line.match(/^([a-zA-Z0-9][-a-zA-Z0-9._]*)(\[.*\])?([<>=!~].*)?$/);
+    // EC225: Strip extras in brackets
+    const match = line.match(/^([a-zA-Z0-9][-a-zA-Z0-9._]*)(?:\[.*?\])?([<>=!~,].*)?$/);
     if (match) {
+      // EC234: Normalize to lowercase
       const name = match[1].toLowerCase();
-      const version = match[3] || undefined;
+      const version = match[2] || undefined;
 
       // INV103: Validate package name
       if (isValidPackageName(name)) {
-        packages.push({
-          name,
-          version,
-          sourceFile: filePath,
-          lineNumber: i + 1,
-          registry,
-        });
+        // EC233: Deduplicate
+        if (!seen.has(name)) {
+          seen.add(name);
+          packages.push({
+            name,
+            version,
+            sourceFile: filePath,
+            lineNumber: i + 1,
+            registry,
+          });
+        }
       }
     }
   }
@@ -289,21 +342,3 @@ function parsePyprojectToml(
   return packages;
 }
 
-/**
- * INVARIANT: INV103
- *
- * Validate that a package name is valid.
- */
-function isValidPackageName(name: string): boolean {
-  if (!name || name.length === 0 || name.length > 214) {
-    return false;
-  }
-
-  // npm scoped packages
-  if (name.startsWith('@')) {
-    return /^@[a-z0-9][-a-z0-9._]*\/[a-z0-9][-a-z0-9._]*$/i.test(name);
-  }
-
-  // Standard package name
-  return /^[a-z0-9][-a-z0-9._]*$/i.test(name);
-}
