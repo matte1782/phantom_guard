@@ -1,18 +1,22 @@
 /**
- * IMPLEMENTS: S120, S121, S122
- * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared), INV123 (hover null check)
- * TESTS: T120.01, T120.02, T120.03, T120.04
+ * IMPLEMENTS: S120, S121, S122, S123, S124
+ * INVARIANTS: INV120-INV125
+ * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02
  */
 
 import * as vscode from 'vscode';
 import { PhantomGuardCore } from './core';
 import { DiagnosticProvider } from './diagnostics';
 import { PhantomGuardHoverProvider } from './hover';
+import { PhantomGuardCodeActionProvider } from './actions';
+import { PhantomGuardStatusBar } from './statusbar';
 import { ActivationError, PythonNotFoundError } from './errors';
 
 let core: PhantomGuardCore | undefined;
 let diagnosticProvider: DiagnosticProvider | undefined;
 let hoverProvider: vscode.Disposable | undefined;
+let codeActionProvider: vscode.Disposable | undefined;
+let statusBar: PhantomGuardStatusBar | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const startTime = Date.now();
@@ -73,13 +77,29 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
     new PhantomGuardHoverProvider(core)
   );
 
+  // S123: Register code action provider
+  codeActionProvider = vscode.languages.registerCodeActionsProvider(
+    DOCUMENT_SELECTORS,
+    new PhantomGuardCodeActionProvider(),
+    { providedCodeActionKinds: PhantomGuardCodeActionProvider.providedCodeActionKinds }
+  );
+
+  // S124: Create status bar
+  statusBar = new PhantomGuardStatusBar();
+
   // Register disposables
   context.subscriptions.push(core);
   context.subscriptions.push(diagnosticProvider);
   context.subscriptions.push(hoverProvider);
+  context.subscriptions.push(codeActionProvider);
+  context.subscriptions.push(statusBar);
 }
 
 export function deactivate(): void {
+  statusBar?.dispose();
+  statusBar = undefined;
+  codeActionProvider?.dispose();
+  codeActionProvider = undefined;
   hoverProvider?.dispose();
   hoverProvider = undefined;
   diagnosticProvider?.dispose();
@@ -94,4 +114,8 @@ export function getCore(): PhantomGuardCore | undefined {
 
 export function getDiagnosticProvider(): DiagnosticProvider | undefined {
   return diagnosticProvider;
+}
+
+export function getStatusBar(): PhantomGuardStatusBar | undefined {
+  return statusBar;
 }

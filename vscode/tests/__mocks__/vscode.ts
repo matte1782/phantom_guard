@@ -65,6 +65,74 @@ export const CancellationToken = {
   onCancellationRequested: vi.fn(),
 };
 
+// Mock CodeActionKind
+export const CodeActionKind = {
+  QuickFix: { value: 'quickfix' },
+  Refactor: { value: 'refactor' },
+  Source: { value: 'source' },
+};
+
+// Mock CodeAction class
+export class CodeAction {
+  edit?: WorkspaceEdit;
+  command?: any;
+  diagnostics?: Diagnostic[];
+  isPreferred?: boolean;
+
+  constructor(
+    public title: string,
+    public kind?: typeof CodeActionKind.QuickFix
+  ) {}
+}
+
+// Mock WorkspaceEdit class
+export class WorkspaceEdit {
+  private edits: Array<{ uri: Uri; range: Range; newText: string }> = [];
+  private deletes: Array<{ uri: Uri; range: Range }> = [];
+  private inserts: Array<{ uri: Uri; position: Position; text: string }> = [];
+
+  replace(uri: Uri, range: Range, newText: string): void {
+    this.edits.push({ uri, range, newText });
+  }
+
+  delete(uri: Uri, range: Range): void {
+    this.deletes.push({ uri, range });
+  }
+
+  insert(uri: Uri, position: Position, text: string): void {
+    this.inserts.push({ uri, position, text });
+  }
+
+  get size(): number {
+    return this.edits.length + this.deletes.length + this.inserts.length;
+  }
+}
+
+// Mock StatusBarAlignment
+export enum StatusBarAlignment {
+  Left = 1,
+  Right = 2,
+}
+
+// Mock ThemeColor
+export class ThemeColor {
+  constructor(public id: string) {}
+}
+
+// Mock StatusBarItem
+export class MockStatusBarItem {
+  text: string = '';
+  tooltip: string = '';
+  command?: string;
+  backgroundColor?: ThemeColor;
+  alignment: StatusBarAlignment = StatusBarAlignment.Right;
+  priority: number = 0;
+
+  show = vi.fn();
+  hide = vi.fn();
+  dispose = vi.fn();
+}
+
 // Mock Diagnostic class
 export class Diagnostic {
   source?: string;
@@ -147,6 +215,7 @@ export const workspace = {
 export const languages = {
   createDiagnosticCollection: vi.fn(() => new MockDiagnosticCollection()),
   registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  registerCodeActionsProvider: vi.fn(() => ({ dispose: vi.fn() })),
 };
 
 // Mock window
@@ -154,6 +223,7 @@ export const window = {
   showErrorMessage: vi.fn().mockResolvedValue(undefined),
   showWarningMessage: vi.fn().mockResolvedValue(undefined),
   showInformationMessage: vi.fn().mockResolvedValue(undefined),
+  createStatusBarItem: vi.fn(() => new MockStatusBarItem()),
 };
 
 // Mock env
@@ -168,6 +238,11 @@ export default {
   MarkdownString,
   Hover,
   CancellationToken,
+  CodeActionKind,
+  CodeAction,
+  WorkspaceEdit,
+  StatusBarAlignment,
+  ThemeColor,
   Diagnostic,
   Uri,
   workspace,

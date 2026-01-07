@@ -9,24 +9,15 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock vscode module
-vi.mock('vscode', () => ({
-  window: {
-    showErrorMessage: vi.fn().mockResolvedValue(undefined),
-    showWarningMessage: vi.fn().mockResolvedValue(undefined),
-  },
-  env: {
-    openExternal: vi.fn().mockResolvedValue(true),
-  },
-  Uri: {
-    parse: vi.fn((url: string) => ({ toString: () => url })),
-  },
-}));
+// Mock vscode module - use shared mock
+vi.mock('vscode', () => import('./__mocks__/vscode'));
 
 // Mock the core module
 vi.mock('../src/core', () => ({
   PhantomGuardCore: vi.fn().mockImplementation(() => ({
     checkAvailability: vi.fn().mockResolvedValue(true),
+    validatePackage: vi.fn().mockResolvedValue(null),
+    validatePackages: vi.fn().mockResolvedValue(new Map()),
     dispose: vi.fn(),
   })),
 }));

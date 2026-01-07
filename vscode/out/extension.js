@@ -1,8 +1,8 @@
 "use strict";
 /**
- * IMPLEMENTS: S120, S121, S122
- * INVARIANTS: INV120 (async I/O), INV121 (500ms timeout), INV122 (diagnostics cleared), INV123 (hover null check)
- * TESTS: T120.01, T120.02, T120.03, T120.04
+ * IMPLEMENTS: S120, S121, S122, S123, S124
+ * INVARIANTS: INV120-INV125
+ * TESTS: T120.01-T120.04, T121.01-T121.05, T122.01-T122.03, T123.01-T123.02, T124.01-T124.02
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -42,14 +42,19 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 exports.getCore = getCore;
 exports.getDiagnosticProvider = getDiagnosticProvider;
+exports.getStatusBar = getStatusBar;
 const vscode = __importStar(require("vscode"));
 const core_1 = require("./core");
 const diagnostics_1 = require("./diagnostics");
 const hover_1 = require("./hover");
+const actions_1 = require("./actions");
+const statusbar_1 = require("./statusbar");
 const errors_1 = require("./errors");
 let core;
 let diagnosticProvider;
 let hoverProvider;
+let codeActionProvider;
+let statusBar;
 async function activate(context) {
     const startTime = Date.now();
     try {
@@ -95,12 +100,22 @@ async function doActivation(context) {
     diagnosticProvider = new diagnostics_1.DiagnosticProvider(core);
     // S122: Register hover provider
     hoverProvider = vscode.languages.registerHoverProvider(DOCUMENT_SELECTORS, new hover_1.PhantomGuardHoverProvider(core));
+    // S123: Register code action provider
+    codeActionProvider = vscode.languages.registerCodeActionsProvider(DOCUMENT_SELECTORS, new actions_1.PhantomGuardCodeActionProvider(), { providedCodeActionKinds: actions_1.PhantomGuardCodeActionProvider.providedCodeActionKinds });
+    // S124: Create status bar
+    statusBar = new statusbar_1.PhantomGuardStatusBar();
     // Register disposables
     context.subscriptions.push(core);
     context.subscriptions.push(diagnosticProvider);
     context.subscriptions.push(hoverProvider);
+    context.subscriptions.push(codeActionProvider);
+    context.subscriptions.push(statusBar);
 }
 function deactivate() {
+    statusBar?.dispose();
+    statusBar = undefined;
+    codeActionProvider?.dispose();
+    codeActionProvider = undefined;
     hoverProvider?.dispose();
     hoverProvider = undefined;
     diagnosticProvider?.dispose();
@@ -113,5 +128,8 @@ function getCore() {
 }
 function getDiagnosticProvider() {
     return diagnosticProvider;
+}
+function getStatusBar() {
+    return statusBar;
 }
 //# sourceMappingURL=extension.js.map
