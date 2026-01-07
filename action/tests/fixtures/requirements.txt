@@ -1,0 +1,7 @@
+# Test requirements.txt for Day 2 tests
+# SPEC: S101, TEST: T101.01
+
+requests==2.31.0
+flask>=2.0.0
+numpy
+pandas~=2.0.0

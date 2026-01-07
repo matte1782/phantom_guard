@@ -2,10 +2,13 @@
  * IMPLEMENTS: S101
  * INVARIANTS: INV102
  * TESTS: T101.01-T101.05
+ * EDGE_CASES: EC200-EC215
  *
  * File discovery for Phantom Guard GitHub Action.
  *
  * Discovers dependency files using glob patterns.
+ * P1-EC206: Follows valid symlinks
+ * P1-EC207: Skips broken symlinks with warning
  */
 
 import * as glob from '@actions/glob';
@@ -50,10 +53,52 @@ export const FILE_REGISTRY_MAP: Record<string, string> = {
 };
 
 /**
+ * P1-EC206: Check if path is a valid file (follows symlinks)
+ * P1-EC207: Skip broken symlinks with warning
+ *
+ * @param filePath - Path to check
+ * @returns true if valid file, false otherwise
+ */
+function isValidFile(filePath: string): boolean {
+  try {
+    // fs.statSync follows symlinks, throws if broken
+    const stats = fs.statSync(filePath);
+    return stats.isFile();
+  } catch {
+    // P1-EC207: Check if it's a broken symlink
+    try {
+      const lstats = fs.lstatSync(filePath);
+      if (lstats.isSymbolicLink()) {
+        core.warning(`Skipping broken symlink: ${filePath}`);
+      }
+    } catch {
+      // File doesn't exist at all
+    }
+    return false;
+  }
+}
+
+/**
+ * Get the resolved real path for deduplication (resolves symlinks)
+ *
+ * @param filePath - Path to resolve
+ * @returns Real path or original path if resolution fails
+ */
+function getRealPath(filePath: string): string {
+  try {
+    return fs.realpathSync(filePath);
+  } catch {
+    return filePath;
+  }
+}
+
+/**
  * IMPLEMENTS: S101
- * INVARIANT: INV102 - Only returns existing files
+ * INVARIANT: INV102 - Only returns existing files, graceful error handling
  *
  * Discover dependency files matching the given patterns.
+ * P1-EC206: Follows valid symlinks
+ * P1-EC207: Skips broken symlinks with warning
  *
  * @param patterns - Comma-separated glob patterns or file names
  * @returns Array of absolute file paths
@@ -66,20 +111,30 @@ export async function discoverFiles(patterns: string): Promise<string[]> {
   const seen = new Set<string>();
 
   for (const pattern of patternList) {
-    const globber = await glob.create(pattern, {
-      followSymbolicLinks: false,
-      implicitDescendants: true,
-    });
+    try {
+      const globber = await glob.create(pattern, {
+        followSymbolicLinks: true, // P1-EC206: Follow symlinks
+        implicitDescendants: true,
+      });
 
-    for await (const file of globber.globGenerator()) {
-      // INV102: Only return existing files
-      if (fs.existsSync(file) && fs.statSync(file).isFile()) {
-        const normalized = path.normalize(file);
-        if (!seen.has(normalized)) {
-          seen.add(normalized);
-          files.push(normalized);
+      for await (const file of globber.globGenerator()) {
+        // P1-EC206/207: Validate file (handles symlinks)
+        if (!isValidFile(file)) {
+          continue;
+        }
+
+        // Deduplicate by resolved real path (handles symlinks pointing to same file)
+        const realPath = getRealPath(file);
+        if (!seen.has(realPath)) {
+          seen.add(realPath);
+          files.push(path.normalize(file));
         }
       }
+    } catch (error) {
+      // INV102: Graceful fallback on invalid glob
+      core.warning(
+        `Pattern '${pattern}' error: ${error instanceof Error ? error.message : 'unknown error'}`
+      );
     }
   }
 
