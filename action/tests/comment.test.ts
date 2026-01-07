@@ -7,7 +7,24 @@
  * Tests for PR comment generation.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock @actions/core
+vi.mock('@actions/core', () => ({
+  info: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+}));
+
+// Mock @actions/github
+vi.mock('@actions/github', () => ({
+  getOctokit: vi.fn(),
+  context: {
+    payload: { pull_request: null },
+    repo: { owner: 'test', repo: 'test' },
+  },
+}));
 
 describe('PR Comment Generator (S104)', () => {
   // =========================================================================

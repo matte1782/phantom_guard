@@ -6,7 +6,7 @@
  * Tests for GitHub Action exit code handling.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   ExitCode,
   determineExitCode,

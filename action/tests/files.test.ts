@@ -7,103 +7,44 @@
  * Tests for dependency file discovery.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock @actions/core
+vi.mock('@actions/core', () => ({
+  info: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+}));
 
 describe('File Discovery (S101)', () => {
-  // =========================================================================
   // T101.01: Find requirements.txt
-  // =========================================================================
   it.skip('T101.01: finds requirements.txt', async () => {
-    /**
-     * SPEC: S101
-     * TEST_ID: T101.01
-     * INV_ID: INV102
-     * EC_ID: EC200
-     *
-     * Given: requirements.txt exists in workspace
-     * When: discoverFiles is called
-     * Then: File found with pypi registry
-     */
-    // Arrange
-    const patterns = ['requirements.txt'];
-
-    // Act
-    // const files = await discoverFiles(patterns);
-
-    // Assert
-    // expect(files).toHaveLength(1);
-    // expect(files[0].registry).toBe('pypi');
+    // SPEC: S101, TEST_ID: T101.01, INV_ID: INV102, EC_ID: EC200
     expect(true).toBe(true);
   });
 
-  // =========================================================================
   // T101.02: Find package.json
-  // =========================================================================
   it.skip('T101.02: finds package.json', async () => {
-    /**
-     * SPEC: S101
-     * TEST_ID: T101.02
-     * INV_ID: INV102
-     * EC_ID: EC201
-     */
+    // SPEC: S101, TEST_ID: T101.02, INV_ID: INV102, EC_ID: EC201
     expect(true).toBe(true);
   });
 
-  // =========================================================================
   // T101.03: No matches returns empty array
-  // =========================================================================
   it.skip('T101.03: no matches returns empty array', async () => {
-    /**
-     * SPEC: S101
-     * TEST_ID: T101.03
-     * INV_ID: INV102
-     * EC_ID: EC204
-     *
-     * Given: Glob pattern matching nothing
-     * When: discoverFiles is called
-     * Then: Returns empty array, no error
-     */
-    // Arrange
-    const patterns = ['*.nonexistent'];
-
-    // Act
-    // const files = await discoverFiles(patterns);
-
-    // Assert
-    // expect(files).toEqual([]);
+    // SPEC: S101, TEST_ID: T101.03, INV_ID: INV102, EC_ID: EC204
     expect(true).toBe(true);
   });
 
-  // =========================================================================
   // T101.04: Invalid glob handled
-  // =========================================================================
   it.skip('T101.04: invalid glob handled gracefully', async () => {
-    /**
-     * SPEC: S101
-     * TEST_ID: T101.04
-     * INV_ID: INV102
-     * EC_ID: EC205
-     *
-     * Given: Invalid glob syntax "[invalid"
-     * When: discoverFiles is called
-     * Then: Returns empty array, logs warning
-     */
+    // SPEC: S101, TEST_ID: T101.04, INV_ID: INV102, EC_ID: EC205
     expect(true).toBe(true);
   });
 
-  // =========================================================================
   // T101.05: Recursive discovery
-  // =========================================================================
   it.skip('T101.05: recursive discovery works (integration)', async () => {
-    /**
-     * SPEC: S101
-     * TEST_ID: T101.05
-     * EC_ID: EC215
-     *
-     * Given: Pattern "**/requirements.txt"
-     * When: discoverFiles is called
-     * Then: Finds files in nested directories
-     */
+    // SPEC: S101, TEST_ID: T101.05, EC_ID: EC215
     expect(true).toBe(true);
   });
 });

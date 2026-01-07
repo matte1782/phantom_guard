@@ -2,6 +2,7 @@
  * IMPLEMENTS: S100
  * INVARIANTS: INV100, INV101
  * TESTS: T100.01-T100.03
+ * SECURITY: P1-SEC-003 (token masking)
  *
  * Phantom Guard GitHub Action Entry Point.
  *
@@ -56,7 +57,15 @@ export async function run(): Promise<void> {
     const filesInput = core.getInput('files');
     const failOnInput = core.getInput('fail-on');
     const outputInput = core.getInput('output');
-    const githubToken = core.getInput('github-token');
+    const githubToken = core.getInput('github-token') || process.env.GITHUB_TOKEN || '';
+    // pythonPath will be used in Day 4 when calling Python core
+    const _pythonPath = core.getInput('python-path') || 'python';
+    void _pythonPath; // Suppress unused variable warning until Day 4
+
+    // P1-SEC-003: Mask GITHUB_TOKEN in logs
+    if (githubToken) {
+      core.setSecret(githubToken);
+    }
 
     core.info('Phantom Guard - Detecting AI-hallucinated package attacks');
     core.info(`Files pattern: ${filesInput}`);
