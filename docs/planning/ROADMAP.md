@@ -1,10 +1,28 @@
 # Phantom Guard — Development Roadmap
 
-> **Version**: 0.1.2
+> **Version**: 0.2.0
 > **Created**: 2025-12-24
-> **Last Updated**: 2026-01-02 (Week 5 Complete - Showcase Published)
+> **Last Updated**: 2026-01-08 (v0.2.0 Released to PyPI)
 > **Status**: ACTIVE
-> **Gate**: 5 of 6 (Showcase Phase Complete)
+> **Gate**: 6 of 6 (Release Complete - VS Code Marketplace Pending)
+
+---
+
+## PRIORITY: Next Session
+
+| Task | Status | Blocker |
+|------|--------|---------|
+| **Publish VS Code Extension to Marketplace** | BLOCKED | Azure DevOps credit card verification |
+
+### Steps to Complete:
+1. Resolve Azure DevOps payment/verification issue (try different card or PayPal)
+2. Create PAT token at https://dev.azure.com → Profile → Personal Access Tokens
+3. Run: `cd vscode && npx vsce publish -p YOUR_TOKEN`
+4. Extension is already packaged: `vscode/phantom-guard-vscode-0.2.0.vsix`
+
+### Publisher Already Created:
+- Publisher ID: `phantom-guard`
+- Marketplace: https://marketplace.visualstudio.com/manage/publishers/phantom-guard
 
 ---
 
