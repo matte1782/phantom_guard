@@ -9,10 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - PWA/offline support for showcase
-- VS Code extension
-- GitHub App integration
-- Enhanced hallucination patterns
-- Performance optimizations
+- GitHub App integration (full integration)
+- JetBrains IDE plugin
+- Pre-commit hook package
+
+## [0.2.0] - 2026-01-08
+
+### Added
+
+#### VS Code Extension (S120-S127)
+- Real-time package validation in dependency files
+- Diagnostic provider with inline warnings for suspicious packages
+- Hover provider showing risk details on package names
+- Code action provider for quick fixes (ignore package, view details)
+- Status bar indicator showing validation status
+- Configuration support for custom Python paths and thresholds
+- Support for requirements.txt, package.json, pyproject.toml, Cargo.toml
+
+#### GitHub Action (S100-S106)
+- CI/CD integration for automated dependency scanning
+- File discovery with glob pattern support
+- Package extraction from multiple manifest formats
+- PR comment generation with risk summary
+- SARIF output for GitHub Security tab integration
+- Configurable exit codes for CI pipeline control
+
+#### New Detection Signals (S060-S080)
+- **Namespace Squatting** (S060-S064): Detects packages mimicking organization namespaces
+- **Download Inflation** (S065-S069): Identifies suspicious download patterns
+- **Ownership Transfer** (S070-S074): Flags recent maintainer changes
+- **Version Spike** (S075-S079): Detects rapid version releases (5+ in 24h)
+- **Signal Combination** (S080): Intelligent multi-signal risk aggregation
+
+#### Enhanced Pattern Database
+- Community pattern contribution system
+- Pattern validation with confidence scoring
+- User-configurable pattern loading
+
+### Changed
+- Updated scoring formula to include 4 new signals (15 total signals)
+- Risk score normalization updated for new signal weights
+- Improved false positive prevention with signal combination logic
+
+### Technical
+- 1,229 tests in core package (96% coverage)
+- 160 tests in VS Code extension (90.81% coverage)
+- 108 tests in GitHub Action
+- All components pass hostile review
 
 ## [0.1.2] - 2026-01-02
 
