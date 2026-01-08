@@ -238,3 +238,107 @@ describe('Core Integration Performance', () => {
   it.skip('subsequent calls faster than first', () => {});
   it.skip('batch validation efficient', () => {});
 });
+
+describe('Package Name Length Validation', () => {
+  let core: PhantomGuardCore;
+
+  beforeEach(() => {
+    core = new PhantomGuardCore();
+  });
+
+  it('rejects package names exceeding max length (214 chars)', async () => {
+    const validatePackageName = (core as any).validatePackageName.bind(core);
+
+    // Generate a name that's exactly at the limit
+    const atLimit = 'a'.repeat(214);
+    expect(validatePackageName(atLimit)).toBe(true);
+
+    // Generate a name that exceeds the limit
+    const tooLong = 'a'.repeat(215);
+    expect(validatePackageName(tooLong)).toBe(false);
+  });
+
+  it('accepts package names at max length boundary', async () => {
+    const validatePackageName = (core as any).validatePackageName.bind(core);
+
+    // Exactly 214 characters should be valid
+    const exactLimit = 'validpkg' + 'a'.repeat(206);
+    expect(validatePackageName(exactLimit)).toBe(true);
+  });
+});
+
+describe('setPythonPath Configuration', () => {
+  let core: PhantomGuardCore;
+
+  beforeEach(() => {
+    core = new PhantomGuardCore();
+  });
+
+  it('sets valid python path', () => {
+    core.setPythonPath('/usr/bin/python3');
+    // Access private field for verification
+    expect((core as any).pythonPath).toBe('/usr/bin/python3');
+  });
+
+  it('trims whitespace from python path', () => {
+    core.setPythonPath('  /usr/bin/python3  ');
+    expect((core as any).pythonPath).toBe('/usr/bin/python3');
+  });
+
+  it('ignores empty python path', () => {
+    const original = (core as any).pythonPath;
+    core.setPythonPath('');
+    expect((core as any).pythonPath).toBe(original);
+  });
+
+  it('ignores whitespace-only python path', () => {
+    const original = (core as any).pythonPath;
+    core.setPythonPath('   ');
+    expect((core as any).pythonPath).toBe(original);
+  });
+});
+
+describe('validatePackages Batch Validation', () => {
+  let core: PhantomGuardCore;
+
+  beforeEach(() => {
+    core = new PhantomGuardCore();
+    vi.clearAllMocks();
+  });
+
+  it('validates multiple packages and returns results map', async () => {
+    // Invalid packages should return null without subprocess
+    const results = await core.validatePackages(['pkg;invalid', 'another|bad'], 'pypi');
+
+    expect(results.size).toBe(2);
+    expect(results.get('pkg;invalid')).toBeNull();
+    expect(results.get('another|bad')).toBeNull();
+  });
+
+  it('handles empty package list', async () => {
+    const results = await core.validatePackages([], 'pypi');
+    expect(results.size).toBe(0);
+  });
+
+  it('validates mixed valid and invalid package names', async () => {
+    // First invalid one returns null, second valid one would try subprocess
+    const results = await core.validatePackages(['bad;pkg', 'validpkg'], 'pypi');
+
+    expect(results.size).toBe(2);
+    expect(results.get('bad;pkg')).toBeNull(); // Invalid name
+    // 'validpkg' would attempt subprocess (but no mock set up, so null)
+  });
+});
+
+describe('Core dispose', () => {
+  it('dispose method is callable', () => {
+    const core = new PhantomGuardCore();
+    expect(() => core.dispose()).not.toThrow();
+  });
+
+  it('dispose can be called multiple times', () => {
+    const core = new PhantomGuardCore();
+    core.dispose();
+    expect(() => core.dispose()).not.toThrow();
+  });
+});

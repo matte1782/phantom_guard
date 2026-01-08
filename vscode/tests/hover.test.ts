@@ -334,6 +334,274 @@ describe('Hover Content Format', () => {
 
   it.skip('includes registry source', () => {});
   it.skip('uses markdown formatting', () => {});
+
+  it('truncates signals list when more than 5', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const content = provider.createHoverContent({
+      name: 'pkg',
+      risk_level: 'HIGH_RISK',
+      risk_score: 0.95,
+      signals: ['sig1', 'sig2', 'sig3', 'sig4', 'sig5', 'sig6', 'sig7'],
+    });
+
+    // Should show first 5 signals and indicate more
+    expect(content.value).toContain('sig1');
+    expect(content.value).toContain('sig5');
+    expect(content.value).toContain('...and 2 more');
+  });
+
+  it('includes recommendation when present', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const content = provider.createHoverContent({
+      name: 'risky-pkg',
+      risk_level: 'HIGH_RISK',
+      risk_score: 0.9,
+      signals: ['version_spike'],
+      recommendation: 'Consider using an alternative package',
+    });
+
+    expect(content.value).toContain('Recommendation');
+    expect(content.value).toContain('Consider using an alternative package');
+  });
+
+  it('handles unknown risk level with default icon', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    // Test with unknown level
+    const icon = provider.getStatusIcon('UNKNOWN_LEVEL' as any);
+    expect(icon).toBe('❔');
+  });
+
+  it('formats NOT_FOUND risk level correctly', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const content = provider.createHoverContent({
+      name: 'missing-pkg',
+      risk_level: 'NOT_FOUND',
+      risk_score: 1.0,
+      signals: [],
+    });
+
+    expect(content.value).toContain('❓');
+    expect(content.value).toContain('Not Found');
+  });
+
+  it('formats ERROR risk level correctly', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const content = provider.createHoverContent({
+      name: 'error-pkg',
+      risk_level: 'ERROR',
+      risk_score: 0,
+      signals: [],
+    });
+
+    expect(content.value).toContain('❌');
+    expect(content.value).toContain('Error');
+  });
+
+  it('handles unknown risk level with Unknown label', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const content = provider.createHoverContent({
+      name: 'unknown-pkg',
+      risk_level: 'SOME_NEW_LEVEL' as any,
+      risk_score: 0.5,
+      signals: [],
+    });
+
+    expect(content.value).toContain('Unknown');
+  });
+});
+
+describe('Registry Detection', () => {
+  it('detects npm registry for package.json', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackage).mockResolvedValue({
+      name: 'lodash',
+      risk_level: 'SAFE',
+      risk_score: 0.05,
+      signals: [],
+    });
+
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    // Create a package.json document
+    const document = createMockDocument('"lodash": "^4.17.21"', '/test/package.json');
+    const position = new Position(0, 3); // On "lodash"
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).not.toBeNull();
+    expect(mockCore.validatePackage).toHaveBeenCalledWith('lodash', 'npm');
+  });
+
+  it('detects crates registry for Cargo.toml', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackage).mockResolvedValue({
+      name: 'serde',
+      risk_level: 'SAFE',
+      risk_score: 0.02,
+      signals: [],
+    });
+
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    // Create a Cargo.toml document with quoted package name
+    const document = createMockDocument('"serde" = "1.0"', '/test/Cargo.toml');
+    const position = new Position(0, 2); // On "serde"
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).not.toBeNull();
+    expect(mockCore.validatePackage).toHaveBeenCalledWith('serde', 'crates');
+  });
+
+  it('detects crates registry for Cargo.toml key-value style', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackage).mockResolvedValue({
+      name: 'tokio',
+      risk_level: 'SAFE',
+      risk_score: 0.02,
+      signals: [],
+    });
+
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    // Test keyMatch path - no quotes before package name
+    const document = createMockDocument('tokio = { }', '/test/Cargo.toml');
+    const position = new Position(0, 2); // On "tokio"
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).not.toBeNull();
+    expect(mockCore.validatePackage).toHaveBeenCalledWith('tokio', 'crates');
+  });
+
+  it('detects pypi registry for requirements.txt', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackage).mockResolvedValue({
+      name: 'flask',
+      risk_level: 'SAFE',
+      risk_score: 0.05,
+      signals: [],
+    });
+
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const document = createMockDocument('flask==2.0.0', '/test/requirements.txt');
+    const position = new Position(0, 2);
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).not.toBeNull();
+    expect(mockCore.validatePackage).toHaveBeenCalledWith('flask', 'pypi');
+  });
+
+  it('detects pypi registry for pyproject.toml', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackage).mockResolvedValue({
+      name: 'django',
+      risk_level: 'SAFE',
+      risk_score: 0.05,
+      signals: [],
+    });
+
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const document = createMockDocument('"django>=4.0"', '/test/pyproject.toml');
+    const position = new Position(0, 3); // On "django"
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).not.toBeNull();
+    expect(mockCore.validatePackage).toHaveBeenCalledWith('django', 'pypi');
+  });
+});
+
+describe('TOML Comment Detection', () => {
+  it('returns null for TOML comment lines', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const document = createMockDocument('# This is a TOML comment\nflask = "2.0"', '/test/pyproject.toml');
+    const position = new Position(0, 5); // On comment line
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).toBeNull();
+  });
+
+  it('isCommentLine returns true for TOML comments', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const tomlUri = Uri.file('/test/pyproject.toml');
+    expect(provider.isCommentLine('# TOML comment', tomlUri)).toBe(true);
+    expect(provider.isCommentLine('flask = "2.0"', tomlUri)).toBe(false);
+  });
+
+  it('returns null for Cargo.toml comment lines', async () => {
+    const { PhantomGuardHoverProvider } = await import('../src/hover');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new PhantomGuardHoverProvider(mockCore);
+
+    const document = createMockDocument('# Comment in Cargo.toml', '/test/Cargo.toml');
+    const position = new Position(0, 5);
+
+    const hover = await provider.provideHover(document as any, position, CancellationToken as any);
+
+    expect(hover).toBeNull();
+  });
 });
 
 describe('Hover Cache', () => {

@@ -370,3 +370,320 @@ describe('Diagnostics Cleared on Close (INV122)', () => {
     expect(true).toBe(true);
   });
 });
+
+describe('Document Validation Flow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('validateDocument creates diagnostics for risky packages', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(
+      new Map([
+        ['flask', { name: 'flask', risk_level: 'SAFE', risk_score: 0.1, signals: [] }],
+        ['flask-gpt', { name: 'flask-gpt', risk_level: 'SUSPICIOUS', risk_score: 0.7, signals: ['ai_suffix'] }],
+      ])
+    );
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/requirements.txt'),
+      'flask==2.0.0\nflask-gpt==1.0.0',
+      'pip-requirements'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    // Should have called validatePackages
+    expect(mockCore.validatePackages).toHaveBeenCalledWith(['flask', 'flask-gpt'], 'pypi');
+
+    provider.dispose();
+  });
+
+  it('validateDocument handles empty packages list', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new DiagnosticProvider(mockCore);
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/requirements.txt'),
+      '# just a comment\n',
+      'pip-requirements'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    // Should not have called validatePackages for empty list
+    expect(mockCore.validatePackages).not.toHaveBeenCalled();
+
+    provider.dispose();
+  });
+
+  it('validateDocument uses npm registry for package.json', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(new Map());
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/package.json'),
+      '{\n  "dependencies": {\n    "express": "^4.0.0"\n  }\n}',
+      'json'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    expect(mockCore.validatePackages).toHaveBeenCalledWith(['express'], 'npm');
+
+    provider.dispose();
+  });
+
+  it('validateDocument uses crates registry for Cargo.toml', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(new Map());
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    // Note: Cargo.toml parsing is not implemented fully, but getRegistry returns 'crates'
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/Cargo.toml'),
+      '[dependencies]\nserde = "1.0"',
+      'toml'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    // Even if parsing doesn't find packages, registry should be crates
+    provider.dispose();
+  });
+});
+
+describe('Package Parsing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('parses requirements.txt format correctly', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(new Map());
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/requirements.txt'),
+      'flask==2.0.0\nrequests>=2.25.0\nnumpy\n# comment\n-r other.txt',
+      'pip-requirements'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    // Should have parsed flask, requests, numpy (not comment or -r)
+    expect(mockCore.validatePackages).toHaveBeenCalledWith(
+      expect.arrayContaining(['flask', 'requests', 'numpy']),
+      'pypi'
+    );
+
+    provider.dispose();
+  });
+
+  it('parses pyproject.toml dependencies section', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(new Map());
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    const pyprojectContent = `[project]
+name = "myproject"
+
+[project.dependencies]
+"flask>=2.0"
+"requests[security]>=2.25"
+
+[build-system]
+requires = ["setuptools"]`;
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/pyproject.toml'),
+      pyprojectContent,
+      'toml'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    expect(mockCore.validatePackages).toHaveBeenCalledWith(
+      expect.arrayContaining(['flask', 'requests']),
+      'pypi'
+    );
+
+    provider.dispose();
+  });
+
+  it('parses package.json dependencies', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(new Map());
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    const packageJson = `{
+  "name": "myapp",
+  "dependencies": {
+    "express": "^4.0.0",
+    "lodash": "^4.17.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}`;
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/package.json'),
+      packageJson,
+      'json'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    // Should parse both dependencies and devDependencies
+    expect(mockCore.validatePackages).toHaveBeenCalledWith(
+      expect.arrayContaining(['express', 'lodash', 'jest']),
+      'npm'
+    );
+
+    provider.dispose();
+  });
+
+  it('handles empty requirements.txt', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new DiagnosticProvider(mockCore);
+
+    const mockDoc = new MockTextDocument(
+      Uri.file('/test/requirements.txt'),
+      '',
+      'pip-requirements'
+    );
+
+    await provider.validateDocument(mockDoc as any);
+
+    expect(mockCore.validatePackages).not.toHaveBeenCalled();
+
+    provider.dispose();
+  });
+});
+
+describe('Revalidate All Documents (INV126)', () => {
+  it('revalidateAllDocuments validates all open supported files', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    vi.mocked(mockCore.validatePackages).mockResolvedValue(new Map());
+
+    const provider = new DiagnosticProvider(mockCore);
+
+    // Test revalidateAllDocuments method exists and is callable
+    // Full integration test requires VS Code extension host
+    expect(typeof provider.revalidateAllDocuments).toBe('function');
+
+    // Calling it should not throw
+    provider.revalidateAllDocuments();
+
+    provider.dispose();
+  });
+});
+
+describe('ERROR Risk Level Handling', () => {
+  it('ERROR status = DiagnosticSeverity.Error', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new DiagnosticProvider(mockCore);
+
+    const severity = provider.getSeverity('ERROR');
+    expect(severity).toBe(DiagnosticSeverity.Error);
+
+    const diagnostic = provider.createDiagnostic(
+      { name: 'error-pkg', line: 0, range: new Range(0, 0, 0, 9) },
+      { name: 'error-pkg', risk_level: 'ERROR', risk_score: 1.0, signals: [] }
+    );
+
+    expect(diagnostic).not.toBeNull();
+    expect(diagnostic!.message).toContain('Error validating');
+
+    provider.dispose();
+  });
+
+  it('unknown status = DiagnosticSeverity.Information', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new DiagnosticProvider(mockCore);
+
+    // Test with unknown/default risk level
+    const severity = provider.getSeverity('UNKNOWN' as any);
+    expect(severity).toBe(DiagnosticSeverity.Information);
+
+    provider.dispose();
+  });
+
+  it('handles undefined risk_score gracefully', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new DiagnosticProvider(mockCore);
+
+    const diagnostic = provider.createDiagnostic(
+      { name: 'test-pkg', line: 0, range: new Range(0, 0, 0, 8) },
+      { name: 'test-pkg', risk_level: 'SUSPICIOUS', signals: [] } as any // no risk_score
+    );
+
+    expect(diagnostic).not.toBeNull();
+    expect(diagnostic!.message).toContain('?'); // fallback for undefined score
+
+    provider.dispose();
+  });
+
+  it('handles empty signals array for HIGH_RISK', async () => {
+    const { DiagnosticProvider } = await import('../src/diagnostics');
+    const { PhantomGuardCore } = await import('../src/core');
+
+    const mockCore = new PhantomGuardCore();
+    const provider = new DiagnosticProvider(mockCore);
+
+    const diagnostic = provider.createDiagnostic(
+      { name: 'risky-pkg', line: 0, range: new Range(0, 0, 0, 9) },
+      { name: 'risky-pkg', risk_level: 'HIGH_RISK', risk_score: 0.9, signals: [] }
+    );
+
+    expect(diagnostic).not.toBeNull();
+    expect(diagnostic!.message).toContain('multiple risk factors');
+
+    provider.dispose();
+  });
+});

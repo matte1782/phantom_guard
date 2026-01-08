@@ -74,6 +74,9 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
   // S125: Create configuration provider
   configProvider = new ConfigProvider();
 
+  // P0-BUG-001 FIX: Wire pythonPath config to core
+  core.setPythonPath(configProvider.getPythonPath());
+
   // S121: Create diagnostic provider
   diagnosticProvider = new DiagnosticProvider(core);
 
@@ -95,6 +98,10 @@ async function doActivation(context: vscode.ExtensionContext): Promise<void> {
 
   // INV126: Configuration changes trigger re-validation
   const configChangeDisposable = configProvider.onConfigChange(() => {
+    // P0-BUG-001 FIX: Update pythonPath on config change
+    if (core && configProvider) {
+      core.setPythonPath(configProvider.getPythonPath());
+    }
     // Re-validate all open documents when config changes
     if (diagnosticProvider) {
       diagnosticProvider.revalidateAllDocuments();

@@ -18,6 +18,7 @@ vi.mock('../src/core', () => ({
     checkAvailability: vi.fn().mockResolvedValue(true),
     validatePackage: vi.fn().mockResolvedValue(null),
     validatePackages: vi.fn().mockResolvedValue(new Map()),
+    setPythonPath: vi.fn(), // P0-BUG-001 FIX: Added setPythonPath mock
     dispose: vi.fn(),
   })),
 }));
@@ -190,5 +191,90 @@ describe('Extension Deactivation', () => {
     // After deactivation, core should be undefined
     deactivate();
     expect(getCore()).toBeUndefined();
+  });
+});
+
+describe('Extension Getters', () => {
+  it('getConfigProvider returns undefined after deactivate', async () => {
+    const { deactivate, getConfigProvider } = await import('../src/extension');
+    deactivate();
+    expect(getConfigProvider()).toBeUndefined();
+  });
+
+  it('getDiagnosticProvider returns undefined after deactivate', async () => {
+    const { deactivate, getDiagnosticProvider } = await import('../src/extension');
+    deactivate();
+    expect(getDiagnosticProvider()).toBeUndefined();
+  });
+
+  it('getStatusBar returns undefined after deactivate', async () => {
+    const { deactivate, getStatusBar } = await import('../src/extension');
+    deactivate();
+    expect(getStatusBar()).toBeUndefined();
+  });
+});
+
+describe('PythonPath Configuration Wiring (P0-BUG-001)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('setPythonPath is called during activation', async () => {
+    /**
+     * P0-BUG-001 FIX VERIFICATION
+     *
+     * Given: Extension activates successfully
+     * When: Core is created and config is loaded
+     * Then: setPythonPath is called with configured value
+     */
+    const mockSetPythonPath = vi.fn();
+    const { PhantomGuardCore } = await import('../src/core');
+
+    vi.mocked(PhantomGuardCore).mockImplementation(() => ({
+      checkAvailability: vi.fn().mockResolvedValue(true),
+      validatePackage: vi.fn().mockResolvedValue(null),
+      validatePackages: vi.fn().mockResolvedValue(new Map()),
+      setPythonPath: mockSetPythonPath,
+      dispose: vi.fn(),
+    }) as any);
+
+    const { activate } = await import('../src/extension');
+    const mockContext = { subscriptions: [] } as any;
+
+    await activate(mockContext);
+
+    // Verify setPythonPath was called during activation
+    expect(mockSetPythonPath).toHaveBeenCalled();
+  });
+
+  it('setPythonPath receives value from config', async () => {
+    /**
+     * P0-BUG-001 FIX VERIFICATION
+     *
+     * Given: pythonPath is configured in settings
+     * When: Extension activates
+     * Then: setPythonPath is called with that configured path
+     */
+    const mockSetPythonPath = vi.fn();
+    const { PhantomGuardCore } = await import('../src/core');
+
+    vi.mocked(PhantomGuardCore).mockImplementation(() => ({
+      checkAvailability: vi.fn().mockResolvedValue(true),
+      validatePackage: vi.fn().mockResolvedValue(null),
+      validatePackages: vi.fn().mockResolvedValue(new Map()),
+      setPythonPath: mockSetPythonPath,
+      dispose: vi.fn(),
+    }) as any);
+
+    const { activate } = await import('../src/extension');
+    const mockContext = { subscriptions: [] } as any;
+
+    await activate(mockContext);
+
+    // setPythonPath should be called with the default 'python' value
+    // (since our mock vscode returns undefined for config values,
+    // ConfigProvider uses 'python' as default)
+    expect(mockSetPythonPath).toHaveBeenCalledWith('python');
   });
 });
