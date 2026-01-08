@@ -50,11 +50,11 @@ dev = [
 phantom-guard = "phantom_guard.cli.main:app"
 
 [project.urls]
-Homepage = "https://github.com/phantom-guard/phantom-guard"
-Documentation = "https://github.com/phantom-guard/phantom-guard#readme"
-Repository = "https://github.com/phantom-guard/phantom-guard"
-Changelog = "https://github.com/phantom-guard/phantom-guard/blob/main/CHANGELOG.md"
-"Bug Tracker" = "https://github.com/phantom-guard/phantom-guard/issues"
+Homepage = "https://github.com/matte1782/phantom_guard"
+Documentation = "https://github.com/matte1782/phantom_guard#readme"
+Repository = "https://github.com/matte1782/phantom_guard"
+Changelog = "https://github.com/matte1782/phantom_guard/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/matte1782/phantom_guard/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/phantom_guard"]

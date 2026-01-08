@@ -20,10 +20,10 @@
   <a href="#the-problem">The Problem</a> •
   <a href="#the-solution">The Solution</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#features">Features</a> •
-  <a href="#cli-reference">CLI Reference</a> •
-  <a href="#python-api">Python API</a> •
-  <a href="#cicd-integration">CI/CD Integration</a>
+  <a href="#vs-code-extension">VS Code</a> •
+  <a href="#github-action">GitHub Action</a> •
+  <a href="#cli-reference">CLI</a> •
+  <a href="#python-api">API</a>
 </p>
 
 ---
@@ -67,7 +67,7 @@ Phantom Guard detects potentially dangerous packages **before installation** by 
 | **Pattern Analysis** | Identifies AI hallucination patterns like `flask-gpt-helper`, `easy-requests`, `py-openai-utils` |
 | **Typosquat Detection** | Uses Levenshtein distance to find suspicious similarities to popular packages |
 | **Metadata Analysis** | Flags packages with few downloads, recent creation, or missing maintainers |
-| **Multi-Signal Scoring** | Combines 10+ risk signals into a single actionable score |
+| **Multi-Signal Scoring** | Combines 15 risk signals into a single actionable score |
 
 ---
 
@@ -100,7 +100,7 @@ phantom-guard check Cargo.toml
 ```
 $ phantom-guard validate flask-gpt-helper
 
-  Phantom Guard v0.1.0
+  Phantom Guard v0.2.0
 
   Package: flask-gpt-helper
   Registry: pypi
@@ -113,6 +113,117 @@ $ phantom-guard validate flask-gpt-helper
 
   Risk Score: 0.92
   Recommendation: DO NOT INSTALL
+```
+
+---
+
+## VS Code Extension
+
+Get real-time package validation directly in your editor. The VS Code extension highlights suspicious packages as you edit dependency files.
+
+### Installation
+
+Search for **"Phantom Guard"** in the VS Code Extensions marketplace, or:
+
+```bash
+code --install-extension phantom-guard.phantom-guard-vscode
+```
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Real-time Validation** | Validates packages as you type in dependency files |
+| **Inline Diagnostics** | Shows warnings directly in the editor |
+| **Hover Information** | Hover over package names to see risk details |
+| **Quick Fixes** | One-click actions to ignore or investigate packages |
+| **Status Bar** | Shows validation status at a glance |
+
+### Supported Files
+
+- `requirements.txt` (Python)
+- `package.json` (npm)
+- `pyproject.toml` (Python)
+- `Cargo.toml` (Rust)
+
+### Configuration
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `phantomGuard.enabled` | `true` | Enable/disable validation |
+| `phantomGuard.pythonPath` | auto | Path to Python with phantom-guard |
+| `phantomGuard.threshold` | `0.5` | Risk score threshold (0.0-1.0) |
+| `phantomGuard.ignoredPackages` | `[]` | Packages to skip |
+
+---
+
+## GitHub Action
+
+Automate dependency scanning in your CI/CD pipeline with the official GitHub Action.
+
+### Basic Usage
+
+```yaml
+# .github/workflows/phantom-guard.yml
+name: Phantom Guard
+
+on:
+  pull_request:
+    paths:
+      - 'requirements.txt'
+      - 'package.json'
+      - 'Cargo.toml'
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: matte1782/phantom-guard-action@v1
+        with:
+          files: |
+            requirements.txt
+            package.json
+          fail-on: suspicious
+```
+
+### Action Inputs
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `files` | auto-detect | Glob patterns for dependency files |
+| `fail-on` | `high_risk` | Fail threshold: `suspicious` or `high_risk` |
+| `comment` | `true` | Post results as PR comment |
+| `sarif` | `false` | Generate SARIF for Security tab |
+
+### PR Comment
+
+The action automatically posts a summary comment on pull requests:
+
+```
+## Phantom Guard Scan Results
+
+| Package | Registry | Risk | Score |
+|---------|----------|------|-------|
+| flask | pypi | SAFE | 0.02 |
+| flask-gpt-helper | pypi | HIGH_RISK | 0.92 |
+
+1 high-risk package detected. Review before merging.
+```
+
+### SARIF Integration
+
+Enable SARIF output to see results in GitHub's Security tab:
+
+```yaml
+- uses: matte1782/phantom-guard-action@v1
+  with:
+    sarif: true
+
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: phantom-guard.sarif
 ```
 
 ---
@@ -149,6 +260,10 @@ Phantom Guard analyzes packages for multiple risk indicators:
 | `NOT_FOUND` | 0.90 | Package doesn't exist on registry |
 | `HALLUCINATION_PATTERN` | 0.30-0.85 | Matches known AI hallucination patterns |
 | `TYPOSQUAT` | 0.30-0.95 | Similar to popular package name |
+| `NAMESPACE_SQUATTING` | 0.70 | Mimics organization namespace (e.g., `aws-`, `google-`) |
+| `DOWNLOAD_INFLATION` | 0.60 | Suspicious download patterns detected |
+| `OWNERSHIP_TRANSFER` | 0.55 | Recent maintainer change on established package |
+| `VERSION_SPIKE` | 0.50 | Rapid version releases (5+ in 24 hours) |
 | `RECENTLY_CREATED` | 0.40 | Package created less than 30 days ago |
 | `LOW_DOWNLOADS` | 0.30 | Less than 1,000 downloads/month |
 | `NO_REPOSITORY` | 0.25 | No source repository linked |
@@ -588,7 +703,7 @@ Phantom Guard is released under the [MIT License](LICENSE).
 ```
 MIT License
 
-Copyright (c) 2024 Phantom Guard Contributors
+Copyright (c) 2025-2026 Phantom Guard Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

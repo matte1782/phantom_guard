@@ -2,7 +2,7 @@
   "name": "phantom-guard-vscode",
   "displayName": "Phantom Guard",
   "description": "Detect AI-hallucinated package attacks in your dependencies",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "phantom-guard",
   "repository": {
     "type": "git",
