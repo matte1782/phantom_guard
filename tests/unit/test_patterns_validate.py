@@ -10,7 +10,7 @@ Tests for pattern validation.
 from typing import Any
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis import strategies as st
 
 from phantom_guard.patterns.validate import validate_pattern

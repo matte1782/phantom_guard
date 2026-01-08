@@ -9,14 +9,13 @@ Tests for namespace squatting signal detection.
 from typing import Any
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import given
 from hypothesis import strategies as st
 
 from phantom_guard.core.signals.namespace import (
     NamespaceSignal,
     detect_namespace_squatting,
     extract_namespace,
-    KNOWN_LEGITIMATE_ORGS,
 )
 
 

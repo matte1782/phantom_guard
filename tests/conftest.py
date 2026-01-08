@@ -29,6 +29,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "integration: Integration tests (live APIs)")
     config.addinivalue_line("markers", "network: Tests requiring network access")
     config.addinivalue_line("markers", "benchmark: Performance benchmarks")
+    config.addinivalue_line("markers", "security: Security-focused tests (attack vectors)")
     config.addinivalue_line("markers", "slow: Slow tests (>1s)")
 
 

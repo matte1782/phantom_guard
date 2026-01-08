@@ -6,7 +6,6 @@ EDGE_CASES: EC500-EC510
 Tests for signal combination behavior when multiple signals fire together.
 """
 
-
 import pytest
 
 from phantom_guard.core.signals.combination import (
