@@ -114,6 +114,8 @@ nul
 .claude/
 .fortress/
 CLAUDE.md
+docs/frameworks/
+docs/planning/
 
 # Social media posts (personal use)
 .social-posts/
