@@ -1,5 +1,6 @@
 <p align="center">
   <a href="https://pypi.org/project/phantom-guard/"><img src="https://img.shields.io/pypi/v/phantom-guard?color=blue&label=PyPI" alt="PyPI Version"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=phantom-guard.phantom-guard-vscode"><img src="https://img.shields.io/visual-studio-marketplace/v/phantom-guard.phantom-guard-vscode?color=blue&label=VS%20Code" alt="VS Code Marketplace"></a>
   <a href="https://pypi.org/project/phantom-guard/"><img src="https://img.shields.io/pypi/pyversions/phantom-guard?color=green" alt="Python Versions"></a>
   <a href="https://github.com/matte1782/phantom_guard/blob/main/LICENSE"><img src="https://img.shields.io/github/license/matte1782/phantom_guard?color=yellow" alt="MIT License"></a>
   <a href="https://github.com/matte1782/phantom_guard/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/matte1782/phantom_guard/ci.yml?label=Tests" alt="Tests"></a>
@@ -120,6 +121,10 @@ $ phantom-guard validate flask-gpt-helper
 ## VS Code Extension
 
 Get real-time package validation directly in your editor. The VS Code extension highlights suspicious packages as you edit dependency files.
+
+<p align="center">
+  <a href="https://marketplace.visualstudio.com/items?itemName=phantom-guard.phantom-guard-vscode"><strong>Install from VS Code Marketplace</strong></a>
+</p>
 
 ### Installation
 
