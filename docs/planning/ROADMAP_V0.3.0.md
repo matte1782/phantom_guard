@@ -44,11 +44,11 @@ This roadmap is informed by comprehensive user research (January 2026):
 | Phase | Weeks | Hours (with 20% buffer) |
 |-------|-------|-------------------------|
 | pip Install Wrapper | 11 | 72 |
-| npm Install Wrapper | 12 | 48 |
-| Pre-commit Hook | 13 | 24 |
+| npm Install Wrapper | 12 | 54 |
+| Pre-commit Hook | 13 | 28 |
 | MCP Server | 14 | 48 |
-| Telemetry & Polish | 15 | 40 |
-| **Total** | **5 weeks** | **232 hours** |
+| Telemetry & Polish | 15 | 44 |
+| **Total** | **5 weeks** | **246 hours** |
 
 ---
 
@@ -102,9 +102,9 @@ Installation cancelled.
 | W11.5 | S204 | Configuration system (~/.phantom-guard/pip.yaml) | 6 | PENDING |
 | W11.6 | S205 | Allowlist/blocklist support | 4 | PENDING |
 | W11.7 | S206 | pip subprocess delegation | 6 | PENDING |
-| W11.8 | - | Unit tests (90% coverage target) | 8 | PENDING |
-| W11.9 | - | Integration tests (mock pip) | 6 | PENDING |
-| W11.10 | - | Documentation | 4 | PENDING |
+| W11.8 | S207 | Unit tests (90% coverage target) | 8 | PENDING |
+| W11.9 | S208 | Integration tests (mock pip) | 6 | PENDING |
+| W11.10 | S209 | Documentation | 4 | PENDING |
 | **Buffer** | - | Contingency (20%) | 12 | - |
 | **Total** | - | Week 11 | **72** | - |
 
@@ -233,7 +233,7 @@ timeout: 30
 
 ### Goals
 
-- Create `@phantom-guard/npm` package
+- Create `phantom-guard-npm` package (unscoped for npm publish simplicity)
 - Same protection for JavaScript ecosystem
 - Support npm, yarn, pnpm workflows
 - Integration via preinstall hook or wrapper script
@@ -242,15 +242,15 @@ timeout: 30
 
 | Task | SPEC | Description | Hours | Status |
 |------|------|-------------|-------|--------|
-| W12.1 | S210 | Package structure (@phantom-guard/npm) | 4 | PENDING |
+| W12.1 | S210 | Package structure (phantom-guard-npm) | 4 | PENDING |
 | W12.2 | S211 | npm argument parser | 6 | PENDING |
 | W12.3 | S212 | Package extraction | 6 | PENDING |
 | W12.4 | S213 | Interactive confirmation (Node.js) | 6 | PENDING |
 | W12.5 | S214 | preinstall hook integration | 6 | PENDING |
 | W12.6 | S215 | Configuration (package.json or .phantomguardrc) | 4 | PENDING |
-| W12.7 | - | Unit tests | 6 | PENDING |
-| W12.8 | - | Integration tests | 4 | PENDING |
-| W12.9 | - | Documentation | 4 | PENDING |
+| W12.7 | S216 | Unit tests | 6 | PENDING |
+| W12.8 | S217 | Integration tests | 4 | PENDING |
+| W12.9 | S218 | Documentation | 4 | PENDING |
 | **Buffer** | - | Contingency (20%) | 8 | - |
 | **Total** | - | Week 12 | **54** | - |
 
@@ -300,8 +300,8 @@ npm config set phantom-guard:enabled true
 | W13.3 | S222 | Dependency file detection | 4 | PENDING |
 | W13.4 | S223 | Exit code compliance (pre-commit spec) | 2 | PENDING |
 | W13.5 | S224 | Configuration via args | 4 | PENDING |
-| W13.6 | - | Integration tests with pre-commit | 4 | PENDING |
-| W13.7 | - | Documentation and examples | 4 | PENDING |
+| W13.6 | S225 | Integration tests with pre-commit | 4 | PENDING |
+| W13.7 | S226 | Documentation and examples | 4 | PENDING |
 | **Buffer** | - | Contingency (20%) | 4 | - |
 | **Total** | - | Week 13 | **28** | - |
 
@@ -314,7 +314,7 @@ npm config set phantom-guard:enabled true
   description: Detect AI-hallucinated package attacks
   entry: phantom-guard check
   language: python
-  files: (requirements.*\.txt|package\.json|Cargo\.toml|pyproject\.toml|poetry\.lock|package-lock\.json)$
+  files: (requirements.*\.txt|package\.json|Cargo\.toml|pyproject\.toml|poetry\.lock|package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$
   pass_filenames: true
   types: [text]
   stages: [commit]
@@ -372,9 +372,9 @@ Tool → Shows inline warning: "Package doesn't exist on PyPI"
 | W14.3 | S232 | check_file tool | 6 | PENDING |
 | W14.4 | S233 | get_risk_report tool | 4 | PENDING |
 | W14.5 | S234 | Configuration and authentication | 4 | PENDING |
-| W14.6 | - | Testing with Claude Code | 6 | PENDING |
-| W14.7 | - | Testing with Cursor | 4 | PENDING |
-| W14.8 | - | Documentation | 4 | PENDING |
+| W14.6 | S235 | Testing with Claude Code | 6 | PENDING |
+| W14.7 | S236 | Testing with Cursor | 4 | PENDING |
+| W14.8 | S237 | Documentation | 4 | PENDING |
 | **Buffer** | - | Contingency (20%) | 8 | - |
 | **Total** | - | Week 14 | **48** | - |
 
@@ -382,11 +382,11 @@ Tool → Shows inline warning: "Package doesn't exist on PyPI"
 
 ```python
 # phantom_guard_mcp/server.py
-from mcp import Server, Tool
+from mcp.server.fastmcp import FastMCP
 
-server = Server("phantom-guard")
+mcp = FastMCP("phantom-guard")
 
-@server.tool()
+@mcp.tool()
 async def validate_package(
     name: str,
     registry: str = "pypi"
@@ -413,7 +413,7 @@ async def validate_package(
         ]
     }
 
-@server.tool()
+@mcp.tool()
 async def check_file(path: str) -> dict:
     """
     Check all packages in a dependency file.
@@ -455,10 +455,10 @@ async def check_file(path: str) -> dict:
 | W15.2 | S241 | Anonymous data model | 4 | PENDING |
 | W15.3 | S242 | Telemetry backend (Cloudflare Workers) | 6 | PENDING |
 | W15.4 | S243 | False positive feedback command | 4 | PENDING |
-| W15.5 | - | Performance benchmarks | 4 | PENDING |
-| W15.6 | - | Documentation updates | 6 | PENDING |
-| W15.7 | - | Final hostile review | 4 | PENDING |
-| W15.8 | - | Release preparation | 4 | PENDING |
+| W15.5 | S244 | Performance benchmarks | 4 | PENDING |
+| W15.6 | S245 | Documentation updates | 6 | PENDING |
+| W15.7 | S246 | Final hostile review | 4 | PENDING |
+| W15.8 | S247 | Release preparation | 4 | PENDING |
 | **Buffer** | - | Contingency (20%) | 8 | - |
 | **Total** | - | Week 15 | **44** | - |
 
@@ -527,26 +527,41 @@ This will be reviewed and may update our pattern database.
 | S204 | pip configuration system | pip Hook |
 | S205 | Allowlist/blocklist | pip Hook |
 | S206 | pip subprocess delegation | pip Hook |
+| S207 | pip wrapper unit tests | pip Hook |
+| S208 | pip wrapper integration tests | pip Hook |
+| S209 | pip wrapper documentation | pip Hook |
 | S210 | npm wrapper package structure | npm Hook |
 | S211 | npm argument parser | npm Hook |
 | S212 | npm package extraction | npm Hook |
 | S213 | npm interactive confirmation | npm Hook |
 | S214 | npm preinstall integration | npm Hook |
 | S215 | npm configuration | npm Hook |
+| S216 | npm wrapper unit tests | npm Hook |
+| S217 | npm wrapper integration tests | npm Hook |
+| S218 | npm wrapper documentation | npm Hook |
 | S220 | Pre-commit hook definition | Pre-commit |
 | S221 | Hook entry point | Pre-commit |
 | S222 | Dependency file detection | Pre-commit |
 | S223 | Exit code compliance | Pre-commit |
 | S224 | Hook args configuration | Pre-commit |
+| S225 | Pre-commit integration tests | Pre-commit |
+| S226 | Pre-commit documentation | Pre-commit |
 | S230 | MCP server scaffold | MCP |
 | S231 | validate_package MCP tool | MCP |
 | S232 | check_file MCP tool | MCP |
 | S233 | get_risk_report MCP tool | MCP |
 | S234 | MCP authentication | MCP |
+| S235 | MCP testing with Claude Code | MCP |
+| S236 | MCP testing with Cursor | MCP |
+| S237 | MCP documentation | MCP |
 | S240 | Telemetry consent flow | Telemetry |
 | S241 | Anonymous data model | Telemetry |
 | S242 | Telemetry backend | Telemetry |
 | S243 | False positive feedback | Telemetry |
+| S244 | Performance benchmarks | Telemetry |
+| S245 | Documentation updates | Telemetry |
+| S246 | Final hostile review | Telemetry |
+| S247 | Release preparation | Telemetry |
 
 ---
 
@@ -566,6 +581,12 @@ This will be reviewed and may update our pattern database.
 | INV231 | MCP tools return valid JSON schema | Schema validation |
 | INV240 | Telemetry data never contains PII | Data schema test |
 | INV241 | Telemetry is opt-in only | Default config test |
+| INV204 | Package names validated before subprocess | Input validation test |
+| INV205 | Subprocess never uses shell=True | Code audit + test |
+| INV206 | Network timeout always enforced | Timeout test |
+| INV207 | Configuration parse errors handled gracefully | Error handling test |
+| INV208 | pip wrapper returns pip's exit code on success | Exit code passthrough test |
+| INV209 | MCP server handles concurrent requests | Concurrency test |
 
 ---
 
@@ -576,6 +597,8 @@ This will be reviewed and may update our pattern database.
 | Operation | Budget | Constraint |
 |-----------|--------|------------|
 | Wrapper startup | <100ms | P99 |
+| Configuration file loading | <50ms | P99 |
+| Allowlist/blocklist lookup | <1ms | P99 |
 | Single package validation | <500ms | P99 |
 | Batch validation (10 packages) | <3s | P99 |
 | Interactive prompt display | <10ms | P99 |
@@ -602,6 +625,13 @@ This will be reviewed and may update our pattern database.
 | Server startup | <1s | P99 |
 | validate_package call | <500ms | P99 |
 | check_file call | <5s | P99 (50 packages) |
+
+### Telemetry
+
+| Operation | Budget | Constraint |
+|-----------|--------|------------|
+| Telemetry call (async) | <100ms | P99 |
+| Feedback submission | <500ms | P99 |
 
 ---
 
@@ -637,32 +667,34 @@ This will be reviewed and may update our pattern database.
 ## Dependency Graph
 
 ```
-                    W11: pip Wrapper
-                           │
-          +----------------+----------------+
-          │                                 │
-          v                                 v
-    W12: npm Wrapper              W13: Pre-commit Hook
-          │                                 │
-          +----------------+----------------+
-                           │
-                           v
-                    W14: MCP Server
-                           │
-                           v
-                    W15: Telemetry & Polish
-                           │
-                           v
-                       v0.3.0 Release
+    W11: pip Wrapper ─────────────┐
+          │                       │
+          v                       │
+    W12: npm Wrapper              │
+          │                       │
+          │    W13: Pre-commit ───┤  (All depend on core library)
+          │                       │
+          └───────────────────────┤
+                                  │
+                                  v
+                           W14: MCP Server
+                                  │
+                                  v
+                           W15: Telemetry & Polish
+                                  │
+                                  v
+                              v0.3.0 Release
 ```
+
+**Note**: W11, W12, W13 can run in parallel as they all depend only on the core phantom-guard library. W14 (MCP) can start once W11 is complete for testing. W15 waits for all phases.
 
 ### Critical Path
 
 ```
-W11.1 → W11.3 → W11.4 → W11.7 → W13.1 → W14.1 → W15.7 → Release
+W11.1 → W11.2 → W11.3 → W11.6 → W11.7 → W13.1 → W14.1 → W15.7 → Release
 ```
 
-**Total Critical Path**: ~45 hours (without buffer)
+**Total Critical Path**: ~50 hours (without buffer)
 
 ---
 
@@ -733,8 +765,8 @@ W11.1 → W11.3 → W11.4 → W11.7 → W13.1 → W14.1 → W15.7 → Release
 
 ---
 
-**Gate 4 Status**: PENDING HOSTILE REVIEW
+**Gate 4 Status**: APPROVED (After hostile review fixes)
 
-**Next Step**: Run `/hostile-review planning` for approval
+**Next Step**: Begin implementation with `/implement W11.1`
 
-**Document Version**: 1.0.0
+**Document Version**: 1.1.0 (Post hostile review fixes)
