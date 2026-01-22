@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### pip Wrapper - phantom-guard-pip (S200-S209)
+- Drop-in replacement for `pip install` with slopsquatting protection
+- CLI entry point with typer: `install`, `uninstall`, `list`, `show`, `freeze`, `config`
+- Package extraction from pip arguments (requirements files, URLs, editable installs)
+- Interactive confirmation UI with rich terminal output
+- 4 operational modes: `interactive`, `warn`, `block`, `silent`
+- YAML configuration via `.phantom-pip.yaml`
+- Allowlist/blocklist filtering for known packages
+- Secure subprocess delegation (shell=False enforced - INV205)
+- 199 tests with 93.51% coverage
+
 ### Planned
+- npm wrapper (phantom-guard-npm) - Week 12
 - PWA/offline support for showcase
 - GitHub App integration (full integration)
 - JetBrains IDE plugin
