@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.backends"
+
+[project]
+name = "phantom-guard-mcp"
+version = "0.4.0"
+description = "MCP server for AI-hallucinated package detection (slopsquatting)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Matteo" },
+]
+keywords = ["mcp", "security", "slopsquatting", "hallucination", "package-security"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+dependencies = [
+    "phantom-guard>=0.2.0",
+    "mcp>=1.9.0,<2.0.0",
+    "pybloom_live>=4.0.0,<5.0.0",
+]
+
+[project.scripts]
+phantom-guard-mcp = "phantom_guard_mcp.server:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-benchmark>=4.0.0",
+    "hypothesis>=6.92.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+    "respx>=0.20.0",
+    "memory-profiler>=0.61.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/phantom_guard_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
