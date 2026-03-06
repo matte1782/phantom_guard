@@ -32,6 +32,10 @@ def create_server() -> FastMCP:
     # TODO(Day 9): Add MCP annotations (readOnlyHint, idempotentHint, destructiveHint)
     from phantom_guard_mcp.tools.check_package import check_package
     server.tool()(check_package)
+    from phantom_guard_mcp.tools.is_hallucinated import is_hallucinated
+    server.tool()(is_hallucinated)
+    from phantom_guard_mcp.tools.check_typosquat import check_typosquat
+    server.tool()(check_typosquat)
 
     return server
 

@@ -6,35 +6,9 @@ TESTS: T300.1, T300.2, T300.3, T300.4, T300.5, T300.6, T300.7, T300.8
 """
 from __future__ import annotations
 
-import re
 import time
 
-from pydantic import BaseModel, Field, field_validator
-
-
-VALID_ECOSYSTEMS = {"pypi", "npm", "crates"}
-PACKAGE_NAME_REGEX = re.compile(r"^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?$")
-MAX_PACKAGE_NAME_LENGTH = 214  # npm standard, per core
-
-
-class CheckPackageInput(BaseModel):
-    """Input validation for check_package. IMPLEMENTS: S300, INV304"""
-    name: str = Field(min_length=1, max_length=MAX_PACKAGE_NAME_LENGTH)
-    ecosystem: str = Field(default="pypi")
-
-    @field_validator("name")
-    @classmethod
-    def validate_name(cls, v: str) -> str:
-        if not PACKAGE_NAME_REGEX.match(v):
-            raise ValueError(f"Invalid package name: {v!r}")
-        return v
-
-    @field_validator("ecosystem")
-    @classmethod
-    def validate_ecosystem(cls, v: str) -> str:
-        if v not in VALID_ECOSYSTEMS:
-            raise ValueError(f"Invalid ecosystem: {v!r}. Must be one of {VALID_ECOSYSTEMS}")
-        return v
+from phantom_guard_mcp.tools._validation import NameEcosystemInput
 
 
 # Module-level hallucination DB for dependency injection.
@@ -54,7 +28,7 @@ async def check_package(name: str, ecosystem: str = "pypi") -> dict:
     MCP Annotations: readOnlyHint=true, idempotentHint=true, destructiveHint=false
     """
     # 1. Validate input (INV304)
-    validated = CheckPackageInput(name=name, ecosystem=ecosystem)
+    validated = NameEcosystemInput(name=name, ecosystem=ecosystem)
 
     # 2. Start timer
     start = time.perf_counter()
