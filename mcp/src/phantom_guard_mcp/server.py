@@ -36,6 +36,8 @@ def create_server() -> FastMCP:
     server.tool()(is_hallucinated)
     from phantom_guard_mcp.tools.check_typosquat import check_typosquat
     server.tool()(check_typosquat)
+    from phantom_guard_mcp.tools.check_packages import check_packages
+    server.tool()(check_packages)
 
     return server
 
