@@ -149,3 +149,17 @@ class Timer:
 @pytest.fixture
 def timer() -> type[Timer]:
     return Timer
+
+
+# -- Dependency Injection (autouse) -------------------------------------------
+
+@pytest.fixture(autouse=True)
+def inject_hallucination_db(hallucination_db_stub, monkeypatch):
+    """Inject stub HallucinationDB into production modules via monkeypatch.
+    Targets check_package module (Day 2+). Will target stage1 module (Day 5+).
+    """
+    try:
+        import phantom_guard_mcp.tools.check_package as cp_mod
+        monkeypatch.setattr(cp_mod, "_hallucination_db", hallucination_db_stub)
+    except (ImportError, AttributeError):
+        pass

@@ -28,7 +28,10 @@ def create_server() -> FastMCP:
     except ImportError:
         logger.warning("phantom-guard core not available -- degraded mode")
 
-    # Tools will be registered here in Days 2-4, 7
+    # Tool registration (Days 2-4, 7)
+    # TODO(Day 9): Add MCP annotations (readOnlyHint, idempotentHint, destructiveHint)
+    from phantom_guard_mcp.tools.check_package import check_package
+    server.tool()(check_package)
 
     return server
 
